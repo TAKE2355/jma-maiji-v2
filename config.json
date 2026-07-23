@@ -25,6 +25,18 @@
           "interval_minutes": 15
         }
       ]
+    },
+    {
+      "email": "takeshi.kai@jetstar.com",
+      "name": "TEST2",
+      "enabled": true,
+      "time_slots": [
+        {
+          "start": 5,
+          "end": 21,
+          "interval_minutes": 15
+        }
+      ]
     }
   ],
   "pages": [
