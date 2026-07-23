@@ -15,7 +15,7 @@
     {
       "email": "odr20062023@gmail.com",
       "name": "TAKE",
-      "enabled": false,
+      "enabled": true,
       "time_slots": [
         {
           "start": 5,
