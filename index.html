@@ -263,8 +263,10 @@ body.has-bar main{padding-bottom:78px;}
           <button class="stepper-btn" onclick="adjustGrid('rows',1)">＋</button>
         </div>
       </div>
-      <div class="row">
-        <button class="btn btn-sm btn-del" onclick="deletePage()">🗑 このページを削除</button>
+      <div class="row" style="gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-edit" onclick="movePage(-1)">◀ 前へ</button>
+        <button class="btn btn-sm btn-edit" onclick="movePage(1)">後へ ▶</button>
+        <button class="btn btn-sm btn-del" onclick="deletePage()">🗑 削除</button>
       </div>
     </div>
 
@@ -562,6 +564,15 @@ function addPage(){
   markDirty();renderPageTabs();renderPageEditor();
 }
 
+function movePage(dir){
+  if(!config||!config.pages)return;
+  const newIdx=currentPageIdx+dir;
+  if(newIdx<0||newIdx>=config.pages.length){showToast(dir<0?'最初のページです':'最後のページです');return;}
+  const pages=config.pages;
+  [pages[currentPageIdx],pages[newIdx]]=[pages[newIdx],pages[currentPageIdx]];
+  currentPageIdx=newIdx;
+  markDirty();renderPageTabs();renderPageEditor();
+}
 function deletePage(){
   if(!config||!config.pages||config.pages.length<=1){showToast('最低1ページ必要です');return;}
   if(!confirm(`ページ ${currentPageIdx+1} を削除しますか？`))return;
