@@ -13,14 +13,14 @@
   },
   "recipients": [
     {
-      "email": "odr20062023@gmail.com",
+      "email": "o_d_r_2006@yahoo.co.jp",
       "name": "TAKE",
-      "enabled": false,
+      "enabled": true,
       "time_slots": [
         {
           "start": 5,
           "end": 21,
-          "interval_minutes": 60
+          "interval_minutes": 15
         },
         {
           "start": 21,
