@@ -306,6 +306,19 @@ body.has-bar main{padding-bottom:78px;}
     <div class="row"><div class="row-label">ヘッダー高さ</div><input type="number" class="input-sm" id="in-header" value="65" min="0" max="200" oninput="markDirty()"></div>
     <div class="row"><div class="row-label">画像間隔</div><input type="number" class="input-sm" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></div>
     <div class="row"><div class="row-label">ラベル高さ</div><input type="number" class="input-sm" id="in-labelh" value="50" min="20" max="120" oninput="markDirty()"></div>
+    <div class="row slider-row">
+      <div class="slider-header">
+        <div><div class="row-label">DPI上限</div><div class="row-sub">最高画質の上限。サイズ超過時は自動で下げる</div></div>
+        <span class="slider-val" id="val-maxdpi">300</span>
+      </div>
+      <input type="range" id="sl-maxdpi" min="72" max="600" step="12" value="300"
+        oninput="updateSl('maxdpi',this.value)" onchange="markDirty()">
+    </div>
+    <div class="row">
+      <div class="row-label">メールサイズ上限<div class="row-sub">Gmailは最大25MB。超えたらDPIを自動で下げる</div></div>
+      <input type="number" class="input-sm" id="in-maxmb" value="20" min="1" max="25" step="0.5" oninput="markDirty()">
+      <span style="font-size:14px;color:var(--sub);">MB</span>
+    </div>
   </div>
 </div>
 
@@ -415,7 +428,7 @@ let editingSlots = [];  // 受信者フォーム用
 function initDefaultConfig(){
   if(config) return;
   config={
-    pdf:{dpi:300,page_margin:55,header_h:65,cell_gap:12,label_h:50,jpeg_quality:90},
+    pdf:{dpi:300,page_margin:55,header_h:65,cell_gap:12,label_h:50,jpeg_quality:90,max_dpi:300,max_mail_mb:20},
     overlay:{enabled:true,alpha:0.2},
     recipients:[],
     pages:[{orientation:'portrait',cols:2,rows:4,
@@ -491,6 +504,8 @@ function collectFromUI(){
   p.header_h=+document.getElementById('in-header').value;
   p.cell_gap=+document.getElementById('in-gap').value;
   p.label_h=+document.getElementById('in-labelh').value;
+  p.max_dpi=+document.getElementById('sl-maxdpi').value;
+  p.max_mail_mb=+document.getElementById('in-maxmb').value;
   config.overlay.enabled=document.getElementById('ov-enabled').checked;
   config.overlay.alpha=+document.getElementById('sl-alpha').value/100;
 }
@@ -501,6 +516,8 @@ function applyToUI(){
   document.getElementById('in-header').value=p.header_h;
   document.getElementById('in-gap').value=p.cell_gap;
   document.getElementById('in-labelh').value=p.label_h;
+  setSl('maxdpi',p.max_dpi||300,'');
+  document.getElementById('in-maxmb').value=p.max_mail_mb||20;
   document.getElementById('ov-enabled').checked=config.overlay.enabled;
   setSl('alpha',Math.round(config.overlay.alpha*100),'%');
   updateOvUI();
