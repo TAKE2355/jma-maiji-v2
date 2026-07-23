@@ -1,15 +1,15 @@
 {
   "pdf": {
-    "dpi": 300,
+    "dpi": 600,
     "page_margin": 55,
     "header_h": 65,
     "cell_gap": 12,
     "label_h": 50,
-    "jpeg_quality": 90
+    "jpeg_quality": 100
   },
   "overlay": {
     "enabled": true,
-    "alpha": 0.2
+    "alpha": 0.5
   },
   "recipients": [
     {
