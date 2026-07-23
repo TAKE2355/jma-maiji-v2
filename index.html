@@ -870,16 +870,20 @@ function updatePreviewImages(){
   const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
   const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
   const sx=displayW/W,sy=displayH/H;
-  const timestamps=getJmaTimestamps();
   const JMA='https://www.data.jma.go.jp/airinfo/data/pict/maiji/';
+  const timestamps=getJmaTimestamps();
+  const [owner,repoName]=(getRepo()||'/').split('/');
+  const cacheBase=`https://${owner}.github.io/${repoName}/cache`;
   (pg.slots||[]).forEach((slot,idx)=>{
     if(!slot||!slot.code||!slot.type)return;
     const r=Math.floor(idx/cols),c=idx%cols;
     const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
-    let urls=[];
-    if(slot.type==='jma_wanlc') urls=timestamps.map(t=>`${JMA}WANLC${slot.code}_RJTD_${t}.PNG`);
-    else if(slot.type==='jma_wanlf') urls=timestamps.map(t=>`${JMA}WANLF${slot.code}_RJTD_${t}.PNG`);
-    if(!urls.length)return;
+    const cacheUrl=`${cacheBase}/${slot.type}_${slot.code}.png`;
+    let urls=[cacheUrl];
+    if(slot.type==='jma_wanlc'||slot.type==='jma_wanlf'){
+      const prefix=slot.type==='jma_wanlc'?'WANLC':'WANLF';
+      urls=[cacheUrl,...timestamps.map(t=>`${JMA}${prefix}${slot.code}_RJTD_${t}.PNG`)];
+    }
     const img=document.createElement('img');
     img.style.cssText=`position:absolute;left:${x*sx}px;top:${(y+labelH)*sy}px;width:${cellW*sx}px;height:${(cellH-labelH)*sy}px;object-fit:contain;background:rgba(255,255,255,.05);`;
     layer.appendChild(img);
