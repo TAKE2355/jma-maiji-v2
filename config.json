@@ -15,11 +15,23 @@
     {
       "email": "odr20062023@gmail.com",
       "name": "TAKE",
-      "enabled": true,
+      "enabled": false,
       "time_slots": [
-        {"start": 5, "end": 21, "interval_minutes": 60},
-        {"start": 21, "end": 24, "interval_minutes": 180},
-        {"start": 0,  "end": 5,  "interval_minutes": 180}
+        {
+          "start": 5,
+          "end": 21,
+          "interval_minutes": 60
+        },
+        {
+          "start": 21,
+          "end": 24,
+          "interval_minutes": 180
+        },
+        {
+          "start": 0,
+          "end": 5,
+          "interval_minutes": 180
+        }
       ]
     }
   ],
@@ -29,14 +41,46 @@
       "cols": 2,
       "rows": 4,
       "slots": [
-        {"type":"jma_wanlc","code":"151","label":"太平洋 東経142.5°(南北)"},
-        {"type":"jma_wanlc","code":"152","label":"太平洋 東経140.0°(南北)"},
-        {"type":"jma_wanlc","code":"153","label":"太平洋 東経137.5°(南北)"},
-        {"type":"jma_wanlc","code":"154","label":"太平洋 東経135.0°(南北)"},
-        {"type":"jma_wanlc","code":"155","label":"太平洋 東経132.5°(南北)"},
-        {"type":"jma_wanlc","code":"156","label":"太平洋 東経130.0°(南北)"},
-        {"type":"jma_wanlc","code":"157","label":"太平洋 東経127.5°(南北)"},
-        {"type":"jma_wanlc","code":"158","label":"太平洋 東経125.0°(南北)"}
+        {
+          "type": "jma_wanlc",
+          "code": "151",
+          "label": "å¤ªå¹³æ´ æ±çµ142.5Â°(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "152",
+          "label": "å¤ªå¹³æ´ æ±çµ140.0Â°(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "153",
+          "label": "å¤ªå¹³æ´ æ±çµ137.5Â°(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "154",
+          "label": "å¤ªå¹³æ´ æ±çµ135.0Â°(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "155",
+          "label": "å¤ªå¹³æ´ æ±çµ132.5Â°(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "156",
+          "label": "å¤ªå¹³æ´ æ±çµ130.0Â°(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "157",
+          "label": "å¤ªå¹³æ´ æ±çµ127.5Â°(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "158",
+          "label": "å¤ªå¹³æ´ æ±çµ125.0Â°(åå)"
+        }
       ]
     },
     {
@@ -44,14 +88,46 @@
       "cols": 2,
       "rows": 4,
       "slots": [
-        {"type":"jma_wanlc","code":"199","label":"太平洋 北東-南西(南北)"},
-        {"type":"jma_wanlc","code":"101","label":"太平洋 南北-東西(南北)"},
-        {"type":"jma_wanlc","code":"102","label":"太平洋 南北-北東(南北)"},
-        {"type":"jma_wanlc","code":"103","label":"太平洋 東西-北西(南北)"},
-        {"type":"jma_wanlc","code":"105","label":"太平洋 南北-東西B(南北)"},
-        {"type":"jma_wanlc","code":"106","label":"太平洋 北西部-東西(南北)"},
-        {"type":"jma_wanlc","code":"107","label":"太平洋 西部-東西(南北)"},
-        {"type":"jma_wanlc","code":"108","label":"太平洋 北東部-東西(南北)"}
+        {
+          "type": "jma_wanlc",
+          "code": "199",
+          "label": "å¤ªå¹³æ´ åæ±-åè¥¿(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "101",
+          "label": "å¤ªå¹³æ´ åå-æ±è¥¿(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "102",
+          "label": "å¤ªå¹³æ´ åå-åæ±(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "103",
+          "label": "å¤ªå¹³æ´ æ±è¥¿-åè¥¿(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "105",
+          "label": "å¤ªå¹³æ´ åå-æ±è¥¿B(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "106",
+          "label": "å¤ªå¹³æ´ åè¥¿é¨-æ±è¥¿(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "107",
+          "label": "å¤ªå¹³æ´ è¥¿é¨-æ±è¥¿(åå)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "108",
+          "label": "å¤ªå¹³æ´ åæ±é¨-æ±è¥¿(åå)"
+        }
       ]
     },
     {
@@ -59,14 +135,46 @@
       "cols": 2,
       "rows": 4,
       "slots": [
-        {"type":"jma_wanlf","code":"139","label":"高層天気図 FL390"},
-        {"type":"jma_wanlf","code":"137","label":"高層天気図 FL370"},
-        {"type":"jma_wanlf","code":"135","label":"高層天気図 FL350"},
-        {"type":"jma_wanlf","code":"133","label":"高層天気図 FL330"},
-        {"type":"jma_wanlf","code":"131","label":"高層天気図 FL310"},
-        {"type":"jma_wanlf","code":"129","label":"高層天気図 FL290"},
-        {"type":"jma_wanlf","code":"127","label":"高層天気図 FL270"},
-        {"type":"jma_wanlf","code":"125","label":"高層天気図 FL250"}
+        {
+          "type": "jma_wanlf",
+          "code": "139",
+          "label": "é«å±¤å¤©æ°å³ FL390"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "137",
+          "label": "é«å±¤å¤©æ°å³ FL370"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "135",
+          "label": "é«å±¤å¤©æ°å³ FL350"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "133",
+          "label": "é«å±¤å¤©æ°å³ FL330"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "131",
+          "label": "é«å±¤å¤©æ°å³ FL310"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "129",
+          "label": "é«å±¤å¤©æ°å³ FL290"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "127",
+          "label": "é«å±¤å¤©æ°å³ FL270"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "125",
+          "label": "é«å±¤å¤©æ°å³ FL250"
+        }
       ]
     },
     {
@@ -74,14 +182,46 @@
       "cols": 2,
       "rows": 4,
       "slots": [
-        {"type":"jma_wanlf","code":"123","label":"高層天気図 FL230"},
-        {"type":"jma_wanlf","code":"121","label":"高層天気図 FL210"},
-        {"type":"jma_wanlf","code":"119","label":"高層天気図 FL190"},
-        {"type":"jma_wanlf","code":"117","label":"高層天気図 FL170"},
-        {"type":"jma_wanlf","code":"115","label":"高層天気図 FL150"},
-        {"type":"jma_wanlf","code":"111","label":"高層天気図 FL110"},
-        {"type":"jma_wanlf","code":"109","label":"高層天気図 FL090"},
-        {"type":"jma_wanlf","code":"105","label":"高層天気図 FL050"}
+        {
+          "type": "jma_wanlf",
+          "code": "123",
+          "label": "é«å±¤å¤©æ°å³ FL230"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "121",
+          "label": "é«å±¤å¤©æ°å³ FL210"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "119",
+          "label": "é«å±¤å¤©æ°å³ FL190"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "117",
+          "label": "é«å±¤å¤©æ°å³ FL170"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "115",
+          "label": "é«å±¤å¤©æ°å³ FL150"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "111",
+          "label": "é«å±¤å¤©æ°å³ FL110"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "109",
+          "label": "é«å±¤å¤©æ°å³ FL090"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "105",
+          "label": "é«å±¤å¤©æ°å³ FL050"
+        }
       ]
     },
     {
@@ -89,14 +229,46 @@
       "cols": 2,
       "rows": 4,
       "slots": [
-        {"type":"metair_csa019","code":"QBSA95","label":"UBSA 上空解析図(南北)"},
-        {"type":"metair_csa019","code":"QBCK95","label":"UBCK 上空解析図(南北)"},
-        {"type":"metair_csa019","code":"QBRA95","label":"UBGG 上空解析図"},
-        {"type":"metair_csa019","code":"QBQA95","label":"UBTT 上空解析図(東西)"},
-        {"type":"metair_csa019","code":"QBFF95","label":"UBFF 上空解析図(南北)"},
-        {"type":"metair_csa019","code":"QBUA95","label":"UBBB 上空解析図"},
-        {"type":"metair_csa019","code":"QBIG95","label":"UBIG 上空解析図"},
-        {"type":"metair_csa019","code":"QBAH95","label":"UBAH 上空解析図"}
+        {
+          "type": "metair_csa019",
+          "code": "QBSA95",
+          "label": "UBSA ä¸ç©ºè§£æå³(åå)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBCK95",
+          "label": "UBCK ä¸ç©ºè§£æå³(åå)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBRA95",
+          "label": "UBGG ä¸ç©ºè§£æå³"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBQA95",
+          "label": "UBTT ä¸ç©ºè§£æå³(æ±è¥¿)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBFF95",
+          "label": "UBFF ä¸ç©ºè§£æå³(åå)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBUA95",
+          "label": "UBBB ä¸ç©ºè§£æå³"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBIG95",
+          "label": "UBIG ä¸ç©ºè§£æå³"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBAH95",
+          "label": "UBAH ä¸ç©ºè§£æå³"
+        }
       ]
     },
     {
@@ -104,14 +276,46 @@
       "cols": 2,
       "rows": 4,
       "slots": [
-        {"type":"metair_csa019","code":"QYYA86","label":"東南アジア航空気象情報(PDF版)"},
-        {"type":"metair_csa019","code":"QYYA82","label":"東南アジア航空気象情報(空港天気)"},
-        {"type":"metair_csa019","code":"QACA95","label":"SPAS 南洋上空天気図"},
-        {"type":"metair_csa019","code":"QACE98","label":"FSAS24 24時間予想天気図"},
-        {"type":"metair_csa019","code":"QBMA98","label":"ABJP 国内航空気象情報"},
-        {"type":"metair_csa019","code":"QBEY10","label":"FBJP 国内航空予想天気図"},
-        {"type":"metair_csa019","code":"QNSA22","label":"TSAT 気象衛星赤外天気図"},
-        {"type":"metair_csa019","code":"QRAI85","label":"FXJP854 広域降水予想天気図"}
+        {
+          "type": "metair_csa019",
+          "code": "QYYA86",
+          "label": "æ±åã¢ã¸ã¢èªç©ºæ°è±¡æå ±(PDFç)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QYYA82",
+          "label": "æ±åã¢ã¸ã¢èªç©ºæ°è±¡æå ±(ç©ºæ¸¯å¤©æ°)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QACA95",
+          "label": "SPAS åæ´ä¸ç©ºå¤©æ°å³"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QACE98",
+          "label": "FSAS24 24æéäºæ³å¤©æ°å³"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBMA98",
+          "label": "ABJP å½åèªç©ºæ°è±¡æå ±"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBEY10",
+          "label": "FBJP å½åèªç©ºäºæ³å¤©æ°å³"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QNSA22",
+          "label": "TSAT æ°è±¡è¡æèµ¤å¤å¤©æ°å³"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QRAI85",
+          "label": "FXJP854 åºåéæ°´äºæ³å¤©æ°å³"
+        }
       ]
     },
     {
@@ -119,12 +323,36 @@
       "cols": 2,
       "rows": 4,
       "slots": [
-        {"type":"metair_fb_akuten","code":"FBSN","label":"下層悪天予想図(北海道)"},
-        {"type":"metair_fb_akuten","code":"FBSP","label":"下層悪天予想図(南北)"},
-        {"type":"metair_fb_akuten","code":"FBOS","label":"下層悪天予想図(大阪)"},
-        {"type":"metair_fb_akuten","code":"FBTK","label":"下層悪天予想図(東西)"},
-        {"type":"metair_fb_akuten","code":"FBOK","label":"下層悪天予想図(沖縄)"},
-        {"type":"metair_fb_akuten","code":"FBKG","label":"下層悪天予想図(北九州)"},
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBSN",
+          "label": "ä¸å±¤æªå¤©äºæ³å³(åæµ·é)"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBSP",
+          "label": "ä¸å±¤æªå¤©äºæ³å³(åå)"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBOS",
+          "label": "ä¸å±¤æªå¤©äºæ³å³(å¤§éª)"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBTK",
+          "label": "ä¸å±¤æªå¤©äºæ³å³(æ±è¥¿)"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBOK",
+          "label": "ä¸å±¤æªå¤©äºæ³å³(æ²ç¸)"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBKG",
+          "label": "ä¸å±¤æªå¤©äºæ³å³(åä¹å·)"
+        },
         null,
         null
       ]
