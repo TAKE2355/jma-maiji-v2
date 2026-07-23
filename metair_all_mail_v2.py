@@ -37,12 +37,14 @@ CONFIG = load_config()
 
 # ── グローバル設定（ページ共通） ──────────────────────────────────────────
 _pdf         = CONFIG["pdf"]
-DPI          = _pdf["dpi"]
+DPI          = _pdf.get("dpi", 150)        # 後方互換用（直接使用はしない）
 PAGE_MARGIN  = _pdf["page_margin"]
 HEADER_H     = _pdf["header_h"]
 CELL_GAP     = _pdf["cell_gap"]
 LABEL_H      = _pdf["label_h"]
 JPEG_QUALITY = _pdf.get("jpeg_quality", 90)
+MAX_DPI      = _pdf.get("max_dpi", DPI)    # DPI上限
+MAX_MAIL_MB  = float(_pdf.get("max_mail_mb", 20.0))  # メールサイズ上限(MB)
 
 # ── オーバーレイ ──────────────────────────────────────────────────────────
 _ov             = CONFIG["overlay"]
@@ -298,19 +300,19 @@ def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
                   fill=(200,200,200), font=font_sm)
     draw.rectangle([x0, y0, x0+box_w-1, y0+box_h-1], outline=(210,210,210), width=1)
 
-def build_one_page(page_cfg, slot_images, page_num, total_pages):
+def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
     """1ページ分のPIL Imageを生成する。"""
     cols    = page_cfg.get("cols", 2)
     rows    = page_cfg.get("rows", 4)
     orient  = page_cfg.get("orientation", "portrait")
 
     if orient == "landscape":
-        pw = int(297 / 25.4 * DPI)
-        ph = int(210 / 25.4 * DPI)
+        pw = int(297 / 25.4 * dpi)
+        ph = int(210 / 25.4 * dpi)
         a4_pt = (img2pdf.mm_to_pt(297), img2pdf.mm_to_pt(210))
     else:
-        pw = int(210 / 25.4 * DPI)
-        ph = int(297 / 25.4 * DPI)
+        pw = int(210 / 25.4 * dpi)
+        ph = int(297 / 25.4 * dpi)
         a4_pt = (img2pdf.mm_to_pt(210), img2pdf.mm_to_pt(297))
 
     cell_w = (pw - 2*PAGE_MARGIN - (cols-1)*CELL_GAP) // cols
@@ -338,16 +340,16 @@ def build_one_page(page_cfg, slot_images, page_num, total_pages):
 
     return page_img, a4_pt
 
-def build_pdf(all_page_data):
+def build_pdf(all_page_data, dpi):
     """全ページのデータからPDFバイト列を生成する。"""
     jpegs   = []
     layouts = []
     n_pages = len(all_page_data)
 
     for pg_num, (page_cfg, slot_images) in enumerate(all_page_data, start=1):
-        page_img, a4_pt = build_one_page(page_cfg, slot_images, pg_num, n_pages)
+        page_img, a4_pt = build_one_page(page_cfg, slot_images, pg_num, n_pages, dpi)
         buf = io.BytesIO()
-        page_img.save(buf, "JPEG", quality=JPEG_QUALITY, dpi=(DPI, DPI))
+        page_img.save(buf, "JPEG", quality=JPEG_QUALITY, dpi=(dpi, dpi))
         jpegs.append(buf.getvalue())
         layouts.append(a4_pt)
 
@@ -368,6 +370,23 @@ def build_pdf(all_page_data):
         # fitz なしの場合: 全ページ同一サイズとして結合（フォールバック）
         a4_pt = (img2pdf.mm_to_pt(210), img2pdf.mm_to_pt(297))
         return img2pdf.convert(jpegs, layout_fun=img2pdf.get_layout_fun(a4_pt)), n_pages
+
+def build_pdf_auto_dpi(all_page_data):
+    """サイズ上限内で最大DPIのPDFを自動生成する。"""
+    dpi_steps = [d for d in [300, 250, 216, 180, 150, 120, 96, 72] if d <= MAX_DPI]
+    if not dpi_steps or dpi_steps[0] != MAX_DPI:
+        dpi_steps = [MAX_DPI] + dpi_steps
+    pdf_bytes, n_pages, size_mb = None, 0, 0.0
+    for dpi in dpi_steps:
+        print(f"  DPI {dpi} で生成中...")
+        pdf_bytes, n_pages = build_pdf(all_page_data, dpi)
+        size_mb = len(pdf_bytes) / (1024 * 1024)
+        print(f"  → サイズ: {size_mb:.1f} MB (上限: {MAX_MAIL_MB} MB)")
+        if size_mb <= MAX_MAIL_MB:
+            print(f"  ✓ DPI {dpi} で送信 ({size_mb:.1f} MB)")
+            return pdf_bytes, n_pages, dpi, size_mb
+    print(f"  ⚠ 最小DPI({dpi_steps[-1]})でもサイズ超過 ({size_mb:.1f} MB) - そのまま送信")
+    return pdf_bytes, n_pages, dpi_steps[-1], size_mb
 
 # ─────────────────────────────────────────────────────────────────────────
 #  天気図収集（ページ単位）
@@ -427,17 +446,19 @@ def collect_charts():
 # ─────────────────────────────────────────────────────────────────────────
 #  メール送信
 # ─────────────────────────────────────────────────────────────────────────
-def send_email_to(recipient, pdf_bytes, n_pages):
+def send_email_to(recipient, pdf_bytes, n_pages, dpi=None, size_mb=None):
     now      = datetime.datetime.utcnow()
     to_addr  = recipient["email"]
     name     = recipient.get("name", "")
     subject  = f"気象情報 {now.strftime('%Y/%m/%d %H:%MZ')} ({n_pages}p)"
     filename = f"weather_{now.strftime('%Y%m%d_%H%MZ')}.pdf"
+    dpi_info = f"DPI: {dpi} / サイズ: {size_mb:.1f} MB" if dpi and size_mb else ""
     body = (
         f"航空気象情報\n"
         f"取得時刻: {now.strftime('%Y/%m/%d %H:%M')} UTC\n"
         f"PDF: {n_pages}ページ\n"
-        f"送信先: {name} <{to_addr}>\n"
+        + (f"{dpi_info}\n" if dpi_info else "")
+        + f"送信先: {name} <{to_addr}>\n"
     )
     msg            = MIMEMultipart()
     msg["From"]    = MAIL_FROM
@@ -486,14 +507,14 @@ def main():
         print("ページデータなし - 終了")
         sys.exit(1)
 
-    print("\n=== PDF生成 ===")
-    pdf_bytes, n_pages = build_pdf(all_page_data)
+    print(f"\n=== PDF生成 (DPI上限: {MAX_DPI}, サイズ上限: {MAX_MAIL_MB} MB) ===")
+    pdf_bytes, n_pages, used_dpi, size_mb = build_pdf_auto_dpi(all_page_data)
 
     print("\n=== メール送信 ===")
     for r in targets:
-        send_email_to(r, pdf_bytes, n_pages)
+        send_email_to(r, pdf_bytes, n_pages, dpi=used_dpi, size_mb=size_mb)
 
-    print(f"\n=== 完了: {n_pages}ページ → {len(targets)}名に送信 ===")
+    print(f"\n=== 完了: {n_pages}ページ (DPI:{used_dpi} / {size_mb:.1f}MB) → {len(targets)}名に送信 ===")
 
 if __name__ == "__main__":
     main()
