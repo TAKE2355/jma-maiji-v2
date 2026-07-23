@@ -35,53 +35,6 @@
       "slots": [
         {
           "type": "jma_wanlc",
-          "code": "151",
-          "label": "太平洋 東経142.5°(南北)"
-        },
-        {
-          "type": "jma_wanlc",
-          "code": "152",
-          "label": "太平洋 東経140.0°(南北)"
-        },
-        {
-          "type": "jma_wanlc",
-          "code": "153",
-          "label": "太平洋 東経137.5°(南北)"
-        },
-        {
-          "type": "jma_wanlc",
-          "code": "154",
-          "label": "太平洋 東経135.0°(南北)"
-        },
-        {
-          "type": "jma_wanlc",
-          "code": "155",
-          "label": "太平洋 東経132.5°(南北)"
-        },
-        {
-          "type": "jma_wanlc",
-          "code": "156",
-          "label": "太平洋 東経130.0°(南北)"
-        },
-        {
-          "type": "jma_wanlc",
-          "code": "157",
-          "label": "太平洋 東経127.5°(南北)"
-        },
-        {
-          "type": "jma_wanlc",
-          "code": "158",
-          "label": "太平洋 東経125.0°(南北)"
-        }
-      ]
-    },
-    {
-      "orientation": "portrait",
-      "cols": 2,
-      "rows": 4,
-      "slots": [
-        {
-          "type": "jma_wanlc",
           "code": "199",
           "label": "太平洋 北東-南西(南北)"
         },
@@ -119,6 +72,53 @@
           "type": "jma_wanlc",
           "code": "108",
           "label": "太平洋 北東部-東西(南北)"
+        }
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {
+          "type": "jma_wanlc",
+          "code": "151",
+          "label": "太平洋 東経142.5°(南北)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "152",
+          "label": "太平洋 東経140.0°(南北)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "153",
+          "label": "太平洋 東経137.5°(南北)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "154",
+          "label": "太平洋 東経135.0°(南北)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "155",
+          "label": "太平洋 東経132.5°(南北)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "156",
+          "label": "太平洋 東経130.0°(南北)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "157",
+          "label": "太平洋 東経127.5°(南北)"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "158",
+          "label": "太平洋 東経125.0°(南北)"
         }
       ]
     },
