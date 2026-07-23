@@ -24,4 +24,5 @@ jobs:
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python metair_all_mail_v2.py
