@@ -116,6 +116,8 @@ input:focus,select:focus{border-color:var(--accent);}
   border:2px solid var(--border);border-radius:20px;background:var(--bg);
   color:var(--sub);cursor:pointer;white-space:nowrap;transition:all .2s;}
 .page-tab.active{border-color:var(--accent);background:var(--accent);color:white;}
+.page-tab-ghost{opacity:0.35;background:var(--border)!important;}
+.page-tab-chosen{cursor:grabbing!important;box-shadow:0 4px 12px rgba(0,0,0,.2);}
 .page-tab-add{flex:none;padding:8px 16px;font-size:18px;font-family:var(--font);
   border:2px dashed var(--border);border-radius:20px;background:none;
   color:var(--accent);cursor:pointer;line-height:1;}
@@ -171,6 +173,7 @@ input:focus,select:focus{border-color:var(--accent);}
 #save-bar .btn{flex:1;padding:13px;font-size:16px;}
 body.has-bar main{padding-bottom:78px;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body>
 
@@ -269,8 +272,6 @@ body.has-bar main{padding-bottom:78px;}
         </div>
       </div>
       <div class="row" style="gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-sm btn-edit" onclick="movePage(-1)">◀ 前へ</button>
-        <button class="btn btn-sm btn-edit" onclick="movePage(1)">後へ ▶</button>
         <button class="btn btn-sm btn-del" onclick="deletePage()">🗑 削除</button>
       </div>
     </div>
@@ -534,6 +535,7 @@ function updateOvUI(){const e=document.getElementById('ov-enabled').checked;cons
 // ══════════════════════════════════════════════════════════════════════
 function curPage(){return config&&config.pages&&config.pages[currentPageIdx]||null;}
 
+let _pageSortable=null;
 function renderPageTabs(){
   const wrap=document.getElementById('page-tabs');wrap.innerHTML='';
   if(!config||!config.pages){
@@ -542,17 +544,37 @@ function renderPageTabs(){
     sp.textContent='⚙️ 設定タブでGitHubに接続すると設定が読み込まれます';
     wrap.appendChild(sp); return;
   }
+  const list=document.createElement('div');
+  list.id='page-tab-list';
+  list.style.cssText='display:flex;gap:8px;flex-wrap:nowrap;';
   (config.pages||[]).forEach((_,i)=>{
     const btn=document.createElement('button');
     btn.className='page-tab'+(i===currentPageIdx?' active':'');
     btn.textContent=`ページ ${i+1}`;
+    btn.dataset.idx=String(i);
     btn.onclick=()=>selectPage(i);
-    wrap.appendChild(btn);
+    list.appendChild(btn);
   });
+  wrap.appendChild(list);
   const add=document.createElement('button');
   add.className='page-tab-add';add.textContent='＋';add.title='ページを追加';
   add.onclick=addPage;
   wrap.appendChild(add);
+  if(typeof Sortable!=='undefined'){
+    if(_pageSortable){_pageSortable.destroy();_pageSortable=null;}
+    _pageSortable=new Sortable(list,{
+      animation:180,delay:150,delayOnTouchOnly:true,
+      ghostClass:'page-tab-ghost',chosenClass:'page-tab-chosen',
+      onEnd:function(e){
+        const o=e.oldIndex,n=e.newIndex;
+        if(o===n)return;
+        const moved=config.pages.splice(o,1)[0];
+        config.pages.splice(n,0,moved);
+        currentPageIdx=n;
+        markDirty();renderPageTabs();renderPageEditor();
+      }
+    });
+  }
 }
 
 function selectPage(i){
