@@ -1,0 +1,27 @@
+name: MetAir 航空気象情報メール送信
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # 15分毎実行（送信判定はスクリプト内で受信者ごとに行う）
+  workflow_dispatch:          # 手動実行（全有効受信者に強制送信）
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: ${{ github.event_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install fonts
+        run: sudo apt-get install -y fonts-noto-cjk
+
+      - name: Install Python packages
+        run: pip install requests pillow img2pdf pymupdf
+
+      - name: Run script
+        env:
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: python metair_all_mail_v2.py
