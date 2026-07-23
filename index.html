@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>気象情報メール送信 管理画面</title>
+<style>
+:root{
+  --bg:#f2f2f7;--card:#fff;--accent:#007aff;--danger:#ff3b30;
+  --success:#34c759;--warn:#ff9500;--text:#1c1c1e;--sub:#8e8e93;
+  --border:#e5e5ea;--radius:12px;
+  --font:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+
+header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 18px;
+  position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;}
+header h1{font-size:17px;font-weight:600;}
+#status-dot{width:9px;height:9px;border-radius:50%;background:var(--sub);
+  display:inline-block;margin-right:5px;vertical-align:middle;}
+#status-text{font-size:13px;color:var(--sub);}
+
+nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);
+  overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:53px;z-index:99;}
+nav button{flex:none;padding:11px 16px;font-size:14px;font-family:var(--font);
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--sub);cursor:pointer;white-space:nowrap;transition:all .2s;}
+nav button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+
+main{max-width:820px;margin:0 auto;padding:14px;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+.card{background:var(--card);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+.card-title{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;
+  letter-spacing:.5px;padding:10px 16px 5px;}
+
+.row{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);gap:10px;}
+.row:last-child{border-bottom:none;}
+.row-label{flex:1;font-size:16px;}
+.row-sub{font-size:12px;color:var(--sub);margin-top:2px;}
+
+.toggle{position:relative;width:51px;height:31px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#e5e5ea;border-radius:15.5px;cursor:pointer;transition:background .2s;}
+.toggle-slider::before{content:'';position:absolute;width:27px;height:27px;left:2px;top:2px;
+  background:white;border-radius:50%;transition:transform .2s;box-shadow:0 2px 6px rgba(0,0,0,.2);}
+.toggle input:checked+.toggle-slider{background:var(--success);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);}
+
+.slider-row{flex-direction:column;align-items:stretch;gap:8px;}
+.slider-header{display:flex;justify-content:space-between;align-items:center;}
+.slider-val{font-size:15px;font-weight:600;color:var(--accent);min-width:55px;text-align:right;}
+input[type=range]{width:100%;height:6px;-webkit-appearance:none;appearance:none;
+  background:var(--border);border-radius:3px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;
+  border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 6px rgba(0,122,255,.4);}
+input[type=number],input[type=text],input[type=email],select{
+  font-family:var(--font);font-size:16px;padding:8px 12px;
+  border:1.5px solid var(--border);border-radius:8px;
+  background:var(--bg);color:var(--text);width:100%;outline:none;}
+input:focus,select:focus{border-color:var(--accent);}
+.input-sm{width:70px;}
+
+.btn{display:block;width:100%;padding:15px;font-size:17px;font-weight:600;
+  font-family:var(--font);border:none;border-radius:var(--radius);cursor:pointer;
+  text-align:center;transition:opacity .15s;}
+.btn:active{opacity:.75;}
+.btn-primary{background:var(--accent);color:white;}
+.btn-outline{background:none;border:1.5px solid var(--accent);color:var(--accent);
+  padding:9px 14px;font-size:14px;border-radius:8px;width:auto;}
+.btn-sm{padding:7px 13px;font-size:14px;border-radius:8px;width:auto;
+  border:none;cursor:pointer;font-family:var(--font);}
+.btn-add{background:var(--accent);color:white;}
+.btn-del{background:var(--danger);color:white;}
+.btn-edit{background:#e5e5ea;color:var(--text);}
+.btn-success{background:var(--success);color:white;}
+
+/* ── 受信者カード ── */
+.rc-card{background:var(--card);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+.rc-header{display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer;user-select:none;}
+.rc-avatar{width:40px;height:40px;border-radius:20px;background:var(--accent);color:white;
+  display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0;}
+.rc-info{flex:1;min-width:0;}
+.rc-name{font-size:16px;font-weight:600;}
+.rc-email{font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rc-slots-badge{display:flex;gap:5px;flex-wrap:wrap;padding:0 16px 10px;}
+.slot-badge{font-size:11px;padding:3px 8px;border-radius:8px;background:#e8f0fe;color:var(--accent);font-weight:600;}
+.rc-detail{border-top:1px solid var(--border);display:none;padding:4px 0 8px;}
+.rc-detail.open{display:block;}
+
+/* ── 受信者フォーム ── */
+.rc-form{background:var(--card);border-radius:var(--radius);padding:16px;
+  margin-bottom:14px;border:1.5px dashed var(--border);display:none;}
+.rc-form.open{display:block;}
+.form-label{font-size:12px;color:var(--sub);margin-bottom:4px;font-weight:600;}
+.form-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.form-row>*{flex:1;min-width:120px;}
+
+/* ── 時間帯スロット ── */
+.slot-list{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+.slot-item{background:var(--bg);border-radius:10px;padding:12px 14px;border:1.5px solid var(--border);}
+.slot-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.slot-num{font-size:13px;font-weight:700;color:var(--accent);}
+.slot-time-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.iv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.iv-btn{padding:9px 4px;font-size:13px;font-family:var(--font);font-weight:600;
+  border:2px solid var(--border);border-radius:9px;background:var(--bg);
+  color:var(--sub);cursor:pointer;text-align:center;transition:all .15s;line-height:1.2;}
+.iv-btn.sel{border-color:var(--accent);background:#e8f0fe;color:var(--accent);}
+
+/* ── ページタブ ── */
+.page-tabs-wrap{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;
+  -webkit-overflow-scrolling:touch;align-items:center;}
+.page-tab{flex:none;padding:8px 16px;font-size:14px;font-family:var(--font);font-weight:600;
+  border:2px solid var(--border);border-radius:20px;background:var(--bg);
+  color:var(--sub);cursor:pointer;white-space:nowrap;transition:all .2s;}
+.page-tab.active{border-color:var(--accent);background:var(--accent);color:white;}
+.page-tab-add{flex:none;padding:8px 16px;font-size:18px;font-family:var(--font);
+  border:2px dashed var(--border);border-radius:20px;background:none;
+  color:var(--accent);cursor:pointer;line-height:1;}
+
+/* ── 向き選択 ── */
+.orient-btn{padding:9px 18px;font-size:14px;font-family:var(--font);font-weight:600;
+  border:2px solid var(--border);border-radius:9px;background:var(--bg);
+  color:var(--sub);cursor:pointer;transition:all .15s;}
+.orient-btn.sel{border-color:var(--accent);background:#e8f0fe;color:var(--accent);}
+
+/* ── グリッド数ステッパー ── */
+.stepper{display:flex;align-items:center;gap:12px;}
+.stepper-btn{width:36px;height:36px;border-radius:18px;border:2px solid var(--border);
+  background:var(--bg);font-size:20px;font-family:var(--font);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;
+  transition:all .15s;flex-shrink:0;}
+.stepper-btn:active{background:var(--accent);color:white;}
+.stepper-val{font-size:20px;font-weight:700;color:var(--text);min-width:28px;text-align:center;}
+
+/* ── スロット割り当てリスト ── */
+.slot-assign-item{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  transition:background .2s;
+}
+.slot-assign-item:last-child{border-bottom:none;}
+.slot-assign-item.highlighted{background:#e8f0fe;}
+.slot-assign-num{
+  width:28px;height:28px;border-radius:14px;background:var(--accent);color:white;
+  font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.slot-assign-num.empty{background:#e5e5ea;color:var(--sub);}
+.slot-selects{display:flex;gap:6px;flex:1;flex-wrap:wrap;}
+.slot-selects select{flex:1;min-width:100px;font-size:14px;padding:6px 8px;}
+
+/* 送信パネル */
+.send-panel{text-align:center;padding:22px 16px;}
+.send-icon{font-size:60px;margin-bottom:14px;}
+.send-desc{font-size:15px;color:var(--sub);margin-bottom:22px;line-height:1.6;}
+#send-log{font-family:monospace;font-size:13px;background:#1c1c1e;color:#30d158;
+  padding:14px;border-radius:var(--radius);text-align:left;white-space:pre-wrap;
+  min-height:60px;display:none;margin-top:14px;word-break:break-all;}
+
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:rgba(0,0,0,.85);color:white;padding:11px 18px;border-radius:20px;
+  font-size:15px;transition:transform .3s,opacity .3s;opacity:0;z-index:999;white-space:nowrap;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+#save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);
+  border-top:1px solid var(--border);padding:10px 18px;display:none;gap:10px;
+  box-shadow:0 -2px 12px rgba(0,0,0,.08);z-index:98;}
+#save-bar.show{display:flex;}
+#save-bar .btn{flex:1;padding:13px;font-size:16px;}
+body.has-bar main{padding-bottom:78px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✈️ 気象情報 管理画面</h1>
+  <div><span id="status-dot"></span><span id="status-text">未接続</span></div>
+</header>
+<nav>
+  <button class="active" onclick="showTab('send',this)">📤 送信</button>
+  <button onclick="showTab('recipients',this)">👥 受信者</button>
+  <button onclick="showTab('layout',this)">📐 ページ設定</button>
+  <button onclick="showTab('overlay',this)">🔀 重ね合わせ</button>
+  <button onclick="showTab('settings',this)">⚙️ 設定</button>
+</nav>
+<main id="main">
+
+<!-- ─── 送信 ─── -->
+<div id="tab-send" class="tab-panel active">
+  <div class="send-panel">
+    <div class="send-icon">🌤️</div>
+    <h2 style="font-size:22px;margin-bottom:8px;">手動送信</h2>
+    <p class="send-desc">全有効受信者に天気図PDFを送信します。<br>完了まで約2〜3分かかります。</p>
+    <button class="btn btn-primary" onclick="triggerWorkflow()" id="send-btn">🚀 今すぐ送信</button>
+    <pre id="send-log"></pre>
+  </div>
+  <div class="card">
+    <div class="card-title">最近の実行</div>
+    <div id="recent-runs"><div class="row"><span class="row-label" style="color:var(--sub)">読み込み中...</span></div></div>
+  </div>
+</div>
+
+<!-- ─── 受信者 ─── -->
+<div id="tab-recipients" class="tab-panel">
+  <p style="font-size:13px;color:var(--sub);padding:6px 2px 12px;">受信者ごとに時間帯と送信間隔を設定できます。</p>
+  <div id="recipient-list"></div>
+  <div style="margin-bottom:14px;">
+    <button class="btn-outline btn" onclick="openRcForm(-1)">＋ 受信者を追加</button>
+  </div>
+  <div class="rc-form" id="rc-form">
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;" id="rf-title">受信者を追加</div>
+    <input type="hidden" id="rf-idx" value="-1">
+    <div class="form-row">
+      <div><div class="form-label">名前</div><input type="text" id="rf-name" placeholder="例: TAKE"></div>
+      <div><div class="form-label">メールアドレス</div><input type="email" id="rf-email" placeholder="example@gmail.com"></div>
+    </div>
+    <div class="form-label" style="margin-bottom:8px;">📅 送信時間帯</div>
+    <div class="slot-list" id="rf-slot-list"></div>
+    <button class="btn-outline btn" style="margin-bottom:16px;" onclick="addSlot()">＋ 時間帯を追加</button>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-sm btn-add" onclick="saveRc()">保存</button>
+      <button class="btn btn-sm btn-edit" onclick="cancelRcForm()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ページ設定 ─── -->
+<div id="tab-layout" class="tab-panel">
+  <p style="font-size:13px;color:var(--sub);padding:6px 2px 10px;">
+    ページごとにレイアウトと天気図を設定します。プレビューの番号をタップするとスロットにジャンプします。
+  </p>
+
+  <!-- ページタブ -->
+  <div class="page-tabs-wrap" id="page-tabs"></div>
+
+  <!-- ページエディタ -->
+  <div id="page-editor">
+    <!-- 向き・グリッド -->
+    <div class="card">
+      <div class="card-title">向き・グリッド</div>
+      <div class="row">
+        <div class="row-label">向き</div>
+        <div style="display:flex;gap:10px;">
+          <button id="orient-portrait" class="orient-btn sel" onclick="setOrient('portrait')">📄 縦</button>
+          <button id="orient-landscape" class="orient-btn" onclick="setOrient('landscape')">📋 横</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="row-label">列数</div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="adjustGrid('cols',-1)">−</button>
+          <span class="stepper-val" id="cols-val">2</span>
+          <button class="stepper-btn" onclick="adjustGrid('cols',1)">＋</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="row-label">行数</div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="adjustGrid('rows',-1)">−</button>
+          <span class="stepper-val" id="rows-val">4</span>
+          <button class="stepper-btn" onclick="adjustGrid('rows',1)">＋</button>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn btn-sm btn-del" onclick="deletePage()">🗑 このページを削除</button>
+      </div>
+    </div>
+
+    <!-- プレビューキャンバス -->
+    <div class="card" style="padding:14px;">
+      <div class="card-title" style="padding:0 0 10px;">プレビュー（番号をタップ → スロット選択へ）</div>
+      <canvas id="layout-preview"
+        style="width:100%;cursor:pointer;border-radius:8px;border:1px solid var(--border);display:block;"
+        onclick="handlePreviewClick(event)"></canvas>
+    </div>
+
+    <!-- 天気図スロット割り当て -->
+    <div class="card">
+      <div class="card-title">天気図配置</div>
+      <div id="slot-assign-list"></div>
+    </div>
+  </div>
+
+  <!-- PDF共通設定 -->
+  <div class="card">
+    <div class="card-title">共通設定（全ページ）</div>
+    <div class="row slider-row">
+      <div class="slider-header">
+        <div><div class="row-label">解像度 (DPI)</div><div class="row-sub">高いほど鮮明・ファイル大</div></div>
+        <span class="slider-val" id="val-dpi">300</span>
+      </div>
+      <input type="range" id="sl-dpi" min="72" max="600" step="12" value="300"
+        oninput="updateSl('dpi',this.value)" onchange="markDirty()">
+    </div>
+    <div class="row slider-row">
+      <div class="slider-header">
+        <div><div class="row-label">JPEG品質</div><div class="row-sub">高いほど高画質・ファイル大</div></div>
+        <span class="slider-val" id="val-jpeg">90%</span>
+      </div>
+      <input type="range" id="sl-jpeg" min="60" max="100" step="5" value="90"
+        oninput="updateSl('jpeg',this.value,'%')" onchange="markDirty()">
+    </div>
+    <div class="row"><div class="row-label">ページ余白</div><input type="number" class="input-sm" id="in-margin" value="55" min="0" max="200" oninput="markDirty()"></div>
+    <div class="row"><div class="row-label">ヘッダー高さ</div><input type="number" class="input-sm" id="in-header" value="65" min="0" max="200" oninput="markDirty()"></div>
+    <div class="row"><div class="row-label">画像間隔</div><input type="number" class="input-sm" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></div>
+    <div class="row"><div class="row-label">ラベル高さ</div><input type="number" class="input-sm" id="in-labelh" value="50" min="20" max="120" oninput="markDirty()"></div>
+  </div>
+</div>
+
+<!-- ─── 重ね合わせ ─── -->
+<div id="tab-overlay" class="tab-panel">
+  <div class="card">
+    <div class="card-title">過去エコー画像との重ね合わせ</div>
+    <div class="row">
+      <div class="row-label">重ね合わせ有効<div class="row-sub">1時間前の画像を現在画像に重ねる</div></div>
+      <label class="toggle"><input type="checkbox" id="ov-enabled" checked onchange="updateOvUI();markDirty()"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="row slider-row" id="ov-alpha-row">
+      <div class="slider-header">
+        <div><div class="row-label">過去画像の透過率</div><div class="row-sub">0%=最新のみ / 100%=過去のみ</div></div>
+        <span class="slider-val" id="val-alpha">20%</span>
+      </div>
+      <input type="range" id="sl-alpha" min="0" max="100" step="5" value="20"
+        oninput="updateSl('alpha',this.value,'%')" onchange="markDirty()">
+    </div>
+  </div>
+</div>
+
+<!-- ─── 設定 ─── -->
+<div id="tab-settings" class="tab-panel">
+  <div class="card">
+    <div class="card-title">GitHub 接続設定</div>
+    <div class="row"><div class="row-label">リポジトリ<div class="row-sub">owner/repo 形式</div></div></div>
+    <div class="row"><input type="text" id="cfg-repo" placeholder="例: TAKE2355/jma-maiji-v2" oninput="saveLS()"></div>
+    <div class="row"><div class="row-label">ブランチ</div></div>
+    <div class="row"><input type="text" id="cfg-branch" value="main" oninput="saveLS()"></div>
+    <div class="row"><div class="row-label">Personal Access Token<div class="row-sub">repo + workflow スコープが必要</div></div></div>
+    <div class="row" style="gap:8px;">
+      <input type="password" id="cfg-pat" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" oninput="saveLS()">
+      <button class="btn-outline btn" onclick="togglePAT()" style="width:auto;padding:8px 12px;">👁</button>
+    </div>
+    <div style="padding:10px 16px;"><button class="btn btn-primary btn-sm" onclick="testConn()">接続テスト</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">接続状態</div>
+    <div class="row"><span id="conn-info" style="color:var(--sub)">未テスト</span></div>
+  </div>
+</div>
+
+</main>
+<div id="save-bar">
+  <button class="btn" style="background:var(--border);color:var(--text)" onclick="revertCfg()">元に戻す</button>
+  <button class="btn btn-primary" onclick="saveCfg()">💾 保存</button>
+</div>
+<div id="toast"></div>
+
+<script>
+// ══ 天気図マスター定義 ════════════════════════════════════════════════════
+const CHART_MASTER = {
+  jma_wanlc:[
+    {code:'151',label:'太平洋 東経142.5°(南北)'},{code:'152',label:'太平洋 東経140.0°(南北)'},
+    {code:'153',label:'太平洋 東経137.5°(南北)'},{code:'154',label:'太平洋 東経135.0°(南北)'},
+    {code:'155',label:'太平洋 東経132.5°(南北)'},{code:'156',label:'太平洋 東経130.0°(南北)'},
+    {code:'157',label:'太平洋 東経127.5°(南北)'},{code:'158',label:'太平洋 東経125.0°(南北)'},
+    {code:'199',label:'太平洋 北東-南西(南北)'}, {code:'101',label:'太平洋 南北-東西(南北)'},
+    {code:'102',label:'太平洋 南北-北東(南北)'}, {code:'103',label:'太平洋 東西-北西(南北)'},
+    {code:'105',label:'太平洋 南北-東西B(南北)'},{code:'106',label:'太平洋 北西部-東西(南北)'},
+    {code:'107',label:'太平洋 西部-東西(南北)'}, {code:'108',label:'太平洋 北東部-東西(南北)'},
+  ],
+  jma_wanlf:[
+    {code:'139',label:'高層天気図 FL390'},{code:'137',label:'高層天気図 FL370'},
+    {code:'135',label:'高層天気図 FL350'},{code:'133',label:'高層天気図 FL330'},
+    {code:'131',label:'高層天気図 FL310'},{code:'129',label:'高層天気図 FL290'},
+    {code:'127',label:'高層天気図 FL270'},{code:'125',label:'高層天気図 FL250'},
+    {code:'123',label:'高層天気図 FL230'},{code:'121',label:'高層天気図 FL210'},
+    {code:'119',label:'高層天気図 FL190'},{code:'117',label:'高層天気図 FL170'},
+    {code:'115',label:'高層天気図 FL150'},{code:'111',label:'高層天気図 FL110'},
+    {code:'109',label:'高層天気図 FL090'},{code:'105',label:'高層天気図 FL050'},
+  ],
+  metair_csa019:[
+    {code:'QBSA95',label:'UBSA 上空解析図(南北)'},{code:'QBCK95',label:'UBCK 上空解析図(南北)'},
+    {code:'QBRA95',label:'UBGG 上空解析図'},      {code:'QBQA95',label:'UBTT 上空解析図(東西)'},
+    {code:'QBFF95',label:'UBFF 上空解析図(南北)'},{code:'QBUA95',label:'UBBB 上空解析図'},
+    {code:'QBIG95',label:'UBIG 上空解析図'},      {code:'QBAH95',label:'UBAH 上空解析図'},
+    {code:'QYYA86',label:'東南アジア航空気象情報(PDF版)'},
+    {code:'QYYA82',label:'東南アジア航空気象情報(空港天気)'},
+    {code:'QACA95',label:'SPAS 南洋上空天気図'},  {code:'QACE98',label:'FSAS24 24時間予想天気図'},
+    {code:'QBMA98',label:'ABJP 国内航空気象情報'},{code:'QBEY10',label:'FBJP 国内航空予想天気図'},
+    {code:'QNSA22',label:'TSAT 気象衛星赤外天気図'},{code:'QRAI85',label:'FXJP854 広域降水予想天気図'},
+  ],
+  metair_fb_akuten:[
+    {code:'FBSN',label:'下層悪天予想図(北海道)'},{code:'FBSP',label:'下層悪天予想図(南北)'},
+    {code:'FBOS',label:'下層悪天予想図(大阪)'},  {code:'FBTK',label:'下層悪天予想図(東西)'},
+    {code:'FBOK',label:'下層悪天予想図(沖縄)'},  {code:'FBKG',label:'下層悪天予想図(北九州)'},
+  ],
+};
+const TYPE_LABELS = {
+  '':'（空き）',
+  jma_wanlc:'JMA 天気図',
+  jma_wanlf:'JMA 高層天気図',
+  metair_csa019:'MetAir CSA019',
+  metair_fb_akuten:'MetAir 悪天予想図',
+};
+
+// ══ 状態 ═══════════════════════════════════════════════════════════════
+let config = null, origConfig = null, dirty = false, configSha = null;
+let currentPageIdx = 0;
+let selectedSlotIdx = -1;
+let editingSlots = [];  // 受信者フォーム用
+
+// ══ 初期化 ══════════════════════════════════════════════════════════════
+// ── デフォルト設定（GitHub未接続でも動作） ──────────────────────────────
+function initDefaultConfig(){
+  if(config) return;
+  config={
+    pdf:{dpi:300,page_margin:55,header_h:65,cell_gap:12,label_h:50,jpeg_quality:90},
+    overlay:{enabled:true,alpha:0.2},
+    recipients:[],
+    pages:[{orientation:'portrait',cols:2,rows:4,
+      slots:[null,null,null,null,null,null,null,null]}]
+  };
+  origConfig=JSON.parse(JSON.stringify(config));
+  applyToUI();
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  loadLS();
+  initDefaultConfig();  // 常にデフォルト設定で初期化
+  if(getRepo()&&getPAT()){fetchCfg();loadRuns();}
+});
+
+const getRepo   = ()=>(document.getElementById('cfg-repo').value||'').trim();
+const getBranch = ()=>(document.getElementById('cfg-branch').value||'main').trim();
+const getPAT    = ()=>(document.getElementById('cfg-pat').value||'').trim();
+function loadLS(){const s=JSON.parse(localStorage.getItem('metair_v2')||'{}');if(s.repo)document.getElementById('cfg-repo').value=s.repo;if(s.branch)document.getElementById('cfg-branch').value=s.branch;if(s.pat)document.getElementById('cfg-pat').value=s.pat;}
+function saveLS(){localStorage.setItem('metair_v2',JSON.stringify({repo:getRepo(),branch:getBranch(),pat:getPAT()}));}
+function togglePAT(){const e=document.getElementById('cfg-pat');e.type=e.type==='password'?'text':'password';}
+
+// ══ タブ ═══════════════════════════════════════════════════════════════
+function showTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(name==='layout'){
+    renderPageTabs();
+    // display:none → block 直後はキャンバス幅が0のため rAF で遅延
+    requestAnimationFrame(()=>requestAnimationFrame(()=>renderPageEditor()));
+  }
+}
+
+// ══ GitHub API ═════════════════════════════════════════════════════════
+const apiUrl=p=>`https://api.github.com/repos/${getRepo()}${p}`;
+const apiHdr=()=>({'Authorization':'token '+getPAT(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'});
+function setStatus(s){const m={connected:['#34c759','接続済み'],error:['#ff3b30','エラー'],loading:['#ff9500','読込中']};if(m[s]){document.getElementById('status-dot').style.background=m[s][0];document.getElementById('status-text').textContent=m[s][1];}}
+
+async function testConn(){const el=document.getElementById('conn-info');el.textContent='確認中...';el.style.color='var(--sub)';try{const r=await fetch(apiUrl(''),{headers:apiHdr()});if(r.ok){const d=await r.json();el.textContent=`✅ 接続OK: ${d.full_name}`;el.style.color='var(--success)';setStatus('connected');}else{const d=await r.json();el.textContent=`❌ ${d.message}`;el.style.color='var(--danger)';setStatus('error');}}catch(e){el.textContent='❌ '+e.message;el.style.color='var(--danger)';}}
+
+async function fetchCfg(){
+  if(!getRepo()||!getPAT())return;setStatus('loading');
+  try{
+    const r=await fetch(apiUrl('/contents/config.json?ref='+getBranch()),{headers:apiHdr()});
+    if(!r.ok){setStatus('error');showToast('config.json取得失敗');return;}
+    const d=await r.json();configSha=d.sha;
+    config=JSON.parse(atob(d.content.replace(/\n/g,'')));
+    origConfig=JSON.parse(JSON.stringify(config));
+    applyToUI();setStatus('connected');
+  }catch(e){setStatus('error');showToast('読込エラー: '+e.message);}
+}
+async function saveCfg(){
+  if(!config)return;
+  if(!configSha){showToast('⚙️ 設定タブでGitHubに接続してから保存してください');return;}
+  collectFromUI();
+  try{
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(config,null,2))));
+    const r=await fetch(apiUrl('/contents/config.json'),{method:'PUT',headers:apiHdr(),
+      body:JSON.stringify({message:'設定更新(管理画面)',content,sha:configSha,branch:getBranch()})});
+    if(r.ok){const d=await r.json();configSha=d.content.sha;origConfig=JSON.parse(JSON.stringify(config));clearDirty();showToast('✅ 保存しました');}
+    else{const d=await r.json();showToast('❌ '+d.message);}
+  }catch(e){showToast('❌ '+e.message);}
+}
+function revertCfg(){config=JSON.parse(JSON.stringify(origConfig));applyToUI();clearDirty();showToast('元に戻しました');}
+
+// ══ UI ↔ config ════════════════════════════════════════════════════════
+function collectFromUI(){
+  const p=config.pdf;
+  p.dpi=+document.getElementById('sl-dpi').value;
+  p.jpeg_quality=+document.getElementById('sl-jpeg').value;
+  p.page_margin=+document.getElementById('in-margin').value;
+  p.header_h=+document.getElementById('in-header').value;
+  p.cell_gap=+document.getElementById('in-gap').value;
+  p.label_h=+document.getElementById('in-labelh').value;
+  config.overlay.enabled=document.getElementById('ov-enabled').checked;
+  config.overlay.alpha=+document.getElementById('sl-alpha').value/100;
+}
+function applyToUI(){
+  const p=config.pdf;
+  setSl('dpi',p.dpi,'');setSl('jpeg',p.jpeg_quality,'%');
+  document.getElementById('in-margin').value=p.page_margin;
+  document.getElementById('in-header').value=p.header_h;
+  document.getElementById('in-gap').value=p.cell_gap;
+  document.getElementById('in-labelh').value=p.label_h;
+  document.getElementById('ov-enabled').checked=config.overlay.enabled;
+  setSl('alpha',Math.round(config.overlay.alpha*100),'%');
+  updateOvUI();
+  renderRecipients();
+  if(document.getElementById('tab-layout').classList.contains('active')){
+    renderPageTabs();renderPageEditor();
+  }
+}
+function setSl(n,v,s){const sl=document.getElementById('sl-'+n),vl=document.getElementById('val-'+n);if(sl)sl.value=v;if(vl)vl.textContent=v+s;}
+function updateSl(n,v,s=''){document.getElementById('val-'+n).textContent=v+s;}
+function updateOvUI(){const e=document.getElementById('ov-enabled').checked;const row=document.getElementById('ov-alpha-row');row.style.opacity=e?'1':'0.4';row.style.pointerEvents=e?'auto':'none';}
+
+// ══════════════════════════════════════════════════════════════════════
+//  ページ設定
+// ══════════════════════════════════════════════════════════════════════
+function curPage(){return config&&config.pages&&config.pages[currentPageIdx]||null;}
+
+function renderPageTabs(){
+  const wrap=document.getElementById('page-tabs');wrap.innerHTML='';
+  if(!config||!config.pages){
+    const sp=document.createElement('span');
+    sp.style.cssText='color:var(--sub);font-size:13px;padding:6px 2px;';
+    sp.textContent='⚙️ 設定タブでGitHubに接続すると設定が読み込まれます';
+    wrap.appendChild(sp); return;
+  }
+  (config.pages||[]).forEach((_,i)=>{
+    const btn=document.createElement('button');
+    btn.className='page-tab'+(i===currentPageIdx?' active':'');
+    btn.textContent=`ページ ${i+1}`;
+    btn.onclick=()=>selectPage(i);
+    wrap.appendChild(btn);
+  });
+  const add=document.createElement('button');
+  add.className='page-tab-add';add.textContent='＋';add.title='ページを追加';
+  add.onclick=addPage;
+  wrap.appendChild(add);
+}
+
+function selectPage(i){
+  currentPageIdx=i;selectedSlotIdx=-1;
+  renderPageTabs();renderPageEditor();
+}
+
+function addPage(){
+  if(!config)return;
+  if(!config.pages)config.pages=[];
+  config.pages.push({orientation:'portrait',cols:2,rows:4,slots:Array(8).fill(null)});
+  currentPageIdx=config.pages.length-1;
+  selectedSlotIdx=-1;
+  markDirty();renderPageTabs();renderPageEditor();
+}
+
+function deletePage(){
+  if(!config||!config.pages||config.pages.length<=1){showToast('最低1ページ必要です');return;}
+  if(!confirm(`ページ ${currentPageIdx+1} を削除しますか？`))return;
+  config.pages.splice(currentPageIdx,1);
+  currentPageIdx=Math.max(0,currentPageIdx-1);
+  selectedSlotIdx=-1;
+  markDirty();renderPageTabs();renderPageEditor();
+}
+
+function renderPageEditor(){
+  const pg=curPage();
+
+  // 向き・グリッド表示を更新（pg がある場合のみ）
+  if(pg){
+    document.getElementById('page-editor').style.opacity='1';
+    const isPortrait=pg.orientation!=='landscape';
+    document.getElementById('orient-portrait').classList.toggle('sel',isPortrait);
+    document.getElementById('orient-landscape').classList.toggle('sel',!isPortrait);
+    document.getElementById('cols-val').textContent=pg.cols;
+    document.getElementById('rows-val').textContent=pg.rows;
+  } else {
+    document.getElementById('page-editor').style.opacity='0.5';
+  }
+
+  // キャンバスは常に描画（pg=null でもデフォルトグリッドを表示）
+  drawPreview();
+  renderSlotAssignList();
+}
+
+function setOrient(o){
+  const pg=curPage();if(!pg)return;
+  pg.orientation=o;
+  document.getElementById('orient-portrait').classList.toggle('sel',o==='portrait');
+  document.getElementById('orient-landscape').classList.toggle('sel',o==='landscape');
+  markDirty();drawPreview();
+}
+
+function adjustGrid(axis,delta){
+  const pg=curPage();if(!pg)return;
+  const min=1,max=axis==='cols'?4:6;
+  const newVal=Math.min(max,Math.max(min,pg[axis]+delta));
+  if(newVal===pg[axis])return;
+  pg[axis]=newVal;
+  document.getElementById(axis==='cols'?'cols-val':'rows-val').textContent=newVal;
+
+  // スロット数を調整
+  const needed=pg.cols*pg.rows;
+  const cur=pg.slots||[];
+  if(cur.length<needed){
+    while(pg.slots.length<needed)pg.slots.push(null);
+  } else if(cur.length>needed){
+    // 末尾を削除（空きのみ）
+    while(pg.slots.length>needed){
+      const last=pg.slots[pg.slots.length-1];
+      if(last!==null){
+        // 非空スロットがある場合は確認
+        if(!confirm('グリッドを小さくすると末尾のスロットが削除されます。続けますか？'))
+          {pg[axis]-=delta;document.getElementById(axis==='cols'?'cols-val':'rows-val').textContent=pg[axis];return;}
+      }
+      pg.slots.pop();
+    }
+  }
+  if(selectedSlotIdx>=needed)selectedSlotIdx=-1;
+  markDirty();drawPreview();renderSlotAssignList();
+}
+
+// ── プレビューキャンバス ──────────────────────────────────────────────
+function drawPreview(){
+  const pg=curPage();
+  const canvas=document.getElementById('layout-preview');
+  const cols=pg?pg.cols:2, rows=pg?pg.rows:4;
+  const landscape=pg&&pg.orientation==='landscape';
+
+  // キャンバス解像度 (表示幅に合わせてスケール)
+  const dispW=canvas.clientWidth||canvas.parentElement.clientWidth||360;
+  const aspect=landscape?(297/210):(210/297);
+  const W=Math.round(dispW), H=Math.round(dispW/aspect);
+  canvas.width=W; canvas.height=H;
+
+  const margin=Math.round(W*0.05);
+  const headerH=Math.round(H*0.06);
+  const gap=Math.round(W*0.01);
+  const labelH=Math.round(H*0.05);
+
+  const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
+  const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
+
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+
+  // ヘッダー
+  ctx.fillStyle='#f2f2f7';ctx.fillRect(margin,margin,W-2*margin,headerH-4);
+  ctx.fillStyle='#8e8e93';ctx.font=`${Math.round(H*0.03)}px sans-serif`;
+  ctx.fillText('気象情報  YYYY/MM/DD HH:MM UTC',margin+6,margin+headerH*0.65);
+
+  // セル
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const idx=r*cols+c;
+    const x=margin+c*(cellW+gap);
+    const y=margin+headerH+r*(cellH+gap);
+    const slot=pg&&pg.slots?pg.slots[idx]:null;
+    const isSelected=idx===selectedSlotIdx;
+
+    // セル背景
+    ctx.fillStyle=isSelected?'#e8f0fe':'#f2f2f7';
+    ctx.fillRect(x,y,cellW,cellH);
+
+    // ラベル帯
+    ctx.fillStyle=isSelected?'#c2d4fd':'#e5e5ea';
+    ctx.fillRect(x,y,cellW,labelH);
+
+    // 枠線
+    ctx.strokeStyle=isSelected?'#007aff':'#d1d1d6';
+    ctx.lineWidth=isSelected?2:1;
+    ctx.strokeRect(x+0.5,y+0.5,cellW-1,cellH-1);
+
+    // 番号
+    const numSize=Math.round(cellH*0.28);
+    ctx.fillStyle=isSelected?'#007aff':'#c7c7cc';
+    ctx.font=`bold ${numSize}px sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(idx+1, x+cellW/2, y+cellH/2);
+
+    // スロット内容（設定済みの場合）
+    if(slot&&slot.label){
+      const fs=Math.round(cellH*0.09);
+      ctx.fillStyle='#3a3a3c';ctx.font=`${fs}px sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='top';
+      const short=slot.label.length>12?slot.label.slice(0,12)+'…':slot.label;
+      ctx.fillText(short, x+cellW/2, y+labelH*0.25);
+    }
+  }
+
+  // 外枠
+  ctx.strokeStyle='#e5e5ea';ctx.lineWidth=1;ctx.strokeRect(0.5,0.5,W-1,H-1);
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+}
+
+function handlePreviewClick(event){
+  const pg=curPage();if(!pg)return;
+  const canvas=document.getElementById('layout-preview');
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width;
+  const scaleY=canvas.height/rect.height;
+  const cx=(event.clientX-rect.left)*scaleX;
+  const cy=(event.clientY-rect.top)*scaleY;
+
+  const W=canvas.width,H=canvas.height;
+  const cols=pg.cols,rows=pg.rows;
+  const margin=Math.round(W*0.05);
+  const headerH=Math.round(H*0.06);
+  const gap=Math.round(W*0.01);
+  const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
+  const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
+
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const x=margin+c*(cellW+gap);
+    const y=margin+headerH+r*(cellH+gap);
+    if(cx>=x&&cx<=x+cellW&&cy>=y&&cy<=y+cellH){
+      const idx=r*cols+c;
+      selectedSlotIdx=idx;
+      drawPreview();
+      // 対応スロット行にスクロール
+      const el=document.getElementById('slot-item-'+idx);
+      if(el){
+        el.classList.add('highlighted');
+        el.scrollIntoView({behavior:'smooth',block:'center'});
+        setTimeout(()=>el.classList.remove('highlighted'),1500);
+      }
+      return;
+    }
+  }
+}
+
+// ── スロット割り当てリスト ────────────────────────────────────────────
+function renderSlotAssignList(){
+  const pg=curPage();
+  const container=document.getElementById('slot-assign-list');
+  container.innerHTML='';
+  if(!pg){container.innerHTML='<div class="row" style="color:var(--sub)">ページなし</div>';return;}
+  const total=pg.cols*pg.rows;
+  if(!pg.slots)pg.slots=[];
+  while(pg.slots.length<total)pg.slots.push(null);
+
+  for(let i=0;i<total;i++){
+    const slot=pg.slots[i];
+    const div=document.createElement('div');
+    div.className='slot-assign-item'+(i===selectedSlotIdx?' highlighted':'');
+    div.id='slot-item-'+i;
+
+    const hasChart=slot&&slot.code;
+
+    // 番号バッジ
+    const badge=document.createElement('div');
+    badge.className='slot-assign-num'+(hasChart?'':' empty');
+    badge.textContent=i+1;
+    div.appendChild(badge);
+
+    // セレクト群
+    const sels=document.createElement('div');sels.className='slot-selects';
+
+    // 種別セレクト
+    const typeEl=document.createElement('select');
+    typeEl.style.flex='0 0 auto';typeEl.style.minWidth='130px';
+    Object.entries(TYPE_LABELS).forEach(([v,l])=>{
+      const o=document.createElement('option');o.value=v;o.textContent=l;
+      if((slot?slot.type:'')===v)o.selected=true;
+      typeEl.appendChild(o);
+    });
+    typeEl.onchange=()=>{ onSlotTypeChange(i, typeEl.value, codeEl); };
+    sels.appendChild(typeEl);
+
+    // 天気図セレクト
+    const codeEl=document.createElement('select');
+    codeEl.style.flex='1';
+    populateCodeSelect(codeEl, slot?slot.type:'', slot?slot.code:'');
+    codeEl.onchange=()=>{ onSlotCodeChange(i, typeEl.value, codeEl.value); };
+    sels.appendChild(codeEl);
+
+    div.appendChild(sels);
+    container.appendChild(div);
+  }
+}
+
+function populateCodeSelect(el, type, selectedCode){
+  el.innerHTML='';
+  const emptyOpt=document.createElement('option');
+  emptyOpt.value='';emptyOpt.textContent='（天気図を選択）';
+  el.appendChild(emptyOpt);
+  if(!type||!CHART_MASTER[type])return;
+  CHART_MASTER[type].forEach(({code,label})=>{
+    const o=document.createElement('option');
+    o.value=code;o.textContent=label;
+    if(code===selectedCode)o.selected=true;
+    el.appendChild(o);
+  });
+}
+
+function onSlotTypeChange(i, type, codeEl){
+  const pg=curPage();if(!pg)return;
+  populateCodeSelect(codeEl, type, '');
+  pg.slots[i]=type?{type,code:'',label:''}:null;
+  markDirty();drawPreview();
+  // バッジ更新
+  const badge=document.querySelector(`#slot-item-${i} .slot-assign-num`);
+  if(badge)badge.className='slot-assign-num empty';
+}
+
+function onSlotCodeChange(i, type, code){
+  const pg=curPage();if(!pg)return;
+  if(!code){pg.slots[i]=null;}
+  else{
+    const entry=(CHART_MASTER[type]||[]).find(e=>e.code===code);
+    pg.slots[i]={type,code,label:entry?entry.label:code};
+  }
+  markDirty();drawPreview();
+  // バッジ更新
+  const badge=document.querySelector(`#slot-item-${i} .slot-assign-num`);
+  if(badge)badge.className='slot-assign-num'+(code?'':' empty');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  受信者
+// ══════════════════════════════════════════════════════════════════════
+const IV_OPTIONS=[
+  {v:15,l:'15分'},{v:30,l:'30分'},{v:60,l:'1時間'},{v:90,l:'1.5時間'},
+  {v:120,l:'2時間'},{v:180,l:'3時間'},{v:360,l:'6時間'},{v:720,l:'12時間'},
+];
+function ivLabel(v){return IV_OPTIONS.find(o=>o.v===+v)?.l||v+'分';}
+function slotBadgesHtml(slots){
+  if(!slots||!slots.length)return '<span style="color:var(--sub);font-size:13px;">時間帯未設定</span>';
+  return slots.map(s=>`<span class="slot-badge">${s.start}〜${s.end}時/${ivLabel(s.interval_minutes)}</span>`).join('');
+}
+
+function renderRecipients(){
+  if(!config)return;
+  const list=document.getElementById('recipient-list');list.innerHTML='';
+  (config.recipients||[]).forEach((r,i)=>{
+    const init=(r.name||'?').charAt(0).toUpperCase();
+    const el=document.createElement('div');el.className='rc-card';
+    el.innerHTML=`
+      <div class="rc-header" onclick="toggleRcDetail(${i})">
+        <div class="rc-avatar">${init}</div>
+        <div class="rc-info">
+          <div class="rc-name">${r.name||'（名前未設定）'}</div>
+          <div class="rc-email">${r.email||''}</div>
+        </div>
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" ${r.enabled!==false?'checked':''} onchange="toggleRc(${i},this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="rc-slots-badge">${slotBadgesHtml(r.time_slots)}</div>
+      <div class="rc-detail" id="rc-detail-${i}">
+        <div class="row" style="gap:8px;">
+          <button class="btn btn-sm btn-edit" onclick="openRcForm(${i})">✏️ 編集</button>
+          <button class="btn btn-sm btn-del" onclick="deleteRc(${i})">削除</button>
+        </div>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+function toggleRcDetail(i){document.getElementById('rc-detail-'+i).classList.toggle('open');}
+function toggleRc(i,v){config.recipients[i].enabled=v;markDirty();renderRecipients();}
+function deleteRc(i){if(!confirm('削除しますか？'))return;config.recipients.splice(i,1);renderRecipients();markDirty();}
+
+function openRcForm(idx){
+  document.getElementById('rf-idx').value=idx;
+  document.getElementById('rf-title').textContent=idx===-1?'受信者を追加':'受信者を編集';
+  if(idx===-1){document.getElementById('rf-name').value='';document.getElementById('rf-email').value='';editingSlots=[{start:5,end:21,interval_minutes:60}];}
+  else{const r=config.recipients[idx];document.getElementById('rf-name').value=r.name||'';document.getElementById('rf-email').value=r.email||'';editingSlots=JSON.parse(JSON.stringify(r.time_slots||[]));if(!editingSlots.length)editingSlots=[{start:5,end:21,interval_minutes:60}];}
+  renderRcSlotList();
+  document.getElementById('rc-form').classList.add('open');
+  document.getElementById('rc-form').scrollIntoView({behavior:'smooth'});
+}
+function cancelRcForm(){document.getElementById('rc-form').classList.remove('open');}
+
+function renderRcSlotList(){
+  const container=document.getElementById('rf-slot-list');container.innerHTML='';
+  editingSlots.forEach((slot,i)=>{
+    const div=document.createElement('div');div.className='slot-item';
+    const ivBtns=IV_OPTIONS.map(o=>`<button class="iv-btn${o.v===slot.interval_minutes?' sel':''}" data-slot="${i}" data-val="${o.v}" onclick="selectIv(this)">${o.l}</button>`).join('');
+    div.innerHTML=`
+      <div class="slot-item-header">
+        <span class="slot-num">時間帯 ${i+1}</span>
+        <button class="btn btn-sm btn-del" onclick="removeSlot(${i})" style="padding:5px 10px;font-size:13px;">✕ 削除</button>
+      </div>
+      <div class="slot-time-row">
+        <span style="color:var(--sub);font-size:14px;">開始</span>
+        <input type="number" class="input-sm" value="${slot.start}" min="0" max="23" oninput="editingSlots[${i}].start=+this.value" style="width:65px;">
+        <span>時 〜</span>
+        <span style="color:var(--sub);font-size:14px;">終了</span>
+        <input type="number" class="input-sm" value="${slot.end}" min="1" max="24" oninput="editingSlots[${i}].end=+this.value" style="width:65px;">
+        <span>時</span>
+        <span style="font-size:12px;color:var(--sub);">(24=深夜0時)</span>
+      </div>
+      <div class="form-label" style="margin-bottom:6px;">送信間隔</div>
+      <div class="iv-grid">${ivBtns}</div>`;
+    container.appendChild(div);
+  });
+}
+function selectIv(btn){const i=+btn.dataset.slot,v=+btn.dataset.val;editingSlots[i].interval_minutes=v;document.querySelectorAll(`[data-slot="${i}"]`).forEach(b=>b.classList.toggle('sel',+b.dataset.val===v));}
+function addSlot(){editingSlots.push({start:0,end:5,interval_minutes:60});renderRcSlotList();}
+function removeSlot(i){if(editingSlots.length<=1){showToast('時間帯は1つ以上必要です');return;}editingSlots.splice(i,1);renderRcSlotList();}
+function saveRc(){
+  const email=document.getElementById('rf-email').value.trim();
+  const name=document.getElementById('rf-name').value.trim();
+  if(!email){showToast('メールアドレスを入力してください');return;}
+  const rec={email,name,enabled:true,time_slots:JSON.parse(JSON.stringify(editingSlots))};
+  const idx=+document.getElementById('rf-idx').value;
+  if(!config.recipients)config.recipients=[];
+  if(idx===-1)config.recipients.push(rec); else config.recipients[idx]=rec;
+  cancelRcForm();renderRecipients();markDirty();
+  showToast(idx===-1?'受信者を追加しました':'受信者を更新しました');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  手動送信
+// ══════════════════════════════════════════════════════════════════════
+async function triggerWorkflow(){
+  if(!getRepo()||!getPAT()){showToast('設定タブでリポジトリとPATを入力してください');return;}
+  const btn=document.getElementById('send-btn'),log=document.getElementById('send-log');
+  btn.textContent='⏳ 起動中...';btn.disabled=true;log.style.display='block';log.textContent='→ GitHub Actions を起動しています...\n';
+  try{
+    const r=await fetch(`https://api.github.com/repos/${getRepo()}/actions/workflows/send_metair.yml/dispatches`,
+      {method:'POST',headers:apiHdr(),body:JSON.stringify({ref:getBranch()})});
+    if(r.status===204){log.textContent+='✅ 起動しました！\n\n約2〜3分後にメールが届きます。\n';btn.textContent='✅ 送信開始';btn.style.background='var(--success)';
+      setTimeout(()=>{btn.textContent='🚀 今すぐ送信';btn.style.background='';btn.disabled=false;loadRuns();},5000);
+    }else{const d=await r.json();log.textContent+=`❌ ${d.message}\n`;btn.textContent='🚀 今すぐ送信';btn.disabled=false;}
+  }catch(e){log.textContent+=`❌ ${e.message}\n`;btn.textContent='🚀 今すぐ送信';btn.disabled=false;}
+}
+async function loadRuns(){
+  if(!getRepo()||!getPAT())return;
+  const el=document.getElementById('recent-runs');
+  try{
+    const r=await fetch(apiUrl('/actions/workflows/send_metair.yml/runs?per_page=5'),{headers:apiHdr()});
+    if(!r.ok)return;
+    const d=await r.json();const runs=d.workflow_runs||[];
+    if(!runs.length){el.innerHTML='<div class="row"><span style="color:var(--sub)">実行履歴なし</span></div>';return;}
+    el.innerHTML=runs.map(run=>{
+      const icon={success:'✅',failure:'❌',cancelled:'⚪️',in_progress:'⏳',queued:'⏳'}[run.conclusion||run.status]||'❓';
+      const time=new Date(run.created_at).toLocaleString('ja-JP');
+      const dur=run.run_started_at&&run.updated_at?Math.round((new Date(run.updated_at)-new Date(run.run_started_at))/1000)+'秒':'-';
+      return `<div class="row"><div class="row-label">${icon} #${run.run_number} ${run.display_title||''}<div class="row-sub">${time} / ${dur} / ${run.event}</div></div></div>`;
+    }).join('');
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  変更管理 / Toast
+// ══════════════════════════════════════════════════════════════════════
+function markDirty(){dirty=true;document.getElementById('save-bar').classList.add('show');document.body.classList.add('has-bar');}
+function clearDirty(){dirty=false;document.getElementById('save-bar').classList.remove('show');document.body.classList.remove('has-bar');}
+let toastT;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ウィンドウリサイズ時にキャンバス再描画
+window.addEventListener('resize',()=>{if(document.getElementById('tab-layout').classList.contains('active'))drawPreview();});
+</script>
+</body>
+</html>
