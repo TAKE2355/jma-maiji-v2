@@ -514,7 +514,7 @@ def save_preview_cache():
             if fname in existing:
                 continue
             print(f"  📦 新規: {fname}")
-            im, _ = fetch_slot_image(slot, jma_ts, None)
+            im, _ = fetch_slot_image(slot, jma_ts, akuten_ts)
             if im is None:
                 print(f"    → 取得失敗")
                 continue
