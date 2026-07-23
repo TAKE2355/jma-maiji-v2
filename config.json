@@ -1,11 +1,11 @@
 {
   "pdf": {
-    "dpi": 600,
+    "dpi": 300,
     "page_margin": 55,
     "header_h": 65,
     "cell_gap": 12,
     "label_h": 50,
-    "jpeg_quality": 100
+    "jpeg_quality": 85
   },
   "overlay": {
     "enabled": true,
