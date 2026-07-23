@@ -1,11 +1,11 @@
 {
   "pdf": {
-    "dpi": 408,
+    "dpi": 600,
     "page_margin": 55,
     "header_h": 65,
     "cell_gap": 12,
     "label_h": 50,
-    "jpeg_quality": 85,
+    "jpeg_quality": 100,
     "max_dpi": 600,
     "max_mail_mb": 25
   },
