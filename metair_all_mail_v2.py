@@ -373,9 +373,10 @@ def build_pdf(all_page_data, dpi):
 
 def build_pdf_auto_dpi(all_page_data):
     """サイズ上限内で最大DPIのPDFを自動生成する。"""
-    dpi_steps = [d for d in [300, 250, 216, 180, 150, 120, 96, 72] if d <= MAX_DPI]
-    if not dpi_steps or dpi_steps[0] != MAX_DPI:
-        dpi_steps = [MAX_DPI] + dpi_steps
+    # MAX_DPIから50ずつ下げる（最低72まで）
+    dpi_steps = list(range(MAX_DPI, 72, -50))
+    if not dpi_steps or dpi_steps[-1] > 72:
+        dpi_steps.append(72)
     pdf_bytes, n_pages, size_mb = None, 0, 0.0
     for dpi in dpi_steps:
         print(f"  DPI {dpi} で生成中...")
