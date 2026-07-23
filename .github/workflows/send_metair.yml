@@ -2,7 +2,7 @@ name: MetAir 航空気象情報メール送信
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # 15分毎実行（送信判定はスクリプト内で受信者ごとに行う）
+    - cron: '*/15 * * * *'  # re-register  # 15分毎実行（送信判定はスクリプト内で受信者ごとに行う）
   workflow_dispatch:          # 手動実行（全有効受信者に強制送信）
 
 jobs:
