@@ -34,6 +34,53 @@
       "rows": 4,
       "slots": [
         {
+          "type": "metair_csa019",
+          "code": "QYYA86",
+          "label": "東南アジア航空気象情報(PDF版)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QYYA82",
+          "label": "東南アジア航空気象情報(空港天気)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QACA95",
+          "label": "SPAS 南洋上空天気図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QACE98",
+          "label": "FSAS24 24時間予想天気図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBMA98",
+          "label": "ABJP 国内航空気象情報"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBEY10",
+          "label": "FBJP 国内航空予想天気図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QNSA22",
+          "label": "TSAT 気象衛星赤外天気図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QRAI85",
+          "label": "FXJP854 広域降水予想天気図"
+        }
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {
           "type": "jma_wanlc",
           "code": "151",
           "label": "太平洋 東経142.5°(南北)"
@@ -260,53 +307,6 @@
           "type": "metair_csa019",
           "code": "QBAH95",
           "label": "UBAH 上空解析図"
-        }
-      ]
-    },
-    {
-      "orientation": "portrait",
-      "cols": 2,
-      "rows": 4,
-      "slots": [
-        {
-          "type": "metair_csa019",
-          "code": "QYYA86",
-          "label": "東南アジア航空気象情報(PDF版)"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QYYA82",
-          "label": "東南アジア航空気象情報(空港天気)"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QACA95",
-          "label": "SPAS 南洋上空天気図"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QACE98",
-          "label": "FSAS24 24時間予想天気図"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBMA98",
-          "label": "ABJP 国内航空気象情報"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBEY10",
-          "label": "FBJP 国内航空予想天気図"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QNSA22",
-          "label": "TSAT 気象衛星赤外天気図"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QRAI85",
-          "label": "FXJP854 広域降水予想天気図"
         }
       ]
     },
