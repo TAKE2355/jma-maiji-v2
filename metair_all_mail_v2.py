@@ -480,6 +480,61 @@ def send_email_to(recipient, pdf_bytes, n_pages, dpi=None, size_mb=None):
 # ─────────────────────────────────────────────────────────────────────────
 #  メイン
 # ─────────────────────────────────────────────────────────────────────────
+def save_preview_cache():
+    """新しいコードの画像のみ /cache/ にコミット（既存はスキップ）"""
+    import base64 as _b64
+    token = os.environ.get("GITHUB_TOKEN", "")
+    repo  = os.environ.get("GITHUB_REPOSITORY", "")
+    if not token or not repo:
+        print("  GITHUB_TOKEN/GITHUB_REPOSITORY未設定 → キャッシュスキップ")
+        return
+
+    api_hdrs = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+    }
+    base_url = f"https://api.github.com/repos/{repo}/contents/cache"
+
+    cr = requests.get(base_url, headers=api_hdrs, timeout=10)
+    existing = set()
+    if cr.status_code == 200:
+        existing = {f["name"] for f in cr.json() if isinstance(f, dict) and f.get("type") == "file"}
+    print(f"  既存キャッシュ: {len(existing)}件")
+
+    jma_ts = find_jma_timestamp()
+    saved = 0
+    for page in CONFIG.get("pages", []):
+        for slot in (page.get("slots") or []):
+            if not slot: continue
+            chart_type = slot.get("type", "")
+            code       = slot.get("code", "")
+            if not code or not chart_type: continue
+            fname = f"{chart_type}_{code}.png"
+            if fname in existing:
+                continue
+            print(f"  📦 新規: {fname}")
+            im, _ = fetch_slot_image(slot, jma_ts, None)
+            if im is None:
+                print(f"    → 取得失敗")
+                continue
+            buf = io.BytesIO()
+            im.convert("RGB").save(buf, "PNG")
+            content_b64 = _b64.b64encode(buf.getvalue()).decode()
+            pr = requests.put(
+                f"{base_url}/{fname}",
+                headers=api_hdrs,
+                json={"message": f"cache: add {fname}", "content": content_b64},
+                timeout=30,
+            )
+            if pr.status_code in (200, 201):
+                saved += 1
+                print(f"    → 保存完了")
+            else:
+                print(f"    → 保存失敗: {pr.status_code}")
+    print(f"  キャッシュ更新: {saved}件追加")
+
+
 def main():
     recipients = CONFIG.get("recipients", [])
     enabled    = [r for r in recipients if r.get("enabled", True)]
@@ -516,6 +571,9 @@ def main():
         send_email_to(r, pdf_bytes, n_pages, dpi=used_dpi, size_mb=size_mb)
 
     print(f"\n=== 完了: {n_pages}ページ (DPI:{used_dpi} / {size_mb:.1f}MB) → {len(targets)}名に送信 ===")
+
+    print("\n=== プレビューキャッシュ更新 ===")
+    save_preview_cache()
 
 if __name__ == "__main__":
     main()
