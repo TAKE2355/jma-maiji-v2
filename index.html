@@ -279,8 +279,11 @@ body.has-bar main{padding-bottom:78px;}
     <!-- プレビューキャンバス -->
     <div class="card" style="padding:14px;">
       <div class="card-title" style="padding:0 0 10px;">プレビュー（ドラッグで入れ替え / タップで選択）</div>
-      <canvas id="layout-preview"
-        style="width:100%;cursor:pointer;border-radius:8px;border:1px solid var(--border);display:block;touch-action:none;"></canvas>
+      <div id="preview-wrap" style="position:relative;width:100%;">
+        <canvas id="layout-preview"
+          style="width:100%;cursor:pointer;border-radius:8px;border:1px solid var(--border);display:block;touch-action:none;"></canvas>
+        <div id="preview-img-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:8px;overflow:hidden;"></div>
+      </div>
     </div>
 
     <!-- 天気図スロット割り当て -->
@@ -820,6 +823,68 @@ function drawPreview(){
   // 外枠
   ctx.strokeStyle='#e5e5ea';ctx.lineWidth=1;ctx.strokeRect(0.5,0.5,W-1,H-1);
   ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  requestAnimationFrame(updatePreviewImages);
+}
+
+
+// ── プレビュー画像オーバーレイ ───────────────────────────────────────
+function getJmaTimestamps(){
+  const now=new Date();
+  const ts=[];
+  for(let d=0;d<8;d++){
+    const t=new Date(now.getTime()-d*30*60*1000);
+    const m=Math.floor(t.getUTCMinutes()/30)*30;
+    t.setUTCMinutes(m,0,0);
+    const yy=String(t.getUTCFullYear()),mm=String(t.getUTCMonth()+1).padStart(2,'0');
+    const dd=String(t.getUTCDate()).padStart(2,'0'),hh=String(t.getUTCHours()).padStart(2,'0');
+    const min=String(m).padStart(2,'0');
+    ts.push(yy+mm+dd+hh+min+'00');
+    ts.push(yy+mm+dd+hh+min);
+  }
+  return [...new Set(ts)];
+}
+
+function tryLoadImage(img, urls, idx){
+  if(idx>=urls.length){img.style.display='none';return;}
+  img.onload=null;img.onerror=null;
+  img.onerror=()=>tryLoadImage(img,urls,idx+1);
+  img.onload=()=>{img.style.display='';};
+  img.src=urls[idx];
+}
+
+function updatePreviewImages(){
+  const pg=curPage();
+  const layer=document.getElementById('preview-img-layer');
+  if(!layer)return;
+  layer.innerHTML='';
+  if(!pg||!pg.slots)return;
+  const canvas=document.getElementById('layout-preview');
+  const W=canvas.width,H=canvas.height;
+  if(!W||!H)return;
+  const displayW=canvas.clientWidth,displayH=canvas.clientHeight;
+  const cols=pg.cols,rows=pg.rows;
+  const margin=Math.round(W*0.05);
+  const headerH=Math.round(H*0.06);
+  const gap=Math.round(W*0.01);
+  const labelH=Math.round(H*0.05);
+  const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
+  const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
+  const sx=displayW/W,sy=displayH/H;
+  const timestamps=getJmaTimestamps();
+  const JMA='https://www.data.jma.go.jp/airinfo/data/pict/maiji/';
+  (pg.slots||[]).forEach((slot,idx)=>{
+    if(!slot||!slot.code||!slot.type)return;
+    const r=Math.floor(idx/cols),c=idx%cols;
+    const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
+    let urls=[];
+    if(slot.type==='jma_wanlc') urls=timestamps.map(t=>`${JMA}WANLC${slot.code}_RJTD_${t}.PNG`);
+    else if(slot.type==='jma_wanlf') urls=timestamps.map(t=>`${JMA}WANLF${slot.code}_RJTD_${t}.PNG`);
+    if(!urls.length)return;
+    const img=document.createElement('img');
+    img.style.cssText=`position:absolute;left:${x*sx}px;top:${(y+labelH)*sy}px;width:${cellW*sx}px;height:${(cellH-labelH)*sy}px;object-fit:contain;background:rgba(255,255,255,.05);`;
+    layer.appendChild(img);
+    tryLoadImage(img,urls,0);
+  });
 }
 
 function handlePreviewClick(event){
