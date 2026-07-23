@@ -286,14 +286,7 @@ body.has-bar main{padding-bottom:78px;}
   <!-- PDF共通設定 -->
   <div class="card">
     <div class="card-title">共通設定（全ページ）</div>
-    <div class="row slider-row">
-      <div class="slider-header">
-        <div><div class="row-label">解像度 (DPI)</div><div class="row-sub">高いほど鮮明・ファイル大</div></div>
-        <span class="slider-val" id="val-dpi">300</span>
-      </div>
-      <input type="range" id="sl-dpi" min="72" max="600" step="12" value="300"
-        oninput="updateSl('dpi',this.value)" onchange="markDirty()">
-    </div>
+
     <div class="row slider-row">
       <div class="slider-header">
         <div><div class="row-label">JPEG品質</div><div class="row-sub">高いほど高画質・ファイル大</div></div>
@@ -498,7 +491,6 @@ function revertCfg(){config=JSON.parse(JSON.stringify(origConfig));applyToUI();c
 // ══ UI ↔ config ════════════════════════════════════════════════════════
 function collectFromUI(){
   const p=config.pdf;
-  p.dpi=+document.getElementById('sl-dpi').value;
   p.jpeg_quality=+document.getElementById('sl-jpeg').value;
   p.page_margin=+document.getElementById('in-margin').value;
   p.header_h=+document.getElementById('in-header').value;
@@ -511,7 +503,7 @@ function collectFromUI(){
 }
 function applyToUI(){
   const p=config.pdf;
-  setSl('dpi',p.dpi,'');setSl('jpeg',p.jpeg_quality,'%');
+setSl('jpeg',p.jpeg_quality,'%');
   document.getElementById('in-margin').value=p.page_margin;
   document.getElementById('in-header').value=p.header_h;
   document.getElementById('in-gap').value=p.cell_gap;
