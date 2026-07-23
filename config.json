@@ -47,6 +47,53 @@
       "slots": [
         {
           "type": "metair_csa019",
+          "code": "QBSA95",
+          "label": "UBSA 上空解析図(南北)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBCK95",
+          "label": "UBCK 上空解析図(南北)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBRA95",
+          "label": "UBGG 上空解析図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBQA95",
+          "label": "UBTT 上空解析図(東西)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBFF95",
+          "label": "UBFF 上空解析図(南北)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBUA95",
+          "label": "UBBB 上空解析図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBIG95",
+          "label": "UBIG 上空解析図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBAH95",
+          "label": "UBAH 上空解析図"
+        }
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {
+          "type": "metair_csa019",
           "code": "QYYA86",
           "label": "東南アジア航空気象情報(PDF版)"
         },
@@ -272,53 +319,6 @@
           "type": "jma_wanlf",
           "code": "105",
           "label": "高層天気図 FL050"
-        }
-      ]
-    },
-    {
-      "orientation": "portrait",
-      "cols": 2,
-      "rows": 4,
-      "slots": [
-        {
-          "type": "metair_csa019",
-          "code": "QBSA95",
-          "label": "UBSA 上空解析図(南北)"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBCK95",
-          "label": "UBCK 上空解析図(南北)"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBRA95",
-          "label": "UBGG 上空解析図"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBQA95",
-          "label": "UBTT 上空解析図(東西)"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBFF95",
-          "label": "UBFF 上空解析図(南北)"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBUA95",
-          "label": "UBBB 上空解析図"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBIG95",
-          "label": "UBIG 上空解析図"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBAH95",
-          "label": "UBAH 上空解析図"
         }
       ]
     },
