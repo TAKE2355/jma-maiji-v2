@@ -278,10 +278,9 @@ body.has-bar main{padding-bottom:78px;}
 
     <!-- プレビューキャンバス -->
     <div class="card" style="padding:14px;">
-      <div class="card-title" style="padding:0 0 10px;">プレビュー（番号をタップ → スロット選択へ）</div>
+      <div class="card-title" style="padding:0 0 10px;">プレビュー（ドラッグで入れ替え / タップで選択）</div>
       <canvas id="layout-preview"
-        style="width:100%;cursor:pointer;border-radius:8px;border:1px solid var(--border);display:block;"
-        onclick="handlePreviewClick(event)"></canvas>
+        style="width:100%;cursor:pointer;border-radius:8px;border:1px solid var(--border);display:block;touch-action:none;"></canvas>
     </div>
 
     <!-- 天気図スロット割り当て -->
@@ -459,6 +458,7 @@ function showTab(name,btn){
   if(btn)btn.classList.add('active');
   if(name==='layout'){
     renderPageTabs();
+  initPreviewDnD();
     // display:none → block 直後はキャンバス幅が0のため rAF で遅延
     requestAnimationFrame(()=>requestAnimationFrame(()=>renderPageEditor()));
   }
@@ -666,6 +666,88 @@ function adjustGrid(axis,delta){
   markDirty();drawPreview();renderSlotAssignList();
 }
 
+// ── プレビューDnD ────────────────────────────────────────────────────
+let _dndSrc=-1,_dndOver=-1,_dndDragging=false,_dndStartX=0,_dndStartY=0;
+
+function _getSlotAt(cx,cy){
+  const pg=curPage();if(!pg)return -1;
+  const canvas=document.getElementById('layout-preview');
+  const W=canvas.width,H=canvas.height;
+  const cols=pg.cols,rows=pg.rows;
+  const margin=Math.round(W*0.05);
+  const headerH=Math.round(H*0.06);
+  const gap=Math.round(W*0.01);
+  const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
+  const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
+    if(cx>=x&&cx<=x+cellW&&cy>=y&&cy<=y+cellH)return r*cols+c;
+  }
+  return -1;
+}
+
+function _canvasXY(canvas,e){
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
+  const src=e.touches?e.touches[0]:e;
+  return {x:(src.clientX-rect.left)*scaleX,y:(src.clientY-rect.top)*scaleY};
+}
+
+function initPreviewDnD(){
+  const canvas=document.getElementById('layout-preview');
+  if(!canvas)return;
+  canvas.addEventListener('mousedown',e=>{
+    const {x,y}=_canvasXY(canvas,e);
+    const s=_getSlotAt(x,y);if(s<0)return;
+    _dndSrc=s;_dndOver=s;_dndDragging=false;_dndStartX=x;_dndStartY=y;
+  });
+  canvas.addEventListener('mousemove',e=>{
+    if(_dndSrc<0)return;
+    const {x,y}=_canvasXY(canvas,e);
+    if(!_dndDragging&&(Math.abs(x-_dndStartX)>6||Math.abs(y-_dndStartY)>6))_dndDragging=true;
+    if(_dndDragging){_dndOver=_getSlotAt(x,y);drawPreview();}
+  });
+  canvas.addEventListener('mouseup',e=>{
+    if(_dndDragging&&_dndSrc>=0&&_dndOver>=0&&_dndSrc!==_dndOver){
+      _swapSlots(_dndSrc,_dndOver);
+    } else if(!_dndDragging&&_dndSrc>=0){
+      handlePreviewClick(e);
+    }
+    _dndSrc=-1;_dndOver=-1;_dndDragging=false;drawPreview();
+  });
+  canvas.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    const {x,y}=_canvasXY(canvas,e);
+    const s=_getSlotAt(x,y);if(s<0)return;
+    _dndSrc=s;_dndOver=s;_dndDragging=false;_dndStartX=x;_dndStartY=y;
+  },{passive:false});
+  canvas.addEventListener('touchmove',e=>{
+    e.preventDefault();if(_dndSrc<0)return;
+    const {x,y}=_canvasXY(canvas,e);
+    if(!_dndDragging&&(Math.abs(x-_dndStartX)>8||Math.abs(y-_dndStartY)>8))_dndDragging=true;
+    if(_dndDragging){_dndOver=_getSlotAt(x,y);drawPreview();}
+  },{passive:false});
+  canvas.addEventListener('touchend',e=>{
+    if(_dndDragging&&_dndSrc>=0&&_dndOver>=0&&_dndSrc!==_dndOver){
+      _swapSlots(_dndSrc,_dndOver);
+    } else if(!_dndDragging&&_dndSrc>=0){
+      selectedSlotIdx=_dndSrc;drawPreview();
+      const el=document.getElementById('slot-item-'+_dndSrc);
+      if(el){el.classList.add('highlighted');el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.classList.remove('highlighted'),1500);}
+    }
+    _dndSrc=-1;_dndOver=-1;_dndDragging=false;drawPreview();
+  });
+}
+
+function _swapSlots(a,b){
+  const pg=curPage();if(!pg||!pg.slots)return;
+  while(pg.slots.length<pg.cols*pg.rows)pg.slots.push(null);
+  [pg.slots[a],pg.slots[b]]=[pg.slots[b],pg.slots[a]];
+  selectedSlotIdx=b;
+  markDirty();drawPreview();renderSlotAssignList();
+  showToast(`スロット${a+1}↔${b+1}を入れ替えました`);
+}
+
 // ── プレビューキャンバス ──────────────────────────────────────────────
 function drawPreview(){
   const pg=curPage();
@@ -703,17 +785,19 @@ function drawPreview(){
     const slot=pg&&pg.slots?pg.slots[idx]:null;
     const isSelected=idx===selectedSlotIdx;
 
-    // セル背景
-    ctx.fillStyle=isSelected?'#e8f0fe':'#f2f2f7';
+    // セル背景（DnD状態を反映）
+    const isDndSrc=idx===_dndSrc&&_dndDragging;
+    const isDndOver=idx===_dndOver&&_dndDragging&&_dndSrc!==_dndOver;
+    ctx.fillStyle=isDndSrc?'rgba(200,200,200,0.4)':isDndOver?'#fff3cd':isSelected?'#e8f0fe':'#f2f2f7';
     ctx.fillRect(x,y,cellW,cellH);
 
     // ラベル帯
     ctx.fillStyle=isSelected?'#c2d4fd':'#e5e5ea';
     ctx.fillRect(x,y,cellW,labelH);
 
-    // 枠線
-    ctx.strokeStyle=isSelected?'#007aff':'#d1d1d6';
-    ctx.lineWidth=isSelected?2:1;
+    // 枠線（DnD状態を反映）
+    ctx.strokeStyle=isDndOver?'#ff9500':isSelected?'#007aff':'#d1d1d6';
+    ctx.lineWidth=(isDndOver||isSelected)?2:1;
     ctx.strokeRect(x+0.5,y+0.5,cellW-1,cellH-1);
 
     // 番号
