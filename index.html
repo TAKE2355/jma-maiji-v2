@@ -463,7 +463,7 @@ async function fetchCfg(){
     const r=await fetch(apiUrl('/contents/config.json?ref='+getBranch()),{headers:apiHdr()});
     if(!r.ok){setStatus('error');showToast('config.json取得失敗');return;}
     const d=await r.json();configSha=d.sha;
-    config=JSON.parse(atob(d.content.replace(/\n/g,'')));
+    const _raw=atob(d.content.replace(/\n/g,''));const _bytes=new Uint8Array(_raw.length);for(let i=0;i<_raw.length;i++)_bytes[i]=_raw.charCodeAt(i);config=JSON.parse(new TextDecoder('utf-8').decode(_bytes));
     origConfig=JSON.parse(JSON.stringify(config));
     applyToUI();setStatus('connected');
   }catch(e){setStatus('error');showToast('読込エラー: '+e.message);}
