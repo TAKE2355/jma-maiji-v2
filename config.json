@@ -1,0 +1,133 @@
+{
+  "pdf": {
+    "dpi": 300,
+    "page_margin": 55,
+    "header_h": 65,
+    "cell_gap": 12,
+    "label_h": 50,
+    "jpeg_quality": 90
+  },
+  "overlay": {
+    "enabled": true,
+    "alpha": 0.2
+  },
+  "recipients": [
+    {
+      "email": "odr20062023@gmail.com",
+      "name": "TAKE",
+      "enabled": true,
+      "time_slots": [
+        {"start": 5, "end": 21, "interval_minutes": 60},
+        {"start": 21, "end": 24, "interval_minutes": 180},
+        {"start": 0,  "end": 5,  "interval_minutes": 180}
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {"type":"jma_wanlc","code":"151","label":"太平洋 東経142.5°(南北)"},
+        {"type":"jma_wanlc","code":"152","label":"太平洋 東経140.0°(南北)"},
+        {"type":"jma_wanlc","code":"153","label":"太平洋 東経137.5°(南北)"},
+        {"type":"jma_wanlc","code":"154","label":"太平洋 東経135.0°(南北)"},
+        {"type":"jma_wanlc","code":"155","label":"太平洋 東経132.5°(南北)"},
+        {"type":"jma_wanlc","code":"156","label":"太平洋 東経130.0°(南北)"},
+        {"type":"jma_wanlc","code":"157","label":"太平洋 東経127.5°(南北)"},
+        {"type":"jma_wanlc","code":"158","label":"太平洋 東経125.0°(南北)"}
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {"type":"jma_wanlc","code":"199","label":"太平洋 北東-南西(南北)"},
+        {"type":"jma_wanlc","code":"101","label":"太平洋 南北-東西(南北)"},
+        {"type":"jma_wanlc","code":"102","label":"太平洋 南北-北東(南北)"},
+        {"type":"jma_wanlc","code":"103","label":"太平洋 東西-北西(南北)"},
+        {"type":"jma_wanlc","code":"105","label":"太平洋 南北-東西B(南北)"},
+        {"type":"jma_wanlc","code":"106","label":"太平洋 北西部-東西(南北)"},
+        {"type":"jma_wanlc","code":"107","label":"太平洋 西部-東西(南北)"},
+        {"type":"jma_wanlc","code":"108","label":"太平洋 北東部-東西(南北)"}
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {"type":"jma_wanlf","code":"139","label":"高層天気図 FL390"},
+        {"type":"jma_wanlf","code":"137","label":"高層天気図 FL370"},
+        {"type":"jma_wanlf","code":"135","label":"高層天気図 FL350"},
+        {"type":"jma_wanlf","code":"133","label":"高層天気図 FL330"},
+        {"type":"jma_wanlf","code":"131","label":"高層天気図 FL310"},
+        {"type":"jma_wanlf","code":"129","label":"高層天気図 FL290"},
+        {"type":"jma_wanlf","code":"127","label":"高層天気図 FL270"},
+        {"type":"jma_wanlf","code":"125","label":"高層天気図 FL250"}
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {"type":"jma_wanlf","code":"123","label":"高層天気図 FL230"},
+        {"type":"jma_wanlf","code":"121","label":"高層天気図 FL210"},
+        {"type":"jma_wanlf","code":"119","label":"高層天気図 FL190"},
+        {"type":"jma_wanlf","code":"117","label":"高層天気図 FL170"},
+        {"type":"jma_wanlf","code":"115","label":"高層天気図 FL150"},
+        {"type":"jma_wanlf","code":"111","label":"高層天気図 FL110"},
+        {"type":"jma_wanlf","code":"109","label":"高層天気図 FL090"},
+        {"type":"jma_wanlf","code":"105","label":"高層天気図 FL050"}
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {"type":"metair_csa019","code":"QBSA95","label":"UBSA 上空解析図(南北)"},
+        {"type":"metair_csa019","code":"QBCK95","label":"UBCK 上空解析図(南北)"},
+        {"type":"metair_csa019","code":"QBRA95","label":"UBGG 上空解析図"},
+        {"type":"metair_csa019","code":"QBQA95","label":"UBTT 上空解析図(東西)"},
+        {"type":"metair_csa019","code":"QBFF95","label":"UBFF 上空解析図(南北)"},
+        {"type":"metair_csa019","code":"QBUA95","label":"UBBB 上空解析図"},
+        {"type":"metair_csa019","code":"QBIG95","label":"UBIG 上空解析図"},
+        {"type":"metair_csa019","code":"QBAH95","label":"UBAH 上空解析図"}
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {"type":"metair_csa019","code":"QYYA86","label":"東南アジア航空気象情報(PDF版)"},
+        {"type":"metair_csa019","code":"QYYA82","label":"東南アジア航空気象情報(空港天気)"},
+        {"type":"metair_csa019","code":"QACA95","label":"SPAS 南洋上空天気図"},
+        {"type":"metair_csa019","code":"QACE98","label":"FSAS24 24時間予想天気図"},
+        {"type":"metair_csa019","code":"QBMA98","label":"ABJP 国内航空気象情報"},
+        {"type":"metair_csa019","code":"QBEY10","label":"FBJP 国内航空予想天気図"},
+        {"type":"metair_csa019","code":"QNSA22","label":"TSAT 気象衛星赤外天気図"},
+        {"type":"metair_csa019","code":"QRAI85","label":"FXJP854 広域降水予想天気図"}
+      ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {"type":"metair_fb_akuten","code":"FBSN","label":"下層悪天予想図(北海道)"},
+        {"type":"metair_fb_akuten","code":"FBSP","label":"下層悪天予想図(南北)"},
+        {"type":"metair_fb_akuten","code":"FBOS","label":"下層悪天予想図(大阪)"},
+        {"type":"metair_fb_akuten","code":"FBTK","label":"下層悪天予想図(東西)"},
+        {"type":"metair_fb_akuten","code":"FBOK","label":"下層悪天予想図(沖縄)"},
+        {"type":"metair_fb_akuten","code":"FBKG","label":"下層悪天予想図(北九州)"},
+        null,
+        null
+      ]
+    }
+  ]
+}
