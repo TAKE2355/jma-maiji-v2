@@ -11,7 +11,20 @@
     "enabled": true,
     "alpha": 0.2
   },
-  "recipients": [],
+  "recipients": [
+    {
+      "email": "o_d_r_2006@yahoo.co.jp",
+      "name": "TEST",
+      "enabled": true,
+      "time_slots": [
+        {
+          "start": 5,
+          "end": 21,
+          "interval_minutes": 15
+        }
+      ]
+    }
+  ],
   "pages": [
     {
       "orientation": "portrait",
