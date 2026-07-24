@@ -17,7 +17,7 @@
     {
       "email": "o_d_r_2006@yahoo.co.jp",
       "name": "Yahoo_10.5 B",
-      "enabled": true,
+      "enabled": false,
       "time_slots": [
         {
           "start": 5,
