@@ -385,8 +385,8 @@
         },
         {
           "type": "metair_csa019",
-          "code": "QYYA82",
-          "label": "全国航空気象解説報・国内空域"
+          "code": "QNSA22",
+          "label": "TSAS1広域雲画像情報(北半球)"
         },
         {
           "type": "metair_csa019",
