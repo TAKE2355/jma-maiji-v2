@@ -378,7 +378,8 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
 
     elif chart_type == "metair_csa003":
         im, date_str = get_csa003_image(code)
-        return im, f"{label}\n{date_str}" if date_str else (im, label)
+        lbl = f"{label}\n{date_str}" if date_str else label
+        return im, lbl
 
     return None, label
 
