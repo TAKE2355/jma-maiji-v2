@@ -372,33 +372,6 @@
         null,
         null
       ]
-    },
-    {
-      "orientation": "landscape",
-      "cols": 2,
-      "rows": 2,
-      "slots": [
-        {
-          "type": "metair_csa019",
-          "code": "QBQA95",
-          "label": "UBTT 狭域悪天実況図・関東"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QNSA22",
-          "label": "TSAS1広域雲画像情報(北半球)"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBEY10",
-          "label": "FBJP国内悪天予想図"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QRAI85",
-          "label": "FXJP854"
-        }
-      ]
     }
   ]
 }
