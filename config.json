@@ -380,8 +380,8 @@
       "slots": [
         {
           "type": "metair_csa019",
-          "code": "QYYA86",
-          "label": "全国航空気象解説報・飛行場"
+          "code": "QBRA95",
+          "label": "UBTT 狭域悪天実況図・関東"
         },
         {
           "type": "metair_csa019",
