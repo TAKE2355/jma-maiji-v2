@@ -103,7 +103,11 @@ def get_metair_session():
             "loginForm:forceflg":   "false",
             "javax.faces.ViewState": vs_m.group(1),
         }
+        print(f"  ViewState取得: {len(vs_m.group(1))}文字")
+        print(f"  POST送信: user={METAIR_USER[:4]}*** fields={list(data.keys())}")
         r1 = s.post(METAIR_LOGIN_URL, data=data, timeout=15, allow_redirects=True)
+        print(f"  POSTステータス: {r1.status_code} url={r1.url}")
+        print(f"  レスポンス先頭: {r1.text[:300]}")
         if "login" not in r1.url.lower():
             print(f"  MetAirログイン成功: {r1.url}")
             _metair_session = s
