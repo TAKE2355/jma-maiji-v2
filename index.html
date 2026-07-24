@@ -1112,10 +1112,12 @@ async function triggerWorkflow(){
   const btn=document.getElementById('send-btn'),log=document.getElementById('send-log');
   btn.textContent='⏳ 起動中...';btn.disabled=true;log.style.display='block';log.textContent='→ GitHub Actions を起動しています...\n';
   try{
+    const triggerTime = new Date().toISOString();
     const r=await fetch(`https://api.github.com/repos/${getRepo()}/actions/workflows/send_metair.yml/dispatches`,
       {method:'POST',headers:apiHdr(),body:JSON.stringify({ref:getBranch()})});
     if(r.status===204){log.textContent+='✅ 起動しました！\n\n約2〜3分後にメールが届きます。\n';btn.textContent='✅ 送信開始';btn.style.background='var(--success)';
       setTimeout(()=>{btn.textContent='🚀 今すぐ送信';btn.style.background='';btn.disabled=false;loadRuns();},5000);
+      pollRunUntilComplete(triggerTime, log);
     }else{const d=await r.json();log.textContent+=`❌ ${d.message}\n`;btn.textContent='🚀 今すぐ送信';btn.disabled=false;}
   }catch(e){log.textContent+=`❌ ${e.message}\n`;btn.textContent='🚀 今すぐ送信';btn.disabled=false;}
 }
