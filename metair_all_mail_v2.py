@@ -1,3 +1,35 @@
+
+def test_csa024a():
+    """CSA024A画像URLの確認テスト"""
+    print("=== CSA024A テスト開始 ===")
+    s = get_metair_session()
+    if s is None:
+        print("  セッション取得失敗")
+        return
+    print("  セッション取得OK")
+    ajax_url = "https://www3.metair.go.jp/metair/ajax/CSA024A/ajaxUpdate"
+    try:
+        resp = s.get(ajax_url, params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+        print(f"  AJAX status={resp.status_code}")
+        if resp.status_code == 200:
+            data = resp.json()
+            ds = data.get("dataSet", [])
+            print(f"  dataSet件数={len(ds)}")
+            for item in ds[:3]:
+                print(f"  fname={item.get('fname','?')} date={item.get('date','?')}")
+            if ds:
+                fname = ds[0].get("fname","")
+                full_url = ("https://www3.metair.go.jp" + fname) if fname.startswith("/") else fname
+                r2 = requests.get(full_url, headers=METAIR_HEADERS, timeout=10)
+                print(f"  認証なし: {full_url} -> {r2.status_code}")
+                r3 = s.get(full_url, timeout=10)
+                print(f"  認証あり: {full_url} -> {r3.status_code}")
+        else:
+            print(f"  レスポンス: {resp.text[:300]}")
+    except Exception as e:
+        print(f"  エラー: {e}")
+    print("=== CSA024A テスト終了 ===")
+
 #!/usr/bin/env python3
 """
 気象情報メール送信 v2 (ページ単位レイアウト対応)
@@ -687,4 +719,5 @@ def main():
     save_preview_cache()
 
 if __name__ == "__main__":
+    test_csa024a()
     main()
