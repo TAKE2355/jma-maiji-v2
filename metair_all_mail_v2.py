@@ -367,7 +367,7 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
 # ─────────────────────────────────────────────────────────────────────────
 def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
     draw    = ImageDraw.Draw(page)
-    lines   = label.split("\n")[:2]
+    lines   = label.split("\n")[:1]
     max_w   = box_w - 8
 
     def _tw(fnt, txt):
@@ -381,8 +381,8 @@ def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
                 return max_w + 1
 
     # ピッタリ収まる最大フォントサイズを探す（26から下へ縮小）
-    fs, font_sm = 52, get_font(52)
-    for size in range(52, 5, -1):
+    fs, font_sm = 40, get_font(40)
+    for size in range(40, 5, -1):
         fnt = get_font(size)
         ws = [_tw(fnt, ln) for ln in lines if ln]
         if ws and max(ws) <= max_w:
