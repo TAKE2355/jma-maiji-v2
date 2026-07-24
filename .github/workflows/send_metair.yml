@@ -1,8 +1,6 @@
 name: MetAir Weather Mail
 
 on:
-  schedule:
-    - cron: '0,15,30,45 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -11,8 +9,6 @@ permissions:
 jobs:
   send:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_EVENT_NAME: ${{ github.event_name }}
     steps:
       - uses: actions/checkout@v4
 
