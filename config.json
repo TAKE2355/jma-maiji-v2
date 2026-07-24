@@ -248,42 +248,42 @@
         {
           "type": "jma_wanlf",
           "code": "139",
-          "label": "高層天気図 FL390"
+          "label": "FL390"
         },
         {
           "type": "jma_wanlf",
           "code": "137",
-          "label": "高層天気図 FL370"
+          "label": "FL370"
         },
         {
           "type": "jma_wanlf",
           "code": "135",
-          "label": "高層天気図 FL350"
+          "label": "FL350"
         },
         {
           "type": "jma_wanlf",
           "code": "133",
-          "label": "高層天気図 FL330"
+          "label": "FL330"
         },
         {
           "type": "jma_wanlf",
           "code": "131",
-          "label": "高層天気図 FL310"
+          "label": "FL310"
         },
         {
           "type": "jma_wanlf",
           "code": "129",
-          "label": "高層天気図 FL290"
+          "label": "FL290"
         },
         {
           "type": "jma_wanlf",
           "code": "127",
-          "label": "高層天気図 FL270"
+          "label": "FL270"
         },
         {
           "type": "jma_wanlf",
           "code": "125",
-          "label": "高層天気図 FL250"
+          "label": "FL250"
         }
       ]
     },
@@ -295,42 +295,42 @@
         {
           "type": "jma_wanlf",
           "code": "123",
-          "label": "高層天気図 FL230"
+          "label": "FL230"
         },
         {
           "type": "jma_wanlf",
           "code": "121",
-          "label": "高層天気図 FL210"
+          "label": "FL210"
         },
         {
           "type": "jma_wanlf",
           "code": "119",
-          "label": "高層天気図 FL190"
+          "label": "FL190"
         },
         {
           "type": "jma_wanlf",
           "code": "117",
-          "label": "高層天気図 FL170"
+          "label": "FL170"
         },
         {
           "type": "jma_wanlf",
           "code": "115",
-          "label": "高層天気図 FL150"
+          "label": "FL150"
         },
         {
           "type": "jma_wanlf",
           "code": "111",
-          "label": "高層天気図 FL110"
+          "label": "FL110"
         },
         {
           "type": "jma_wanlf",
           "code": "109",
-          "label": "高層天気図 FL090"
+          "label": "FL090"
         },
         {
           "type": "jma_wanlf",
           "code": "105",
-          "label": "高層天気図 FL050"
+          "label": "FL050"
         }
       ]
     },
