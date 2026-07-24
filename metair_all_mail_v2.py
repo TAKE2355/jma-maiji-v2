@@ -99,8 +99,8 @@ def get_metair_session():
             "loginForm":            "loginForm",
             "loginForm:username":   METAIR_USER,
             "loginForm:password":   METAIR_PASS,
-            "loginForm:doLogin":    "",
-            "loginForm:forceflg":   "",
+            "loginForm:doLogin":    "\u30ed\u30b0\u30a4\u30f3",
+            "loginForm:forceflg":   "false",
             "javax.faces.ViewState": vs_m.group(1),
         }
         r1 = s.post(METAIR_LOGIN_URL, data=data, timeout=15, allow_redirects=True)
