@@ -16,7 +16,7 @@
   "recipients": [
     {
       "email": "o_d_r_2006@yahoo.co.jp",
-      "name": "10B",
+      "name": "10.5 B",
       "enabled": false,
       "time_slots": [
         {
@@ -40,7 +40,7 @@
     },
     {
       "email": "odr20062023@gmail.com",
-      "name": "Gmail",
+      "name": "Gmail23B",
       "enabled": true,
       "time_slots": [
         {
