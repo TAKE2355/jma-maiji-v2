@@ -154,42 +154,42 @@
         {
           "type": "jma_wanlc",
           "code": "151",
-          "label": "太平洋 東経142.5°(南北)"
+          "label": "東経142.5"
         },
         {
           "type": "jma_wanlc",
           "code": "152",
-          "label": "太平洋 東経140.0°(南北)"
+          "label": "東経140"
         },
         {
           "type": "jma_wanlc",
           "code": "153",
-          "label": "太平洋 東経137.5°(南北)"
+          "label": "東経137.5"
         },
         {
           "type": "jma_wanlc",
           "code": "154",
-          "label": "太平洋 東経135.0°(南北)"
+          "label": "東経135"
         },
         {
           "type": "jma_wanlc",
           "code": "155",
-          "label": "太平洋 東経132.5°(南北)"
+          "label": "東経132.5"
         },
         {
           "type": "jma_wanlc",
           "code": "156",
-          "label": "太平洋 東経130.0°(南北)"
+          "label": "東経130"
         },
         {
           "type": "jma_wanlc",
           "code": "157",
-          "label": "太平洋 東経127.5°(南北)"
+          "label": "東経127.5"
         },
         {
           "type": "jma_wanlc",
           "code": "158",
-          "label": "太平洋 東経125.0°(南北)"
+          "label": "東経125"
         }
       ]
     },
@@ -201,42 +201,42 @@
         {
           "type": "jma_wanlc",
           "code": "199",
-          "label": "太平洋 北東-南西(南北)"
+          "label": "航空路断面図"
         },
         {
           "type": "jma_wanlc",
           "code": "101",
-          "label": "太平洋 南北-東西(南北)"
+          "label": "福岡-釧路"
         },
         {
           "type": "jma_wanlc",
           "code": "102",
-          "label": "太平洋 南北-北東(南北)"
+          "label": "福岡-紋別"
         },
         {
           "type": "jma_wanlc",
           "code": "103",
-          "label": "太平洋 東西-北西(南北)"
+          "label": "東京-稚内"
         },
         {
           "type": "jma_wanlc",
           "code": "105",
-          "label": "太平洋 南北-東西B(南北)"
+          "label": "福岡-東京"
         },
         {
           "type": "jma_wanlc",
           "code": "106",
-          "label": "太平洋 北西部-東西(南北)"
+          "label": "鹿児島-東京"
         },
         {
           "type": "jma_wanlc",
           "code": "107",
-          "label": "太平洋 西部-東西(南北)"
+          "label": "石垣-東京"
         },
         {
           "type": "jma_wanlc",
           "code": "108",
-          "label": "太平洋 北東部-東西(南北)"
+          "label": "与那国-高松"
         }
       ]
     },
