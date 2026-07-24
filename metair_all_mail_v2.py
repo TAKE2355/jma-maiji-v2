@@ -84,20 +84,33 @@ def get_metair_session():
     if not METAIR_USER or not METAIR_PASS:
         print("  MetAir認証情報未設定 (METAIR_USER/METAIR_PASS)")
         return None
-    for fields in [{"userId": METAIR_USER, "password": METAIR_PASS},
-                   {"id":     METAIR_USER, "pw":       METAIR_PASS}]:
-        try:
-            s = requests.Session()
-            s.headers.update(METAIR_HEADERS)
-            s.get(METAIR_LOGIN_URL, timeout=15)
-            r = s.post(METAIR_LOGIN_URL, data=fields, timeout=15, allow_redirects=True)
-            if "login" not in r.url.lower():
-                print(f"  MetAirログイン成功: {r.url}")
-                _metair_session = s
-                return s
-            print(f"  MetAirログイン失敗(fields={list(fields)}): {r.url}")
-        except Exception as e:
-            print(f"  MetAirログインエラー: {e}")
+    import re as _re2
+    try:
+        s = requests.Session()
+        s.headers.update(METAIR_HEADERS)
+        # ① GETでViewStateトークンを取得
+        r0 = s.get(METAIR_LOGIN_URL, timeout=15)
+        vs_m = _re2.search(r'name="javax\.faces\.ViewState"[^>]+value="([^"]+)"', r0.text)
+        if not vs_m:
+            print("  MetAir ViewState取得失敗")
+            return None
+        # ② JSFフォームフィールドでPOST
+        data = {
+            "loginForm":            "loginForm",
+            "loginForm:username":   METAIR_USER,
+            "loginForm:password":   METAIR_PASS,
+            "loginForm:doLogin":    "",
+            "loginForm:forceflg":   "",
+            "javax.faces.ViewState": vs_m.group(1),
+        }
+        r1 = s.post(METAIR_LOGIN_URL, data=data, timeout=15, allow_redirects=True)
+        if "login" not in r1.url.lower():
+            print(f"  MetAirログイン成功: {r1.url}")
+            _metair_session = s
+            return s
+        print(f"  MetAirログイン失敗: {r1.url}")
+    except Exception as e:
+        print(f"  MetAirログインエラー: {e}")
     return None
 
 def get_csa003_image(code):
