@@ -29,7 +29,7 @@
     {
       "email": "takeshi.kai@jetstar.com",
       "name": "JJP18B",
-      "enabled": false,
+      "enabled": true,
       "time_slots": [
         {
           "start": 5,
