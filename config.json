@@ -342,32 +342,32 @@
         {
           "type": "metair_fb_akuten",
           "code": "FBSN",
-          "label": "下層悪天予想図・北海道"
-        },
-        {
-          "type": "metair_fb_akuten",
-          "code": "FBSP",
           "label": "下層悪天予想図・東北"
         },
         {
           "type": "metair_fb_akuten",
-          "code": "FBOS",
-          "label": "下層悪天予想図・東日本"
+          "code": "FBSP",
+          "label": "下層悪天予想図・北海道"
         },
         {
           "type": "metair_fb_akuten",
-          "code": "FBTK",
+          "code": "FBOS",
           "label": "下層悪天予想図・西日本"
         },
         {
           "type": "metair_fb_akuten",
+          "code": "FBTK",
+          "label": "下層悪天予想図・東日本"
+        },
+        {
+          "type": "metair_fb_akuten",
           "code": "FBOK",
-          "label": "下層悪天予想図・奄美"
+          "label": "下層悪天予想図・沖縄"
         },
         {
           "type": "metair_fb_akuten",
           "code": "FBKG",
-          "label": "下層悪天予想図・沖縄"
+          "label": "下層悪天予想図・奄美"
         },
         null,
         null
