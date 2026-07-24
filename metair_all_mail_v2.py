@@ -1,4 +1,32 @@
+#!/usr/bin/env python3
+"""
+気象情報メール送信 v2 (ページ単位レイアウト対応)
 
+仕組み:
+  - config.json の pages[] にページ単位でレイアウトと天気図スロットを定義
+  - 各ページ: orientation(portrait/landscape), cols, rows, slots[]
+  - slots[] の各要素: {"type": ..., "code": ..., "label": ...} or null
+  - recipients[] に受信者を複数登録 (time_slots スケジュール付き)
+  - PDFは1回生成 → 送信対象の受信者全員に個別送信
+  - workflow_dispatch は全有効受信者に強制送信
+"""
+
+import os, io, json, smtplib, datetime, sys, requests
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
+from PIL import Image, ImageDraw, ImageFont
+import img2pdf
+
+# ── 環境変数 ────────────────────────────────────────────────────────────────
+MAIL_FROM    = os.environ["MAIL_FROM"]
+SMTP_HOST    = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT    = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USER    = os.environ["SMTP_USER"]
+SMTP_PASS    = os.environ["SMTP_PASS"]
+
+# ── config.json 読み込み ──────────────────────────────────────────────────
 def load_config():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
     with open(path, "r", encoding="utf-8") as f:
@@ -685,7 +713,6 @@ def test_csa024a():
     except Exception as e:
         print(f"  エラー: {e}")
     print("=== CSA024A テスト終了 ===")
-
 
 if __name__ == "__main__":
     test_csa024a()
