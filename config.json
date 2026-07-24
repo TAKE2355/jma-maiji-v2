@@ -60,42 +60,42 @@
         {
           "type": "metair_csa019",
           "code": "QBSA95",
-          "label": "UBCK 狭域悪天実況図・日高"
-        },
-        {
-          "type": "metair_csa019",
-          "code": "QBCK95",
           "label": "UBSA 狭域悪天実況図・白神"
         },
         {
           "type": "metair_csa019",
-          "code": "QBRA95",
-          "label": "UBTT 狭域悪天実況図・関東"
+          "code": "QBCK95",
+          "label": "UBCK 狭域悪天実況図・日高"
         },
         {
           "type": "metair_csa019",
-          "code": "QBQA95",
+          "code": "QBRA95",
           "label": "UBGG 狭域悪天実況図・中部"
         },
         {
           "type": "metair_csa019",
-          "code": "QBFF95",
-          "label": "UBBB 狭域悪天実況図・関西"
+          "code": "QBQA95",
+          "label": "UBTT 狭域悪天実況図・関東"
         },
         {
           "type": "metair_csa019",
-          "code": "QBUA95",
+          "code": "QBFF95",
           "label": "UBFF 狭域悪天実況図・福岡"
         },
         {
           "type": "metair_csa019",
+          "code": "QBUA95",
+          "label": "UBBB 狭域悪天実況図・関西"
+        },
+        {
+          "type": "metair_csa019",
           "code": "QBIG95",
-          "label": "UBAH 狭域悪天実況図・那覇"
+          "label": "UBIG 狭域悪天実況図・先島"
         },
         {
           "type": "metair_csa019",
           "code": "QBAH95",
-          "label": "UBIG 狭域悪天実況図・先島"
+          "label": "UBAH 狭域悪天実況図・那覇"
         }
       ]
     },
@@ -381,7 +381,7 @@
         {
           "type": "metair_csa019",
           "code": "QBRA95",
-          "label": "UBTT 狭域悪天実況図・関東"
+          "label": "UBGG 狭域悪天実況図・中部"
         },
         {
           "type": "metair_csa019",
