@@ -366,10 +366,19 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
 #  PDF生成（ページ単位レイアウト）
 # ─────────────────────────────────────────────────────────────────────────
 def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
-    draw    = ImageDraw.Draw(page)
+    draw  = ImageDraw.Draw(page)
+    lines = label.split("\n")[:2]
+    max_w = box_w - 8          # 左右4pxずつマージン
+    # フォントサイズをピッタリ収まるまで小さくする
     font_sm = get_font(26)
-    for i, line in enumerate(label.split("\n")[:2]):
-        draw.text((x0+4, y0+i*24), line, fill=(0,0,120), font=font_sm)
+    for size in range(26, 9, -1):
+        fnt = get_font(size)
+        if all(draw.textlength(ln, font=fnt) <= max_w for ln in lines if ln):
+            font_sm = fnt
+            break
+    line_h = max(int(font_sm.size * 1.2), 14)
+    for i, line in enumerate(lines):
+        draw.text((x0+4, y0+i*line_h), line, fill=(0,0,120), font=font_sm)
     img_y = y0 + LABEL_H
     img_w = box_w
     img_h = box_h - LABEL_H
