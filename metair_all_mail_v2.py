@@ -118,64 +118,23 @@ def get_metair_session():
     return None
 
 def get_csa003_image(code):
-    """CSA003チャート取得 (code例: 'CSA003_TOPH_7')"""
-    import re as _re
-    parts      = code.rsplit("_", 1)
-    csid       = parts[0]
-    chart_type = parts[1] if len(parts) == 2 else "7"
-    session    = get_metair_session()
-    if not session:
-        return None, None
-    # ① AJAX
-    for ajax_url in [
-        f"https://www3.metair.go.jp/metair/ajax/CSA003/ajaxUpdate?contentsType=0&csid={csid}&type={chart_type}&lastDate=",
-        f"https://www3.metair.go.jp/metair/ajax/CSA003/ajaxUpdate?contentsType=0&dbKey=RJTD,{csid}&type={chart_type}&lastDate=",
-    ]:
+    """CSA003レーダー合成図頂高度取得 (認証不要・直接URLアクセス)"""
+    import datetime as _dt
+    now = _dt.datetime.utcnow()
+    for delta in range(20):
+        ts_dt = now - _dt.timedelta(minutes=delta)
+        ts = ts_dt.strftime('%Y%m%d%H%M00')
+        img_url = f"https://www3.metair.go.jp/pict/radar/rectp99/RECTP99_RJTD_{ts}.png"
         try:
-            r = session.get(ajax_url, timeout=15)
-            if r.status_code == 200 and r.text.strip():
-                ds = r.json().get("dataSet")
-                if ds and isinstance(ds, list) and ds:
-                    entry = ds[-1]
-                    fname = entry.get("fname", "")
-                    if fname:
-                        img_url = f"https://www3.metair.go.jp{fname}" if fname.startswith("/") else fname
-                        ir = session.get(img_url, timeout=30)
-                        if ir.status_code == 200:
-                            im = Image.open(io.BytesIO(ir.content)).convert("RGB")
-                            print(f"  CSA003 AJAX取得成功: {img_url[-50:]}")
-                            return im, entry.get("date", "")
-        except Exception as e:
-            print(f"  CSA003 AJAX失敗: {e}")
-    # ② HTMLページ解析
-    page_url = f"https://www3.metair.go.jp/metair/view/winKobetsu/CSA003.html?csid={csid}&type={chart_type}"
-    try:
-        r = session.get(page_url, timeout=30)
-        print(f"  CSA003 page status={r.status_code}")
-        for pat in [
-            r'"fname"\s*:\s*"([^"]+\.(?:png|jpg|PNG|JPG))"',
-            r"<img[^>]+src=[\"']([^\"']+\.(?:png|jpg|PNG|JPG))[\"']",
-            r"src\s*=\s*[\"']([^\"']*(?:/pict/|/img/)[^\"']+)[\"']",
-        ]:
-            for img_path in reversed(_re.findall(pat, r.text)):
-                img_url = img_path if img_path.startswith("http") else f"https://www3.metair.go.jp{img_path}"
-                try:
-                    ir = session.get(img_url, timeout=30)
-                    if ir.status_code == 200:
-                        im = Image.open(io.BytesIO(ir.content)).convert("RGB")
-                        print(f"  CSA003 HTML取得成功: {img_url[-50:]}")
-                        return im, None
-                except Exception:
-                    continue
-        print(f"  CSA003 解析失敗. preview: {r.text[:200]}")
-    except Exception as e:
-        print(f"  CSA003 HTMLエラー: {e}")
+            r = requests.get(img_url, headers=METAIR_HEADERS, timeout=15)
+            if r.status_code == 200:
+                im = Image.open(io.BytesIO(r.content)).convert("RGB")
+                print(f"  CSA003取得成功: {ts}")
+                return im, ts
+        except Exception:
+            continue
+    print("  CSA003取得失敗")
     return None, None
-
-# ─────────────────────────────────────────────────────────────────────────
-#  スケジュール判定
-# ─────────────────────────────────────────────────────────────────────────
-
 def get_font(size=36):
     try:
         return ImageFont.truetype(
