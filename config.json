@@ -7,7 +7,7 @@
     "label_h": 50,
     "jpeg_quality": 60,
     "max_dpi": 600,
-    "max_mail_mb": 19
+    "max_mail_mb": 18.5
   },
   "overlay": {
     "enabled": true,
