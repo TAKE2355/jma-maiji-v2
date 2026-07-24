@@ -58,44 +58,44 @@
       "rows": 4,
       "slots": [
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBSA95",
-          "label": "UBCK 狭域悪天実況図・日高"
+          "label": "UBSA 上空解析図(南北)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBCK95",
-          "label": "UBSA 狭域悪天実況図・白神"
+          "label": "UBCK 上空解析図(南北)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBRA95",
-          "label": "UBTT 狭域悪天実況図・関東"
+          "label": "UBGG 上空解析図"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBQA95",
-          "label": "UBGG 狭域悪天実況図・中部"
+          "label": "UBTT 上空解析図(東西)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBFF95",
-          "label": "UBBB 狭域悪天実況図・関西"
+          "label": "UBFF 上空解析図(南北)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBUA95",
-          "label": "UBFF 狭域悪天実況図・福岡"
+          "label": "UBBB 上空解析図"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBIG95",
-          "label": "UBAH 狭域悪天実況図・那覇"
+          "label": "UBIG 上空解析図"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBAH95",
-          "label": "UBIG 狭域悪天実況図・先島"
+          "label": "UBAH 上空解析図"
         }
       ]
     },
@@ -105,44 +105,44 @@
       "rows": 4,
       "slots": [
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QYYA86",
-          "label": "全国航空気象解説報・飛行場"
+          "label": "東南アジア航空気象情報(PDF版)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QYYA82",
-          "label": "全国航空気象解説報・国内空域"
+          "label": "東南アジア航空気象情報(空港天気)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QACA95",
-          "label": "SPAS速報天気図"
+          "label": "SPAS 南洋上空天気図"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QACE98",
-          "label": "FSAS24アジア太平洋海上悪天24時間予想図"
+          "label": "FSAS24 24時間予想天気図"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBMA98",
-          "label": "ABJP国内悪天解析図"
+          "label": "ABJP 国内航空気象情報"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QBEY10",
-          "label": "FBJP国内悪天予想図"
+          "label": "FBJP 国内航空予想天気図"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QNSA22",
-          "label": "TSAS1広域雲画像情報(北半球)"
+          "label": "TSAT 気象衛星赤外天気図"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_csa019",
           "code": "QRAI85",
-          "label": "FXJP854"
+          "label": "FXJP854 広域降水予想天気図"
         }
       ]
     },
@@ -152,44 +152,44 @@
       "rows": 4,
       "slots": [
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "151",
-          "label": "東経142.5"
+          "label": "太平洋 東経142.5°(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "152",
-          "label": "東経140"
+          "label": "太平洋 東経140.0°(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "153",
-          "label": "東経137.5"
+          "label": "太平洋 東経137.5°(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "154",
-          "label": "東経135"
+          "label": "太平洋 東経135.0°(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "155",
-          "label": "東経132.5"
+          "label": "太平洋 東経132.5°(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "156",
-          "label": "東経130"
+          "label": "太平洋 東経130.0°(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "157",
-          "label": "東経127.5"
+          "label": "太平洋 東経127.5°(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "158",
-          "label": "東経125"
+          "label": "太平洋 東経125.0°(南北)"
         }
       ]
     },
@@ -199,44 +199,44 @@
       "rows": 4,
       "slots": [
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "199",
-          "label": "航空路断面図"
+          "label": "太平洋 北東-南西(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "101",
-          "label": "福岡-釧路"
+          "label": "太平洋 南北-東西(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "102",
-          "label": "福岡-紋別"
+          "label": "太平洋 南北-北東(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "103",
-          "label": "東京-稚内"
+          "label": "太平洋 東西-北西(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "105",
-          "label": "福岡-東京"
+          "label": "太平洋 南北-東西B(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "106",
-          "label": "鹿児島-東京"
+          "label": "太平洋 北西部-東西(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "107",
-          "label": "石垣-東京"
+          "label": "太平洋 西部-東西(南北)"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlc",
           "code": "108",
-          "label": "与那国-高松"
+          "label": "太平洋 北東部-東西(南北)"
         }
       ]
     },
@@ -246,44 +246,44 @@
       "rows": 4,
       "slots": [
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "139",
-          "label": "FL390"
+          "label": "高層天気図 FL390"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "137",
-          "label": "FL370"
+          "label": "高層天気図 FL370"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "135",
-          "label": "FL350"
+          "label": "高層天気図 FL350"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "133",
-          "label": "FL330"
+          "label": "高層天気図 FL330"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "131",
-          "label": "FL310"
+          "label": "高層天気図 FL310"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "129",
-          "label": "FL290"
+          "label": "高層天気図 FL290"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "127",
-          "label": "FL270"
+          "label": "高層天気図 FL270"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "125",
-          "label": "FL250"
+          "label": "高層天気図 FL250"
         }
       ]
     },
@@ -293,44 +293,44 @@
       "rows": 4,
       "slots": [
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "123",
-          "label": "FL230"
+          "label": "高層天気図 FL230"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "121",
-          "label": "FL210"
+          "label": "高層天気図 FL210"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "119",
-          "label": "FL190"
+          "label": "高層天気図 FL190"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "117",
-          "label": "FL170"
+          "label": "高層天気図 FL170"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "115",
-          "label": "FL150"
+          "label": "高層天気図 FL150"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "111",
-          "label": "FL110"
+          "label": "高層天気図 FL110"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "109",
-          "label": "FL090"
+          "label": "高層天気図 FL090"
         },
         {
-          "type": "sanjuppun_taiki",
+          "type": "jma_wanlf",
           "code": "105",
-          "label": "福岡-東京"
+          "label": "高層天気図 FL050"
         }
       ]
     },
@@ -340,34 +340,34 @@
       "rows": 4,
       "slots": [
         {
-          "type": "kisho_joho",
+          "type": "metair_fb_akuten",
           "code": "FBSN",
-          "label": "下層悪天予想図・北海道"
+          "label": "下層悪天予想図(北海道)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_fb_akuten",
           "code": "FBSP",
-          "label": "下層悪天予想図・東北"
+          "label": "下層悪天予想図(南北)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_fb_akuten",
           "code": "FBOS",
-          "label": "下層悪天予想図・東日本"
+          "label": "下層悪天予想図(大阪)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_fb_akuten",
           "code": "FBTK",
-          "label": "下層悪天予想図・西日本"
+          "label": "下層悪天予想図(東西)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_fb_akuten",
           "code": "FBOK",
-          "label": "下層悪天予想図・奄美"
+          "label": "下層悪天予想図(沖縄)"
         },
         {
-          "type": "kisho_joho",
+          "type": "metair_fb_akuten",
           "code": "FBKG",
-          "label": "下層悪天予想図・沖縄"
+          "label": "下層悪天予想図(北九州)"
         },
         null,
         null
