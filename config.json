@@ -7,7 +7,7 @@
     "label_h": 50,
     "jpeg_quality": 60,
     "max_dpi": 600,
-    "max_mail_mb": 10
+    "max_mail_mb": 25
   },
   "overlay": {
     "enabled": true,
@@ -16,8 +16,8 @@
   "recipients": [
     {
       "email": "o_d_r_2006@yahoo.co.jp",
-      "name": "TEST",
-      "enabled": true,
+      "name": "10B",
+      "enabled": false,
       "time_slots": [
         {
           "start": 5,
@@ -28,13 +28,25 @@
     },
     {
       "email": "takeshi.kai@jetstar.com",
-      "name": "TEST2",
-      "enabled": true,
+      "name": "JJP18B",
+      "enabled": false,
       "time_slots": [
         {
           "start": 5,
           "end": 21,
           "interval_minutes": 15
+        }
+      ]
+    },
+    {
+      "email": "odr20062023@gmail.com",
+      "name": "Gmail",
+      "enabled": true,
+      "time_slots": [
+        {
+          "start": 5,
+          "end": 21,
+          "interval_minutes": 60
         }
       ]
     }
