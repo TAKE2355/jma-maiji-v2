@@ -197,8 +197,6 @@ body.has-bar main{padding-bottom:78px;}
     <h2 style="font-size:22px;margin-bottom:8px;">手動送信</h2>
     <p class="send-desc">全有効受信者に天気図PDFを送信します。<br>完了まで約2〜3分かかります。</p>
     <button class="btn btn-primary" onclick="triggerWorkflow()" id="send-btn">🚀 今すぐ送信</button>
-    
-    
     <pre id="send-log"></pre>
   </div>
   <div class="card">
@@ -1104,36 +1102,6 @@ function saveRc(){
   if(idx===-1)config.recipients.push(rec); else config.recipients[idx]=rec;
   cancelRcForm();renderRecipients();markDirty();
   showToast(idx===-1?'受信者を追加しました':'受信者を更新しました');
-}
-
-// ══════════════════════════════════════════════════════════════════════
-//  自動実行モード
-// ══════════════════════════════════════════════════════════════════════
-
-    btn.textContent='⏹ 自動実行停止';
-    btn.style.background='var(--danger)';
-    btn.style.color='white';
-    showToast('自動実行モード開始 — 画面を閉じると停止します');
-  }else{
-    btn.textContent='▶ 自動実行開始';
-    btn.style.background='#e5e5ea';
-    btn.style.color='var(--text)';
-    if(status)status.textContent='';
-    showToast('自動実行モード停止');
-  }
-}
-
-    const now=new Date();
-    const slot=Math.floor((now.getHours()*60+now.getMinutes())/15);
-    const secInSlot=(now.getMinutes()%15)*60+now.getSeconds();
-      triggerWorkflow();
-    }
-  },10000);
-}
-
-  const now=new Date();
-  const remainSec=(14-now.getMinutes()%15)*60+(59-now.getSeconds());
-  el.textContent='次回実行まで '+Math.floor(remainSec/60)+'分'+remainSec%60+'秒';
 }
 
 // ══════════════════════════════════════════════════════════════════════
