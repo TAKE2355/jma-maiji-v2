@@ -384,9 +384,11 @@ def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
     fs, font_sm = 26, get_font(26)
     for size in range(26, 6, -1):
         fnt = get_font(size)
-        if all(_tw(fnt, ln) <= max_w for ln in lines if ln):
+        ws = [_tw(fnt, ln) for ln in lines if ln]
+        if ws and max(ws) <= max_w:
             fs, font_sm = size, fnt
             break
+    print(f"  FONT size={fs} box_w={box_w} max_w={max_w} ws={[_tw(font_sm,ln) for ln in lines if ln]}")
 
     line_h = int(fs * 1.25)
     for i, line in enumerate(lines):
