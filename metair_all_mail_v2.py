@@ -428,7 +428,7 @@ def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
 
     page_img = Image.new("RGB", (pw, ph), (255, 255, 255))
     draw     = ImageDraw.Draw(page_img)
-    draw.text((PAGE_MARGIN, PAGE_MARGIN), header, fill=(60,60,60), font=get_font(34))
+    draw.text((PAGE_MARGIN, PAGE_MARGIN), header, fill=(60,60,60), font=get_font(round(10*dpi/72)))
     draw.text((pw-PAGE_MARGIN-150, PAGE_MARGIN),
               f"P.{page_num}/{total_pages}", fill=(130,130,130), font=get_font(30))
 
