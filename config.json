@@ -372,6 +372,33 @@
         null,
         null
       ]
+    },
+    {
+      "orientation": "landscape",
+      "cols": 2,
+      "rows": 2,
+      "slots": [
+        {
+          "type": "metair_csa019",
+          "code": "QYYA86",
+          "label": "全国航空気象解説報・飛行場"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QYYA82",
+          "label": "全国航空気象解説報・国内空域"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBEY10",
+          "label": "FBJP国内悪天予想図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QRAI85",
+          "label": "FXJP854"
+        }
+      ]
     }
   ]
 }
