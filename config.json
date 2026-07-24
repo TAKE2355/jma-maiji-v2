@@ -60,42 +60,42 @@
         {
           "type": "metair_csa019",
           "code": "QBSA95",
-          "label": "UBSA 上空解析図(南北)"
+          "label": "UBCK 狭域悪天実況図・日高"
         },
         {
           "type": "metair_csa019",
           "code": "QBCK95",
-          "label": "UBCK 上空解析図(南北)"
+          "label": "UBSA 狭域悪天実況図・白神"
         },
         {
           "type": "metair_csa019",
           "code": "QBRA95",
-          "label": "UBGG 上空解析図"
+          "label": "UBTT 狭域悪天実況図・関東"
         },
         {
           "type": "metair_csa019",
           "code": "QBQA95",
-          "label": "UBTT 上空解析図(東西)"
+          "label": "UBGG 狭域悪天実況図・中部"
         },
         {
           "type": "metair_csa019",
           "code": "QBFF95",
-          "label": "UBFF 上空解析図(南北)"
+          "label": "UBBB 狭域悪天実況図・関西"
         },
         {
           "type": "metair_csa019",
           "code": "QBUA95",
-          "label": "UBBB 上空解析図"
+          "label": "UBFF 狭域悪天実況図・福岡"
         },
         {
           "type": "metair_csa019",
           "code": "QBIG95",
-          "label": "UBIG 上空解析図"
+          "label": "UBAH 狭域悪天実況図・那覇"
         },
         {
           "type": "metair_csa019",
           "code": "QBAH95",
-          "label": "UBAH 上空解析図"
+          "label": "UBIG 狭域悪天実況図・先島"
         }
       ]
     },
@@ -107,42 +107,42 @@
         {
           "type": "metair_csa019",
           "code": "QYYA86",
-          "label": "東南アジア航空気象情報(PDF版)"
+          "label": "全国航空気象解説報・飛行場"
         },
         {
           "type": "metair_csa019",
           "code": "QYYA82",
-          "label": "東南アジア航空気象情報(空港天気)"
+          "label": "全国航空気象解説報・国内空域"
         },
         {
           "type": "metair_csa019",
           "code": "QACA95",
-          "label": "SPAS 南洋上空天気図"
+          "label": "SPAS速報天気図"
         },
         {
           "type": "metair_csa019",
           "code": "QACE98",
-          "label": "FSAS24 24時間予想天気図"
+          "label": "FSAS24・24時間予想図"
         },
         {
           "type": "metair_csa019",
           "code": "QBMA98",
-          "label": "ABJP 国内航空気象情報"
+          "label": "ABJP国内悪天解析図"
         },
         {
           "type": "metair_csa019",
           "code": "QBEY10",
-          "label": "FBJP 国内航空予想天気図"
+          "label": "FBJP国内悪天予想図"
         },
         {
           "type": "metair_csa019",
           "code": "QNSA22",
-          "label": "TSAT 気象衛星赤外天気図"
+          "label": "TSAS1広域雲画像情報(北半球)"
         },
         {
           "type": "metair_csa019",
           "code": "QRAI85",
-          "label": "FXJP854 広域降水予想天気図"
+          "label": "FXJP854"
         }
       ]
     },
@@ -342,32 +342,32 @@
         {
           "type": "metair_fb_akuten",
           "code": "FBSN",
-          "label": "下層悪天予想図(北海道)"
+          "label": "下層悪天予想図・北海道"
         },
         {
           "type": "metair_fb_akuten",
           "code": "FBSP",
-          "label": "下層悪天予想図(南北)"
+          "label": "下層悪天予想図・東北"
         },
         {
           "type": "metair_fb_akuten",
           "code": "FBOS",
-          "label": "下層悪天予想図(大阪)"
+          "label": "下層悪天予想図・東日本"
         },
         {
           "type": "metair_fb_akuten",
           "code": "FBTK",
-          "label": "下層悪天予想図(東西)"
+          "label": "下層悪天予想図・西日本"
         },
         {
           "type": "metair_fb_akuten",
           "code": "FBOK",
-          "label": "下層悪天予想図(沖縄)"
+          "label": "下層悪天予想図・奄美"
         },
         {
           "type": "metair_fb_akuten",
           "code": "FBKG",
-          "label": "下層悪天予想図(北九州)"
+          "label": "下層悪天予想図・沖縄"
         },
         null,
         null
