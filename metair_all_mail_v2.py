@@ -71,6 +71,90 @@ METAIR_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 }
 
+# ── MetAir 認証 ───────────────────────────────────────────────────────────
+METAIR_USER      = os.environ.get("METAIR_USER", "")
+METAIR_PASS      = os.environ.get("METAIR_PASS", "")
+METAIR_LOGIN_URL = "https://www3.metair.go.jp/metair/view/login/index.html"
+_metair_session  = None
+
+def get_metair_session():
+    global _metair_session
+    if _metair_session is not None:
+        return _metair_session
+    if not METAIR_USER or not METAIR_PASS:
+        print("  MetAir認証情報未設定 (METAIR_USER/METAIR_PASS)")
+        return None
+    for fields in [{"userId": METAIR_USER, "password": METAIR_PASS},
+                   {"id":     METAIR_USER, "pw":       METAIR_PASS}]:
+        try:
+            s = requests.Session()
+            s.headers.update(METAIR_HEADERS)
+            s.get(METAIR_LOGIN_URL, timeout=15)
+            r = s.post(METAIR_LOGIN_URL, data=fields, timeout=15, allow_redirects=True)
+            if "login" not in r.url.lower():
+                print(f"  MetAirログイン成功: {r.url}")
+                _metair_session = s
+                return s
+            print(f"  MetAirログイン失敗(fields={list(fields)}): {r.url}")
+        except Exception as e:
+            print(f"  MetAirログインエラー: {e}")
+    return None
+
+def get_csa003_image(code):
+    """CSA003チャート取得 (code例: 'CSA003_TOPH_7')"""
+    import re as _re
+    parts      = code.rsplit("_", 1)
+    csid       = parts[0]
+    chart_type = parts[1] if len(parts) == 2 else "7"
+    session    = get_metair_session()
+    if not session:
+        return None, None
+    # ① AJAX
+    for ajax_url in [
+        f"https://www3.metair.go.jp/metair/ajax/CSA003/ajaxUpdate?contentsType=0&csid={csid}&type={chart_type}&lastDate=",
+        f"https://www3.metair.go.jp/metair/ajax/CSA003/ajaxUpdate?contentsType=0&dbKey=RJTD,{csid}&type={chart_type}&lastDate=",
+    ]:
+        try:
+            r = session.get(ajax_url, timeout=15)
+            if r.status_code == 200 and r.text.strip():
+                ds = r.json().get("dataSet")
+                if ds and isinstance(ds, list) and ds:
+                    entry = ds[-1]
+                    fname = entry.get("fname", "")
+                    if fname:
+                        img_url = f"https://www3.metair.go.jp{fname}" if fname.startswith("/") else fname
+                        ir = session.get(img_url, timeout=30)
+                        if ir.status_code == 200:
+                            im = Image.open(io.BytesIO(ir.content)).convert("RGB")
+                            print(f"  CSA003 AJAX取得成功: {img_url[-50:]}")
+                            return im, entry.get("date", "")
+        except Exception as e:
+            print(f"  CSA003 AJAX失敗: {e}")
+    # ② HTMLページ解析
+    page_url = f"https://www3.metair.go.jp/metair/view/winKobetsu/CSA003.html?csid={csid}&type={chart_type}"
+    try:
+        r = session.get(page_url, timeout=30)
+        print(f"  CSA003 page status={r.status_code}")
+        for pat in [
+            r'"fname"\s*:\s*"([^"]+\.(?:png|jpg|PNG|JPG))"',
+            r'<img[^>]+src=["\'\']([^\"\'']+\.(?:png|jpg|PNG|JPG))["\'\']',
+            r'src\s*=\s*["\'\']([^\"\'']*(?:/pict/|/img/)[^\"\'']+)["\'\']',
+        ]:
+            for img_path in reversed(_re.findall(pat, r.text)):
+                img_url = img_path if img_path.startswith("http") else f"https://www3.metair.go.jp{img_path}"
+                try:
+                    ir = session.get(img_url, timeout=30)
+                    if ir.status_code == 200:
+                        im = Image.open(io.BytesIO(ir.content)).convert("RGB")
+                        print(f"  CSA003 HTML取得成功: {img_url[-50:]}")
+                        return im, None
+                except Exception:
+                    continue
+        print(f"  CSA003 解析失敗. preview: {r.text[:200]}")
+    except Exception as e:
+        print(f"  CSA003 HTMLエラー: {e}")
+    return None, None
+
 # ─────────────────────────────────────────────────────────────────────────
 #  スケジュール判定
 # ─────────────────────────────────────────────────────────────────────────
@@ -291,6 +375,10 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         url = f"{METAIR_BASE}/pict/akuten/{code}/{code}03_RJTD_{akuten_ts}.png"
         im  = fetch_image(url)
         return im, f"{label}\n{ts_to_label(akuten_ts)} FT+03h"
+
+    elif chart_type == "metair_csa003":
+        im, date_str = get_csa003_image(code)
+        return im, f"{label}\n{date_str}" if date_str else (im, label)
 
     return None, label
 
