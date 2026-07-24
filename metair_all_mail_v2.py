@@ -366,9 +366,9 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
 #  PDF生成（ページ単位レイアウト）
 # ─────────────────────────────────────────────────────────────────────────
 def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
-    draw  = ImageDraw.Draw(page)
-    lines = label.split("\n")[:2]
-    max_w = box_w - 8
+    draw    = ImageDraw.Draw(page)
+    lines   = label.split("\n")[:2]
+    max_w   = box_w - 8
 
     def _tw(fnt, txt):
         """テキスト幅をPillowバージョンに関係なく取得"""
@@ -378,21 +378,33 @@ def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
             try:
                 return fnt.getsize(txt)[0]
             except Exception:
-                return max_w
+                return max_w + 1
 
-    # ピッタリ収まる最大フォントサイズを探す
+    # ピッタリ収まる最大フォントサイズを探す（26から下へ縮小）
     fs, font_sm = 26, get_font(26)
-    for size in range(26, 6, -1):
+    for size in range(26, 5, -1):
         fnt = get_font(size)
         ws = [_tw(fnt, ln) for ln in lines if ln]
         if ws and max(ws) <= max_w:
             fs, font_sm = size, fnt
             break
-    print(f"  FONT size={fs} box_w={box_w} max_w={max_w} ws={[_tw(font_sm,ln) for ln in lines if ln]}")
 
-    line_h = int(fs * 1.25)
     for i, line in enumerate(lines):
-        draw.text((x0+4, y0+i*line_h), line, fill=(0,0,120), font=font_sm)
+        draw.text((x0+4, y0+i*24), line, fill=(0,0,120), font=font_sm)
+
+    # 画像を配置
+    img_y = y0 + LABEL_H
+    img_w = box_w
+    img_h = box_h - LABEL_H
+    if im is not None:
+        ratio = min(img_w / im.width, img_h / im.height)
+        nw, nh = int(im.width * ratio), int(im.height * ratio)
+        page.paste(im.resize((nw, nh), Image.LANCZOS),
+                   (x0 + (img_w - nw) // 2, img_y + (img_h - nh) // 2))
+    else:
+        draw.text((x0+8, img_y+img_h//2-12), "データなし",
+                  fill=(200,200,200), font=font_sm)
+    draw.rectangle([x0, y0, x0+box_w-1, y0+box_h-1], outline=(210,210,210), width=1)
 def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
     """1ページ分のPIL Imageを生成する。"""
     cols    = page_cfg.get("cols", 2)
