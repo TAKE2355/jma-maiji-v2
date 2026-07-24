@@ -688,28 +688,19 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: ページHTMLから画像URLを直接抽出"""
+    """CSA024A: JSファイルURL一覧を取得"""
     print("=== CSA024A テスト開始 ===")
+    import re
     page_url = METAIR_BASE + "/metair/view/winKobetsu/CSA024A.html"
     params = {"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}
-    try:
-        resp = requests.get(page_url, headers=METAIR_HEADERS, params=params, timeout=20)
-        print(f"  ページ status={resp.status_code} len={len(resp.text)}")
-        if resp.status_code == 200:
-            # 画像URLパターンを探す
-            import re
-            imgs = re.findall(r'["\']((?:/pict/|https?://)[^"\' <>]+\.(?:png|jpg|gif))["\'\s]', resp.text)
-            print(f"  画像URL候補: {imgs[:10]}")
-            # imgタグのsrcも探す
-            srcs = re.findall(r'<img[^>]+src=["\'"]([^"\'"]+)["\'"]', resp.text)
-            print(f"  imgタグsrc: {srcs[:10]}")
-            # fname パターン
-            fnames = re.findall(r'fname["\'"]\s*:\s*["\'"]([^\'"]+)["\'"]', resp.text)
-            print(f"  fname値: {fnames[:5]}")
-        else:
-            print(f"  エラーレスポンス: {resp.text[:500]}")
-    except Exception as e:
-        import traceback; traceback.print_exc()
+    resp = requests.get(page_url, headers=METAIR_HEADERS, params=params, timeout=20)
+    print(f"  status={resp.status_code} len={len(resp.text)}")
+    # スクリプト参照
+    scripts = re.findall(r'<script[^>]+src=["\'"]([^"\'"]+)["\'"]', resp.text)
+    print(f"  scripts: {scripts}")
+    # ページ本文の先頭と末尾
+    print("  HTML先頭:", resp.text[:300])
+    print("  HTML末尾:", resp.text[-500:])
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
