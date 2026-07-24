@@ -1119,6 +1119,31 @@ async function triggerWorkflow(){
     }else{const d=await r.json();log.textContent+=`❌ ${d.message}\n`;btn.textContent='🚀 今すぐ送信';btn.disabled=false;}
   }catch(e){log.textContent+=`❌ ${e.message}\n`;btn.textContent='🚀 今すぐ送信';btn.disabled=false;}
 }
+
+async function pollRunUntilComplete(triggerTime, log) {
+  const maxWait = 10 * 60 * 1000;
+  const pollInterval = 20 * 1000;
+  const started = Date.now();
+  while (Date.now() - started < maxWait) {
+    await new Promise(res => setTimeout(res, pollInterval));
+    try {
+      const r = await fetch(`https://api.github.com/repos/${getRepo()}/actions/runs?event=workflow_dispatch&per_page=5`, { headers: apiHdr() });
+      const data = await r.json();
+      const run = (data.workflow_runs || []).find(w => w.created_at >= triggerTime);
+      if (!run) continue;
+      if (run.status === 'completed') {
+        if (run.conclusion === 'success') {
+          log.textContent += '\n✅ メールが送信されました！！\n';
+        } else {
+          log.textContent += `\n❌ ワークフロー失敗 (${run.conclusion})\n`;
+        }
+        return;
+      }
+      log.textContent += `⏳ 実行中... (${run.status})\n`;
+    } catch(e) { /* ignore */ }
+  }
+  log.textContent += '\n⏰ タイムアウト: 完了を確認できませんでした。\n';
+}
 async function loadRuns(){
   if(!getRepo()||!getPAT())return;
   const el=document.getElementById('recent-runs');
