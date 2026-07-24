@@ -137,8 +137,8 @@ def get_csa003_image(code):
         print(f"  CSA003 page status={r.status_code}")
         for pat in [
             r'"fname"\s*:\s*"([^"]+\.(?:png|jpg|PNG|JPG))"',
-            r'<img[^>]+src=["\'\']([^\"\'']+\.(?:png|jpg|PNG|JPG))["\'\']',
-            r'src\s*=\s*["\'\']([^\"\'']*(?:/pict/|/img/)[^\"\'']+)["\'\']',
+            r"<img[^>]+src=[\"']([^\"']+\.(?:png|jpg|PNG|JPG))[\"']",
+            r"src\s*=\s*[\"']([^\"']*(?:/pict/|/img/)[^\"']+)[\"']",
         ]:
             for img_path in reversed(_re.findall(pat, r.text)):
                 img_url = img_path if img_path.startswith("http") else f"https://www3.metair.go.jp{img_path}"
