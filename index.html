@@ -821,11 +821,14 @@ function drawPreview(){
 
     // スロット内容（設定済みの場合）
     if(slot&&slot.label){
-      const fs=Math.round(cellH*0.09);
-      ctx.fillStyle='#3a3a3c';ctx.font=`${fs}px sans-serif`;
       ctx.textAlign='center';ctx.textBaseline='top';
-      const short=slot.label.length>12?slot.label.slice(0,12)+'…':slot.label;
-      ctx.fillText(short, x+cellW/2, y+labelH*0.25);
+      const lbl=slot.label;
+      const maxW=cellW-6;
+      const maxFs=Math.round(cellH*0.09);
+      let fs=maxFs;
+      for(let s=maxFs;s>=6;s--){ctx.font=s+'px sans-serif';if(ctx.measureText(lbl).width<=maxW){fs=s;break;}}
+      ctx.fillStyle='#3a3a3c';ctx.font=fs+'px sans-serif';
+      ctx.fillText(lbl,x+cellW/2,y+labelH*0.25);
     }
   }
 
