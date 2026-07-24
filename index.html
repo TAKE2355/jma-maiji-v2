@@ -197,11 +197,8 @@ body.has-bar main{padding-bottom:78px;}
     <h2 style="font-size:22px;margin-bottom:8px;">手動送信</h2>
     <p class="send-desc">全有効受信者に天気図PDFを送信します。<br>完了まで約2〜3分かかります。</p>
     <button class="btn btn-primary" onclick="triggerWorkflow()" id="send-btn">🚀 今すぐ送信</button>
-    <button class="btn" id="btn-autorun" onclick="toggleAutoRun()"
-      style="margin-top:10px;background:#e5e5ea;color:var(--text);font-size:15px;padding:12px;">
-      ▶ 自動実行開始
-    </button>
-    <div id="autorun-status" style="font-size:13px;color:var(--sub);margin-top:6px;min-height:18px;"></div>
+    
+    
     <pre id="send-log"></pre>
   </div>
   <div class="card">
@@ -1112,47 +1109,28 @@ function saveRc(){
 // ══════════════════════════════════════════════════════════════════════
 //  自動実行モード
 // ══════════════════════════════════════════════════════════════════════
-let autoRunEnabled=false,autoRunTimer=null,lastAutoRunSlot=-1;
 
-function toggleAutoRun(){
-  autoRunEnabled=!autoRunEnabled;
-  const btn=document.getElementById('btn-autorun');
-  const status=document.getElementById('autorun-status');
-  if(autoRunEnabled){
     btn.textContent='⏹ 自動実行停止';
     btn.style.background='var(--danger)';
     btn.style.color='white';
-    lastAutoRunSlot=-1;
-    startAutoRunTimer();
     showToast('自動実行モード開始 — 画面を閉じると停止します');
   }else{
     btn.textContent='▶ 自動実行開始';
     btn.style.background='#e5e5ea';
     btn.style.color='var(--text)';
-    if(autoRunTimer){clearInterval(autoRunTimer);autoRunTimer=null;}
     if(status)status.textContent='';
     showToast('自動実行モード停止');
   }
 }
 
-function startAutoRunTimer(){
-  updateAutoRunStatus();
-  autoRunTimer=setInterval(()=>{
-    if(!autoRunEnabled)return;
     const now=new Date();
     const slot=Math.floor((now.getHours()*60+now.getMinutes())/15);
     const secInSlot=(now.getMinutes()%15)*60+now.getSeconds();
-    if(secInSlot<20&&slot!==lastAutoRunSlot){
-      lastAutoRunSlot=slot;
       triggerWorkflow();
     }
-    updateAutoRunStatus();
   },10000);
 }
 
-function updateAutoRunStatus(){
-  const el=document.getElementById('autorun-status');
-  if(!el||!autoRunEnabled)return;
   const now=new Date();
   const remainSec=(14-now.getMinutes()%15)*60+(59-now.getSeconds());
   el.textContent='次回実行まで '+Math.floor(remainSec/60)+'分'+remainSec%60+'秒';
