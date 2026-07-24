@@ -383,7 +383,11 @@
           "code": "CSA003_TOPH_7",
           "label": "レーダー合成図頂高度・最新"
         },
-        null,
+        {
+          "type": "metair_csa003",
+          "code": "CSA003_TOPH_7_30",
+          "label": "レーダー合成図頂高度・0.5h前"
+        },
         null,
         null,
         null,
