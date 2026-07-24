@@ -25,7 +25,6 @@ SMTP_HOST    = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT    = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER    = os.environ["SMTP_USER"]
 SMTP_PASS    = os.environ["SMTP_PASS"]
-GITHUB_EVENT = os.environ.get("GITHUB_EVENT_NAME", "schedule")
 
 # ── config.json 読み込み ──────────────────────────────────────────────────
 def load_config():
@@ -44,6 +43,7 @@ CELL_GAP     = _pdf["cell_gap"]
 LABEL_H      = _pdf["label_h"]
 JPEG_QUALITY = _pdf.get("jpeg_quality", 90)
 MAX_DPI      = _pdf.get("max_dpi", DPI)    # DPI上限
+MIN_DPI      = _pdf.get("min_dpi", 72)       # DPI下限
 MAX_MAIL_MB  = float(_pdf.get("max_mail_mb", 20.0))  # メールサイズ上限(MB)
 
 # ── オーバーレイ ──────────────────────────────────────────────────────────
@@ -74,35 +74,7 @@ METAIR_HEADERS = {
 # ─────────────────────────────────────────────────────────────────────────
 #  スケジュール判定
 # ─────────────────────────────────────────────────────────────────────────
-def should_send_to_recipient(r):
-    time_slots = r.get("time_slots", [])
-    if not time_slots:
-        return False
-    JST       = datetime.timezone(datetime.timedelta(hours=9))
-    now_jst   = datetime.datetime.now(JST)
-    h, m      = now_jst.hour, now_jst.minute
-    total_min = h * 60 + m
-    print(f"    [{r.get('name','?')}] JST {h:02d}:{m:02d}")
-    for i, slot in enumerate(time_slots):
-        start    = int(slot.get("start", 0))
-        end      = int(slot.get("end", 24))
-        interval = int(slot.get("interval_minutes", 60))
-        end_h    = 0 if end >= 24 else end
-        if start <= (end if end < 24 else 24):
-            in_slot = start <= h < (end if end < 24 else 24) or (end >= 24 and h == 0 and m < 15)
-        else:
-            in_slot = h >= start or h < end_h
-        if not in_slot:
-            continue
-        ok = (total_min % interval) < 15
-        print(f"    → 時間帯{i+1}({start}〜{end}時/{interval}分) {'✓送信' if ok else '✗スキップ'}")
-        if ok:
-            return True
-    return False
 
-# ─────────────────────────────────────────────────────────────────────────
-#  画像取得ユーティリティ
-# ─────────────────────────────────────────────────────────────────────────
 def get_font(size=36):
     try:
         return ImageFont.truetype(
@@ -405,24 +377,32 @@ def build_pdf(all_page_data, dpi):
     print(f"  PDF生成: PIL ({n_pages}p, {len(result)//1024//1024:.0f}MB)")
     return result, n_pages
 def build_pdf_auto_dpi(all_page_data):
-    """サイズ上限内で最大DPIのPDFを自動生成する。"""
-    # DPIを段階的に下げるステップ（MAX_DPI以下のみ使用）
-    dpi_steps = [d for d in [300, 250, 216, 180, 150, 120, 96, 72] if d <= MAX_DPI]
-    if not dpi_steps or dpi_steps[0] != MAX_DPI:
-        dpi_steps = [MAX_DPI] + dpi_steps
+    """サイズ上限内で最大DPIをバイナリサーチで自動決定してPDFを生成する。"""
+    lo, hi = MIN_DPI, MAX_DPI
+    best_bytes, best_pages, best_dpi, best_size = None, 0, lo, 0.0
 
-    for dpi in dpi_steps:
-        print(f"  DPI {dpi} で生成中...")
-        pdf_bytes, n_pages = build_pdf(all_page_data, dpi)
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        print(f"  DPI {mid} で生成中... (探索範囲: {lo}〜{hi})")
+        pdf_bytes, n_pages = build_pdf(all_page_data, mid)
         size_mb = len(pdf_bytes) / (1024 * 1024)
-        print(f"  → サイズ: {size_mb:.1f} MB (上限: {MAX_MAIL_MB} MB)")
+        print(f"  → {size_mb:.1f} MB (上限: {MAX_MAIL_MB} MB)")
         if size_mb <= MAX_MAIL_MB:
-            print(f"  ✓ DPI {dpi} で送信 ({size_mb:.1f} MB)")
-            return pdf_bytes, n_pages, dpi, size_mb
+            best_bytes, best_pages, best_dpi, best_size = pdf_bytes, n_pages, mid, size_mb
+            lo = mid + 1
+        else:
+            hi = mid - 1
 
-    # 最小DPIでも超過する場合はそのまま送信
-    print(f"  ⚠ 最小DPI({dpi_steps[-1]})でもサイズ超過 ({size_mb:.1f} MB) - そのまま送信")
-    return pdf_bytes, n_pages, dpi_steps[-1], size_mb
+    if best_bytes is None:
+        # MIN_DPIでも超過 → そのまま送信
+        pdf_bytes, n_pages = build_pdf(all_page_data, MIN_DPI)
+        size_mb = len(pdf_bytes) / (1024 * 1024)
+        print(f"  ⚠ 最小DPI({MIN_DPI})でもサイズ超過 ({size_mb:.1f} MB) - そのまま送信")
+        return pdf_bytes, n_pages, MIN_DPI, size_mb
+
+    print(f"  ✓ 最適DPI: {best_dpi} ({best_size:.1f} MB / 上限 {MAX_MAIL_MB} MB)")
+    return best_bytes, best_pages, best_dpi, best_size
+
 
 # ─────────────────────────────────────────────────────────────────────────
 #  天気図収集（ページ単位）
@@ -588,12 +568,8 @@ def main():
         print("有効な受信者なし - 終了")
         sys.exit(0)
 
-    if GITHUB_EVENT == "workflow_dispatch":
-        print("=== workflow_dispatch: 全受信者に送信 ===")
-        targets = enabled
-    else:
-        print("=== スケジュール実行: 送信対象を判定 ===")
-        targets = [r for r in enabled if should_send_to_recipient(r)]
+    print("=== 全有効受信者に送信 ===")
+    targets = enabled
 
     if not targets:
         print("送信対象なし - スキップ")
