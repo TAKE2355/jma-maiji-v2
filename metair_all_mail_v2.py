@@ -118,22 +118,25 @@ def get_metair_session():
     return None
 
 def get_csa003_image(code):
-    """CSA003レーダー合成図頂高度取得 (認証不要・直接URLアクセス)"""
-    import datetime as _dt
+    """CSA003レーダー合成図頂高度取得 (認証不要・直接URLアクセス)
+    code末尾 _NNN でN分前の画像を取得 (例: CSA003_TOPH_7_30 → 30分前)"""
+    import datetime as _dt, re as _re2
+    m = _re2.search(r'_(\d{2,3})$', code)
+    offset_min = int(m.group(1)) if m else 0
     now = _dt.datetime.utcnow()
-    for delta in range(20):
-        ts_dt = now - _dt.timedelta(minutes=delta)
+    for delta in range(10):
+        ts_dt = now - _dt.timedelta(minutes=offset_min + delta)
         ts = ts_dt.strftime('%Y%m%d%H%M00')
         img_url = f"https://www3.metair.go.jp/pict/radar/rectp99/RECTP99_RJTD_{ts}.png"
         try:
             r = requests.get(img_url, headers=METAIR_HEADERS, timeout=15)
             if r.status_code == 200:
                 im = Image.open(io.BytesIO(r.content)).convert("RGB")
-                print(f"  CSA003取得成功: {ts}")
+                print(f"  CSA003取得成功: offset={offset_min}min ts={ts}")
                 return im, ts
         except Exception:
             continue
-    print("  CSA003取得失敗")
+    print(f"  CSA003取得失敗 (offset={offset_min}min)")
     return None, None
 def get_font(size=36):
     try:
