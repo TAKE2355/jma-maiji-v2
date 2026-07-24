@@ -1,31 +1,4 @@
 
-def test_csa024a():
-    """CSA024A画像URLの確認テスト（CSA019と同じMETAIR_HEADERS方式）"""
-    print("=== CSA024A テスト開始 ===")
-    ajax_url = METAIR_BASE + "/metair/ajax/CSA024A/ajaxUpdate"
-    try:
-        resp = requests.get(ajax_url, headers=METAIR_HEADERS,
-                            params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
-        print(f"  AJAX status={resp.status_code}")
-        if resp.status_code == 200:
-            data = resp.json()
-            ds = data.get("dataSet", [])
-            if isinstance(ds, str):
-                import json as _j2; ds = _j2.loads(ds)
-            print(f"  dataSet件数={len(ds)}")
-            for item in ds[:3]:
-                print(f"  fname={item.get('fname','?')} date={item.get('date','?')}")
-            if ds:
-                fname = ds[0].get("fname","")
-                full_url = (METAIR_BASE + fname) if fname.startswith("/") else fname
-                r2 = requests.get(full_url, headers=METAIR_HEADERS, timeout=10)
-                print(f"  画像アクセス: {full_url} -> {r2.status_code} ({len(r2.content)}bytes)")
-        else:
-            print(f"  レスポンス: {resp.text[:300]}")
-    except Exception as e:
-        print(f"  エラー: {e}")
-    print("=== CSA024A テスト終了 ===")
-
 def load_config():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
     with open(path, "r", encoding="utf-8") as f:
@@ -684,6 +657,35 @@ def main():
 
     print("\n=== プレビューキャッシュ更新 ===")
     save_preview_cache()
+
+
+def test_csa024a():
+    """CSA024A画像URLの確認テスト（CSA019と同じMETAIR_HEADERS方式）"""
+    print("=== CSA024A テスト開始 ===")
+    ajax_url = METAIR_BASE + "/metair/ajax/CSA024A/ajaxUpdate"
+    try:
+        resp = requests.get(ajax_url, headers=METAIR_HEADERS,
+                            params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+        print(f"  AJAX status={resp.status_code}")
+        if resp.status_code == 200:
+            data = resp.json()
+            ds = data.get("dataSet", [])
+            if isinstance(ds, str):
+                import json as _j2; ds = _j2.loads(ds)
+            print(f"  dataSet件数={len(ds)}")
+            for item in ds[:3]:
+                print(f"  fname={item.get('fname','?')} date={item.get('date','?')}")
+            if ds:
+                fname = ds[0].get("fname","")
+                full_url = (METAIR_BASE + fname) if fname.startswith("/") else fname
+                r2 = requests.get(full_url, headers=METAIR_HEADERS, timeout=10)
+                print(f"  画像アクセス: {full_url} -> {r2.status_code} ({len(r2.content)}bytes)")
+        else:
+            print(f"  レスポンス: {resp.text[:300]}")
+    except Exception as e:
+        print(f"  エラー: {e}")
+    print("=== CSA024A テスト終了 ===")
+
 
 if __name__ == "__main__":
     test_csa024a()
