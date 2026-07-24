@@ -402,6 +402,9 @@ const CHART_MASTER = {
     {code:'QBIG95',label:'UBIG 狭域悪天実況図・先島'},{code:'QBAH95',label:'UBAH 狭域悪天実況図・那覇'},
   ],
   jikkyou:[],
+  metair_csa003:[
+    {code:'CSA003_TOPH_7',label:'レーダー合成図頂高度・最新'},
+  ],
   metair_fb_akuten:[
     {code:'FBSN',label:'下層悪天予想図・東北'},{code:'FBSP',label:'下層悪天予想図・北海道'},
     {code:'FBOS',label:'下層悪天予想図・西日本'},  {code:'FBTK',label:'下層悪天予想図・東日本'},
@@ -415,11 +418,12 @@ const TYPE_LABELS = {
   metair_csa019:'気象図情報',
   metair_fb_akuten:'気象図情報',
   jikkyou:'実況情報',
+  metair_csa003:'実況情報',
 };
 const UPPER_GROUPS = [
   {id:'sanjuppun',label:'三十分大気解析',keys:['jma_wanlc','jma_wanlf']},
   {id:'kishozujoho',label:'気象図情報',keys:['metair_csa019','metair_fb_akuten']},
-  {id:'jikkyou',label:'実況情報',keys:['jikkyou']},
+  {id:'jikkyou',label:'実況情報',keys:['jikkyou','metair_csa003']},
 ];
 function getUpperGroupForType(type){return UPPER_GROUPS.find(g=>g.keys.includes(type))||null;}
 function getUpperGroupById(id){return UPPER_GROUPS.find(g=>g.id===id)||null;}
