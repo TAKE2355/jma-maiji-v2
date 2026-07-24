@@ -370,50 +370,71 @@ body.has-bar main{padding-bottom:78px;}
 <script>
 // ══ 天気図マスター定義 ════════════════════════════════════════════════════
 const CHART_MASTER = {
-  jma_wanlc:[
-    {code:'151',label:'太平洋 東経142.5°(南北)'},{code:'152',label:'太平洋 東経140.0°(南北)'},
-    {code:'153',label:'太平洋 東経137.5°(南北)'},{code:'154',label:'太平洋 東経135.0°(南北)'},
-    {code:'155',label:'太平洋 東経132.5°(南北)'},{code:'156',label:'太平洋 東経130.0°(南北)'},
-    {code:'157',label:'太平洋 東経127.5°(南北)'},{code:'158',label:'太平洋 東経125.0°(南北)'},
-    {code:'199',label:'太平洋 北東-南西(南北)'}, {code:'101',label:'太平洋 南北-東西(南北)'},
-    {code:'102',label:'太平洋 南北-北東(南北)'}, {code:'103',label:'太平洋 東西-北西(南北)'},
-    {code:'105',label:'太平洋 南北-東西B(南北)'},{code:'106',label:'太平洋 北西部-東西(南北)'},
-    {code:'107',label:'太平洋 西部-東西(南北)'}, {code:'108',label:'太平洋 北東部-東西(南北)'},
+  sanjuppun_taiki:[
+    {code:'199',label:'航空路断面図',src:'jma_wanlc'},
+    {code:'101',label:'福岡-釧路',src:'jma_wanlc'},
+    {code:'102',label:'福岡-紋別',src:'jma_wanlc'},
+    {code:'103',label:'東京-稚内',src:'jma_wanlc'},
+    {code:'105',label:'福岡-東京',src:'jma_wanlc'},
+    {code:'106',label:'鹿児島-東京',src:'jma_wanlc'},
+    {code:'107',label:'石垣-東京',src:'jma_wanlc'},
+    {code:'108',label:'与那国-高松',src:'jma_wanlc'},
+    {code:'151',label:'東経142.5',src:'jma_wanlc'},
+    {code:'152',label:'東経140',src:'jma_wanlc'},
+    {code:'153',label:'東経137.5',src:'jma_wanlc'},
+    {code:'154',label:'東経135',src:'jma_wanlc'},
+    {code:'155',label:'東経132.5',src:'jma_wanlc'},
+    {code:'156',label:'東経130',src:'jma_wanlc'},
+    {code:'157',label:'東経127.5',src:'jma_wanlc'},
+    {code:'158',label:'東経125',src:'jma_wanlc'},
+    {code:'139',label:'FL390',src:'jma_wanlf'},
+    {code:'137',label:'FL370',src:'jma_wanlf'},
+    {code:'135',label:'FL350',src:'jma_wanlf'},
+    {code:'133',label:'FL330',src:'jma_wanlf'},
+    {code:'131',label:'FL310',src:'jma_wanlf'},
+    {code:'129',label:'FL290',src:'jma_wanlf'},
+    {code:'127',label:'FL270',src:'jma_wanlf'},
+    {code:'125',label:'FL250',src:'jma_wanlf'},
+    {code:'123',label:'FL230',src:'jma_wanlf'},
+    {code:'121',label:'FL210',src:'jma_wanlf'},
+    {code:'119',label:'FL190',src:'jma_wanlf'},
+    {code:'117',label:'FL170',src:'jma_wanlf'},
+    {code:'115',label:'FL150',src:'jma_wanlf'},
+    {code:'111',label:'FL110',src:'jma_wanlf'},
+    {code:'109',label:'FL090',src:'jma_wanlf'},
+    {code:'105',label:'FL050',src:'jma_wanlf'},
   ],
-  jma_wanlf:[
-    {code:'139',label:'高層天気図 FL390'},{code:'137',label:'高層天気図 FL370'},
-    {code:'135',label:'高層天気図 FL350'},{code:'133',label:'高層天気図 FL330'},
-    {code:'131',label:'高層天気図 FL310'},{code:'129',label:'高層天気図 FL290'},
-    {code:'127',label:'高層天気図 FL270'},{code:'125',label:'高層天気図 FL250'},
-    {code:'123',label:'高層天気図 FL230'},{code:'121',label:'高層天気図 FL210'},
-    {code:'119',label:'高層天気図 FL190'},{code:'117',label:'高層天気図 FL170'},
-    {code:'115',label:'高層天気図 FL150'},{code:'111',label:'高層天気図 FL110'},
-    {code:'109',label:'高層天気図 FL090'},{code:'105',label:'高層天気図 FL050'},
+  kisho_joho:[
+    {code:'QYYA86',label:'全国航空気象解説報・飛行場',src:'metair_csa019'},
+    {code:'QYYA82',label:'全国航空気象解説報・国内空域',src:'metair_csa019'},
+    {code:'QACA95',label:'SPAS速報天気図',src:'metair_csa019'},
+    {code:'QACE98',label:'FSAS24アジア太平洋海上悪天24時間予想図',src:'metair_csa019'},
+    {code:'QBMA98',label:'ABJP国内悪天解析図',src:'metair_csa019'},
+    {code:'QBEY10',label:'FBJP国内悪天予想図',src:'metair_csa019'},
+    {code:'QNSA22',label:'TSAS1広域雲画像情報(北半球)',src:'metair_csa019'},
+    {code:'QRAI85',label:'FXJP854',src:'metair_csa019'},
+    {code:'QBSA95',label:'UBCK 狭域悪天実況図・日高',src:'metair_csa019'},
+    {code:'QBCK95',label:'UBSA 狭域悪天実況図・白神',src:'metair_csa019'},
+    {code:'QBRA95',label:'UBTT 狭域悪天実況図・関東',src:'metair_csa019'},
+    {code:'QBQA95',label:'UBGG 狭域悪天実況図・中部',src:'metair_csa019'},
+    {code:'QBFF95',label:'UBBB 狭域悪天実況図・関西',src:'metair_csa019'},
+    {code:'QBUA95',label:'UBFF 狭域悪天実況図・福岡',src:'metair_csa019'},
+    {code:'QBIG95',label:'UBAH 狭域悪天実況図・那覇',src:'metair_csa019'},
+    {code:'QBAH95',label:'UBIG 狭域悪天実況図・先島',src:'metair_csa019'},
+    {code:'FBSN',label:'下層悪天予想図・北海道',src:'metair_fb_akuten'},
+    {code:'FBSP',label:'下層悪天予想図・東北',src:'metair_fb_akuten'},
+    {code:'FBOS',label:'下層悪天予想図・東日本',src:'metair_fb_akuten'},
+    {code:'FBTK',label:'下層悪天予想図・西日本',src:'metair_fb_akuten'},
+    {code:'FBOK',label:'下層悪天予想図・奄美',src:'metair_fb_akuten'},
+    {code:'FBKG',label:'下層悪天予想図・沖縄',src:'metair_fb_akuten'},
   ],
-  metair_csa019:[
-    {code:'QBSA95',label:'UBSA 上空解析図(南北)'},{code:'QBCK95',label:'UBCK 上空解析図(南北)'},
-    {code:'QBRA95',label:'UBGG 上空解析図'},      {code:'QBQA95',label:'UBTT 上空解析図(東西)'},
-    {code:'QBFF95',label:'UBFF 上空解析図(南北)'},{code:'QBUA95',label:'UBBB 上空解析図'},
-    {code:'QBIG95',label:'UBIG 上空解析図'},      {code:'QBAH95',label:'UBAH 上空解析図'},
-    {code:'QYYA86',label:'東南アジア航空気象情報(PDF版)'},
-    {code:'QYYA82',label:'東南アジア航空気象情報(空港天気)'},
-    {code:'QACA95',label:'SPAS 南洋上空天気図'},  {code:'QACE98',label:'FSAS24 24時間予想天気図'},
-    {code:'QBMA98',label:'ABJP 国内航空気象情報'},{code:'QBEY10',label:'FBJP 国内航空予想天気図'},
-    {code:'QNSA22',label:'TSAT 気象衛星赤外天気図'},{code:'QRAI85',label:'FXJP854 広域降水予想天気図'},
-  ],
-  metair_fb_akuten:[
-    {code:'FBSN',label:'下層悪天予想図(北海道)'},{code:'FBSP',label:'下層悪天予想図(南北)'},
-    {code:'FBOS',label:'下層悪天予想図(大阪)'},  {code:'FBTK',label:'下層悪天予想図(東西)'},
-    {code:'FBOK',label:'下層悪天予想図(沖縄)'},  {code:'FBKG',label:'下層悪天予想図(北九州)'},
-  ],
-};
+  jikkyo_joho:[],
+}
 const TYPE_LABELS = {
-  '':'（空き）',
-  jma_wanlc:'JMA 天気図',
-  jma_wanlf:'JMA 高層天気図',
-  metair_csa019:'MetAir CSA019',
-  metair_fb_akuten:'MetAir 悪天予想図',
-};
+  sanjuppun_taiki:'三十分大気解析',
+  kisho_joho:'気象図情報',
+  jikkyo_joho:'実況情報',
+}
 
 // ══ 状態 ═══════════════════════════════════════════════════════════════
 let config = null, origConfig = null, dirty = false, configSha = null;
@@ -875,7 +896,9 @@ function updatePreviewImages(){
     const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
     const cacheUrl=`${cacheBase}/${slot.type}_${slot.code}.png`;
     let urls=[cacheUrl];
-    if(slot.type==='jma_wanlc'||slot.type==='jma_wanlf'){
+    const _entry = (CHART_MASTER[slot.type]||[]).find(e=>e.code===slot.code);
+        const _src = _entry?.src || slot.type;
+        if (_src === 'jma_wanlc' || _src === 'jma_wanlf'){
       const prefix=slot.type==='jma_wanlc'?'WANLC':'WANLF';
       urls=[cacheUrl,...timestamps.map(t=>`${JMA}${prefix}${slot.code}_RJTD_${t}.PNG`)];
     }
