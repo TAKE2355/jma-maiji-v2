@@ -368,30 +368,29 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
 def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
     draw  = ImageDraw.Draw(page)
     lines = label.split("\n")[:2]
-    max_w = box_w - 8          # 左右4pxずつマージン
-    # フォントサイズをピッタリ収まるまで小さくする
-    font_sm = get_font(26)
-    for size in range(26, 9, -1):
+    max_w = box_w - 8
+
+    def _tw(fnt, txt):
+        """テキスト幅をPillowバージョンに関係なく取得"""
+        try:
+            return draw.textlength(txt, font=fnt)
+        except Exception:
+            try:
+                return fnt.getsize(txt)[0]
+            except Exception:
+                return max_w
+
+    # ピッタリ収まる最大フォントサイズを探す
+    fs, font_sm = 26, get_font(26)
+    for size in range(26, 6, -1):
         fnt = get_font(size)
-        if all(draw.textlength(ln, font=fnt) <= max_w for ln in lines if ln):
-            font_sm = fnt
+        if all(_tw(fnt, ln) <= max_w for ln in lines if ln):
+            fs, font_sm = size, fnt
             break
-    line_h = max(int(font_sm.size * 1.2), 14)
+
+    line_h = int(fs * 1.25)
     for i, line in enumerate(lines):
         draw.text((x0+4, y0+i*line_h), line, fill=(0,0,120), font=font_sm)
-    img_y = y0 + LABEL_H
-    img_w = box_w
-    img_h = box_h - LABEL_H
-    if im is not None:
-        ratio = min(img_w/im.width, img_h/im.height)
-        nw, nh = int(im.width*ratio), int(im.height*ratio)
-        page.paste(im.resize((nw,nh), Image.LANCZOS),
-                   (x0+(img_w-nw)//2, img_y+(img_h-nh)//2))
-    else:
-        draw.text((x0+8, img_y+img_h//2-12), "データなし",
-                  fill=(200,200,200), font=font_sm)
-    draw.rectangle([x0, y0, x0+box_w-1, y0+box_h-1], outline=(210,210,210), width=1)
-
 def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
     """1ページ分のPIL Imageを生成する。"""
     cols    = page_cfg.get("cols", 2)
