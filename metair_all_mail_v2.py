@@ -1,64 +1,31 @@
 
 def test_csa024a():
-    """CSA024A画像URLの確認テスト"""
+    """CSA024A画像URLの確認テスト（CSA019と同じMETAIR_HEADERS方式）"""
     print("=== CSA024A テスト開始 ===")
-    s = get_metair_session()
-    if s is None:
-        print("  セッション取得失敗")
-        return
-    print("  セッション取得OK")
-    ajax_url = "https://www3.metair.go.jp/metair/ajax/CSA024A/ajaxUpdate"
+    ajax_url = METAIR_BASE + "/metair/ajax/CSA024A/ajaxUpdate"
     try:
-        resp = s.get(ajax_url, params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+        resp = requests.get(ajax_url, headers=METAIR_HEADERS,
+                            params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
         print(f"  AJAX status={resp.status_code}")
         if resp.status_code == 200:
             data = resp.json()
             ds = data.get("dataSet", [])
+            if isinstance(ds, str):
+                import json as _j2; ds = _j2.loads(ds)
             print(f"  dataSet件数={len(ds)}")
             for item in ds[:3]:
                 print(f"  fname={item.get('fname','?')} date={item.get('date','?')}")
             if ds:
                 fname = ds[0].get("fname","")
-                full_url = ("https://www3.metair.go.jp" + fname) if fname.startswith("/") else fname
+                full_url = (METAIR_BASE + fname) if fname.startswith("/") else fname
                 r2 = requests.get(full_url, headers=METAIR_HEADERS, timeout=10)
-                print(f"  認証なし: {full_url} -> {r2.status_code}")
-                r3 = s.get(full_url, timeout=10)
-                print(f"  認証あり: {full_url} -> {r3.status_code}")
+                print(f"  画像アクセス: {full_url} -> {r2.status_code} ({len(r2.content)}bytes)")
         else:
             print(f"  レスポンス: {resp.text[:300]}")
     except Exception as e:
         print(f"  エラー: {e}")
     print("=== CSA024A テスト終了 ===")
 
-#!/usr/bin/env python3
-"""
-気象情報メール送信 v2 (ページ単位レイアウト対応)
-
-仕組み:
-  - config.json の pages[] にページ単位でレイアウトと天気図スロットを定義
-  - 各ページ: orientation(portrait/landscape), cols, rows, slots[]
-  - slots[] の各要素: {"type": ..., "code": ..., "label": ...} or null
-  - recipients[] に受信者を複数登録 (time_slots スケジュール付き)
-  - PDFは1回生成 → 送信対象の受信者全員に個別送信
-  - workflow_dispatch は全有効受信者に強制送信
-"""
-
-import os, io, json, smtplib, datetime, sys, requests
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
-from email import encoders
-from PIL import Image, ImageDraw, ImageFont
-import img2pdf
-
-# ── 環境変数 ────────────────────────────────────────────────────────────────
-MAIL_FROM    = os.environ["MAIL_FROM"]
-SMTP_HOST    = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT    = int(os.environ.get("SMTP_PORT", "587"))
-SMTP_USER    = os.environ["SMTP_USER"]
-SMTP_PASS    = os.environ["SMTP_PASS"]
-
-# ── config.json 読み込み ──────────────────────────────────────────────────
 def load_config():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
     with open(path, "r", encoding="utf-8") as f:
