@@ -688,36 +688,28 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A画像URLの確認テスト - dataKindCode=ALWIN1 + 詳細出力"""
+    """CSA024A: ページHTMLから画像URLを直接抽出"""
     print("=== CSA024A テスト開始 ===")
-    ajax_url = METAIR_BASE + "/metair/ajax/CSA024A/ajaxUpdate"
-    # パターン1: CSA019方式（did1/did2/lastDate）
-    for params in [
-        {"did1":"CSA024A","did2":"RJAA","lastDate":""},
-        {"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1","lastDate":""},
-        {"did1":"CSA024A","did2":"RJAA","dataKindCode":"ALWIN1","lastDate":""},
-    ]:
-        try:
-            resp = requests.get(ajax_url, headers=METAIR_HEADERS, params=params, timeout=15)
-            print(f"  params={list(params.keys())} -> status={resp.status_code}")
-            if resp.status_code == 200:
-                data = resp.json()
-                ds = data.get("dataSet", [])
-                if isinstance(ds, str):
-                    import json as _j2; ds = _j2.loads(ds)
-                print(f"  dataSet件数={len(ds)}")
-                for item in ds[:3]:
-                    print(f"  fname={item.get('fname','?')} date={item.get('date','?')}")
-                if ds:
-                    fname = ds[0].get("fname","")
-                    full_url = (METAIR_BASE + fname) if fname.startswith("/") else fname
-                    r2 = requests.get(full_url, headers=METAIR_HEADERS, timeout=10)
-                    print(f"  画像アクセス: {full_url} -> {r2.status_code} ({len(r2.content)}bytes)")
-                break
-            else:
-                print(f"  レスポンス先頭: {resp.text[:200]}")
-        except Exception as e:
-            print(f"  エラー: {e}")
+    page_url = METAIR_BASE + "/metair/view/winKobetsu/CSA024A.html"
+    params = {"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}
+    try:
+        resp = requests.get(page_url, headers=METAIR_HEADERS, params=params, timeout=20)
+        print(f"  ページ status={resp.status_code} len={len(resp.text)}")
+        if resp.status_code == 200:
+            # 画像URLパターンを探す
+            import re
+            imgs = re.findall(r'["\']((?:/pict/|https?://)[^"\' <>]+\.(?:png|jpg|gif))["\'\s]', resp.text)
+            print(f"  画像URL候補: {imgs[:10]}")
+            # imgタグのsrcも探す
+            srcs = re.findall(r'<img[^>]+src=["\'"]([^"\'"]+)["\'"]', resp.text)
+            print(f"  imgタグsrc: {srcs[:10]}")
+            # fname パターン
+            fnames = re.findall(r'fname["\'"]\s*:\s*["\'"]([^\'"]+)["\'"]', resp.text)
+            print(f"  fname値: {fnames[:5]}")
+        else:
+            print(f"  エラーレスポンス: {resp.text[:500]}")
+    except Exception as e:
+        import traceback; traceback.print_exc()
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
