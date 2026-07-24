@@ -107,7 +107,7 @@ def get_metair_session():
         print(f"  POST送信: user={METAIR_USER[:4]}*** fields={list(data.keys())}")
         r1 = s.post(METAIR_LOGIN_URL, data=data, timeout=15, allow_redirects=True)
         print(f"  POSTステータス: {r1.status_code} url={r1.url}")
-        print(f"  レスポンス先頭: {r1.text[:300]}")
+        print(f"  レスポンス先頭: {r1.text[:2000]}")
         if "login" not in r1.url.lower():
             print(f"  MetAirログイン成功: {r1.url}")
             _metair_session = s
