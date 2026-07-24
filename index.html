@@ -391,16 +391,17 @@ const CHART_MASTER = {
     {code:'109',label:'FL090'},{code:'105',label:'FL050'},
   ],
   metair_csa019:[
-    {code:'QBSA95',label:'UBCK 狭域悪天実況図・日高'},{code:'QBCK95',label:'UBSA 狭域悪天実況図・白神'},
-    {code:'QBRA95',label:'UBTT 狭域悪天実況図・関東'},      {code:'QBQA95',label:'UBGG 狭域悪天実況図・中部'},
-    {code:'QBFF95',label:'UBBB 狭域悪天実況図・関西'},{code:'QBUA95',label:'UBFF 狭域悪天実況図・福岡'},
-    {code:'QBIG95',label:'UBAH 狭域悪天実況図・那覇'},      {code:'QBAH95',label:'UBIG 狭域悪天実況図・先島'},
     {code:'QYYA86',label:'全国航空気象解説報・飛行場'},
     {code:'QYYA82',label:'全国航空気象解説報・国内空域'},
-    {code:'QACA95',label:'SPAS速報天気図'},  {code:'QACE98',label:'FSAS24・24時間予想図'},
+    {code:'QACA95',label:'SPAS速報天気図'},{code:'QACE98',label:'FSAS24アジア太平洋海上悪天24時間予想図'},
     {code:'QBMA98',label:'ABJP国内悪天解析図'},{code:'QBEY10',label:'FBJP国内悪天予想図'},
     {code:'QNSA22',label:'TSAS1広域雲画像情報(北半球)'},{code:'QRAI85',label:'FXJP854'},
+    {code:'QBSA95',label:'UBCK 狭域悪天実況図・日高'},{code:'QBCK95',label:'UBSA 狭域悪天実況図・白神'},
+    {code:'QBRA95',label:'UBTT 狭域悪天実況図・関東'},{code:'QBQA95',label:'UBGG 狭域悪天実況図・中部'},
+    {code:'QBFF95',label:'UBBB 狭域悪天実況図・関西'},{code:'QBUA95',label:'UBFF 狭域悪天実況図・福岡'},
+    {code:'QBIG95',label:'UBAH 狭域悪天実況図・那覇'},{code:'QBAH95',label:'UBIG 狭域悪天実況図・先島'},
   ],
+  jikkyou:[],
   metair_fb_akuten:[
     {code:'FBSN',label:'下層悪天予想図・北海道'},{code:'FBSP',label:'下層悪天予想図・東北'},
     {code:'FBOS',label:'下層悪天予想図・東日本'},  {code:'FBTK',label:'下層悪天予想図・西日本'},
@@ -409,11 +410,19 @@ const CHART_MASTER = {
 };
 const TYPE_LABELS = {
   '':'（空き）',
-  jma_wanlc:'JMA 天気図',
-  jma_wanlf:'JMA 高層天気図',
-  metair_csa019:'MetAir CSA019',
-  metair_fb_akuten:'MetAir 悪天予想図',
+  jma_wanlc:'三十分大気解析',
+  jma_wanlf:'三十分大気解析',
+  metair_csa019:'気象図情報',
+  metair_fb_akuten:'気象図情報',
+  jikkyou:'実況情報',
 };
+const UPPER_GROUPS = [
+  {id:'sanjuppun',label:'三十分大気解析',keys:['jma_wanlc','jma_wanlf']},
+  {id:'kishozujoho',label:'気象図情報',keys:['metair_csa019','metair_fb_akuten']},
+  {id:'jikkyou',label:'実況情報',keys:['jikkyou']},
+];
+function getUpperGroupForType(type){return UPPER_GROUPS.find(g=>g.keys.includes(type))||null;}
+function getUpperGroupById(id){return UPPER_GROUPS.find(g=>g.id===id)||null;}
 
 // ══ 状態 ═══════════════════════════════════════════════════════════════
 let config = null, origConfig = null, dirty = false, configSha = null;
@@ -949,22 +958,26 @@ function renderSlotAssignList(){
     // セレクト群
     const sels=document.createElement('div');sels.className='slot-selects';
 
-    // 種別セレクト
+    // 種別セレクト（上位グループ）
     const typeEl=document.createElement('select');
     typeEl.style.flex='0 0 auto';typeEl.style.minWidth='130px';
-    Object.entries(TYPE_LABELS).forEach(([v,l])=>{
-      const o=document.createElement('option');o.value=v;o.textContent=l;
-      if((slot?slot.type:'')===v)o.selected=true;
+    const emptyGrpO=document.createElement('option');emptyGrpO.value='';emptyGrpO.textContent='（空き）';
+    if(!slot||!slot.type)emptyGrpO.selected=true;
+    typeEl.appendChild(emptyGrpO);
+    UPPER_GROUPS.forEach(g=>{
+      const o=document.createElement('option');o.value=g.id;o.textContent=g.label;
+      if(slot&&getUpperGroupForType(slot.type)?.id===g.id)o.selected=true;
       typeEl.appendChild(o);
     });
-    typeEl.onchange=()=>{ onSlotTypeChange(i, typeEl.value, codeEl); };
+    typeEl.onchange=()=>{ onSlotGroupChange(i, getUpperGroupById(typeEl.value), codeEl); };
     sels.appendChild(typeEl);
 
     // 天気図セレクト
     const codeEl=document.createElement('select');
     codeEl.style.flex='1';
-    populateCodeSelect(codeEl, slot?slot.type:'', slot?slot.code:'');
-    codeEl.onchange=()=>{ onSlotCodeChange(i, typeEl.value, codeEl.value); };
+    const slotGroupId=slot&&slot.type?(getUpperGroupForType(slot.type)?.id||''):'';
+    populateCodeSelect(codeEl, slotGroupId, slot?slot.type:'', slot?slot.code:'');
+    codeEl.onchange=()=>{ onSlotCodeChange(i, codeEl.value); };
     sels.appendChild(codeEl);
 
     div.appendChild(sels);
@@ -972,41 +985,47 @@ function renderSlotAssignList(){
   }
 }
 
-function populateCodeSelect(el, type, selectedCode){
+function populateCodeSelect(el, groupId, selectedType, selectedCode){
   el.innerHTML='';
   const emptyOpt=document.createElement('option');
   emptyOpt.value='';emptyOpt.textContent='（天気図を選択）';
   el.appendChild(emptyOpt);
-  if(!type||!CHART_MASTER[type])return;
-  CHART_MASTER[type].forEach(({code,label})=>{
-    const o=document.createElement('option');
-    o.value=code;o.textContent=label;
-    if(code===selectedCode)o.selected=true;
-    el.appendChild(o);
+  if(!groupId)return;
+  const grp=getUpperGroupById(groupId);
+  if(!grp)return;
+  grp.keys.forEach(key=>{
+    (CHART_MASTER[key]||[]).forEach(({code,label})=>{
+      const o=document.createElement('option');
+      o.value=key+':::'+code;o.textContent=label;
+      if(key===selectedType&&code===selectedCode)o.selected=true;
+      el.appendChild(o);
+    });
   });
 }
 
-function onSlotTypeChange(i, type, codeEl){
+function onSlotGroupChange(i, grp, codeEl){
   const pg=curPage();if(!pg)return;
-  populateCodeSelect(codeEl, type, '');
-  pg.slots[i]=type?{type,code:'',label:''}:null;
+  populateCodeSelect(codeEl, grp?grp.id:'', '', '');
+  pg.slots[i]=grp?{type:grp.keys[0],code:'',label:''}:null;
   markDirty();drawPreview();
   // バッジ更新
   const badge=document.querySelector(`#slot-item-${i} .slot-assign-num`);
   if(badge)badge.className='slot-assign-num empty';
 }
 
-function onSlotCodeChange(i, type, code){
+function onSlotCodeChange(i, encodedValue){
   const pg=curPage();if(!pg)return;
-  if(!code){pg.slots[i]=null;}
+  if(!encodedValue){pg.slots[i]=null;}
   else{
+    const sep=encodedValue.indexOf(':::');
+    const type=encodedValue.slice(0,sep),code=encodedValue.slice(sep+3);
     const entry=(CHART_MASTER[type]||[]).find(e=>e.code===code);
     pg.slots[i]={type,code,label:entry?entry.label:code};
   }
   markDirty();drawPreview();
   // バッジ更新
   const badge=document.querySelector(`#slot-item-${i} .slot-assign-num`);
-  if(badge)badge.className='slot-assign-num'+(code?'':' empty');
+  if(badge)badge.className='slot-assign-num'+(encodedValue?'':' empty');
 }
 
 // ══════════════════════════════════════════════════════════════════════
