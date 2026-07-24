@@ -16,8 +16,8 @@
   "recipients": [
     {
       "email": "o_d_r_2006@yahoo.co.jp",
-      "name": "10.5 B",
-      "enabled": false,
+      "name": "Yahoo_10.5 B",
+      "enabled": true,
       "time_slots": [
         {
           "start": 5,
