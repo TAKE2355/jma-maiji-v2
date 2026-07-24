@@ -372,6 +372,25 @@
         null,
         null
       ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        {
+          "type": "metair_csa003",
+          "code": "CSA003_TOPH_7",
+          "label": "レーダー合成図頂高度・最新"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
     }
   ]
 }
