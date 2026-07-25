@@ -698,11 +698,16 @@ def test_csa024a():
     login_url = base + "/metair/view/login/index.html"
     rL = sess.get(login_url, timeout=15)
     print("  GET login:", rL.status_code, len(rL.text))
+    # ViewState取得: inputタグ全体をスキャン
     vs = []
-    idx = rL.text.find("javax.faces.ViewState")
-    if idx >= 0:
-        vm = re.search(r'value="([^"]+)"', rL.text[idx:idx+400])
-        if vm: vs = [vm.group(1)]
+    for m in re.finditer(r'<input[^>]+>', rL.text):
+        inp = m.group(0)
+        if "javax.faces.ViewState" in inp:
+            vm = re.search(r'value="([^"]+)"', inp)
+            if not vm: vm = re.search(r"value='([^']+)'", inp)
+            if vm: vs = [vm.group(1)]
+            print("  ViewState input:", inp[:120])
+            break
     print("  ViewState:", ("OK len="+str(len(vs[0]))) if vs else "NG")
     if vs: print("  VS[:40]:", vs[0][:40])
     login_data = {
@@ -715,8 +720,6 @@ def test_csa024a():
     }
     rP = sess.post(login_url, data=login_data, timeout=15, allow_redirects=True)
     print("  POST:", rP.status_code, "url="+str(rP.url), "len="+str(len(rP.text)))
-    resp_head = rP.text[:500].replace("\n"," ").replace("\r","")
-    print("  RESP500:", resp_head)
     is_login = "loginForm" in rP.text
     print("  Login success:", not is_login)
     if not is_login:
