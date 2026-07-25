@@ -194,7 +194,7 @@ body.has-bar main{padding-bottom:78px;}
   <button class="active" onclick="showTab('send',this)">📤 送信</button>
   <button onclick="showTab('recipients',this)">👥 受信者</button>
   <button onclick="showTab('layout',this)">📐 ページ設定</button>
-  <button onclick="showTab('overlay',this)">🔀 重ね合わせ</button>
+  <button onclick="showTab('overlay',this)">🔀 レイヤー</button>
   <button onclick="showTab('settings',this)">⚙️ 設定</button>
 </nav>
 <main id="main">
@@ -306,12 +306,12 @@ body.has-bar main{padding-bottom:78px;}
   </div>
 </div>
 
-<!-- ─── 重ね合わせ ─── -->
+<!-- ─── レイヤー ─── -->
 <div id="tab-overlay" class="tab-panel">
   <div class="card">
-    <div class="card-title">過去エコー画像との重ね合わせ</div>
+    <div class="card-title">レイヤー設定</div>
     <div class="row">
-      <div class="row-label">重ね合わせ有効<div class="row-sub">過去画像を最新画像に重ねる（狭域悪天実況図）</div></div>
+      <div class="row-label">レイヤー有効<div class="row-sub">過去画像を最新画像に重ねる（狭域悪天実況図）</div></div>
       <label class="toggle"><input type="checkbox" id="ov-enabled" checked onchange="updateOvUI();markDirty()"><span class="toggle-slider"></span></label>
     </div>
     <div id="ov-layers-wrap">
@@ -1024,11 +1024,11 @@ function renderSlotAssignList(){
     codeEl.onchange=()=>{ onSlotCodeChange(i, codeEl.value); };
     sels.appendChild(codeEl);
 
-    // 重ね合わせトグル
+    // レイヤートグル
     const ovWrap=document.createElement('div');
     ovWrap.className='ov-slot';
     ovWrap.title='この画像に過去レイヤーを重ねる';
-    ovWrap.appendChild(document.createTextNode('Layer'));
+    ovWrap.appendChild(document.createTextNode('レイヤー'));
     const ovLab=document.createElement('label');
     ovLab.className='toggle sm';
     const ovCb=document.createElement('input');
