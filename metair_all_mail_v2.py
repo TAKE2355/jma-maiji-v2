@@ -691,10 +691,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: 最新表示ボタン→currentFileNameを取得"""
+    """CSA024A: ページJSとボタンのonclick確認"""
     import re, os
-    print("=== CSA024A 最新表示テスト ===")
+    print("=== CSA024A JS調査 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -707,14 +708,6 @@ def test_csa024a():
             if "javax.faces.ViewState" in inp:
                 vm = re.search(r'value="([^"]+)"', inp)
                 if vm: return vm.group(1)
-        return None
-    def get_input_val(html, name):
-        for m in re.finditer(r'<input([^>]+)>', html):
-            inp = m.group(1)
-            nm = re.search(r'name="([^"]+)"', inp)
-            if nm and nm.group(1) == name:
-                vl = re.search(r'value="([^"]*?)"', inp)
-                return vl.group(1) if vl else ""
         return None
     def login():
         rL = sess.get(login_url, timeout=15)
@@ -731,21 +724,24 @@ def test_csa024a():
     if not login(): print("login failed"); return
     page_url = base + "/metair/view/winKobetsu/CSA024A.html"
     rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    vs_page = get_vs(rC.text)
-    ctx_root = get_input_val(rC.text, "contextRoot") or "/home/www/html/"
-    print("  ctx_root:", ctx_root)
-    # 「最新表示」ボタンPOST
-    rLast = sess.post(page_url, data={"Form":"Form","Form:last":"最新表示","contextRoot":ctx_root,"currentFileName":"","contentsType":"IMG","javax.faces.ViewState":vs_page}, timeout=20)
-    print("  last POST:", rLast.status_code, len(rLast.text))
-    fname = get_input_val(rLast.text, "currentFileName")
-    ctx2  = get_input_val(rLast.text, "contextRoot")
-    print("  currentFileName:", fname)
-    print("  contextRoot:", ctx2)
-    if fname:
-        img_url = base + fname
-        print("  img_url:", img_url)
-        ri = sess.get(img_url, timeout=20)
-        print("  img:", ri.status_code, len(ri.content), "type="+ri.headers.get("Content-Type","?"))
+    html = rC.text
+    # Form:lastボタンのHTML確認
+    for m in re.finditer(r'<input[^>]+Form:last[^>]*>', html):
+        safe = m.group(0).replace("<","[").replace(">","]")
+        print("  last_btn:", safe[:200])
+    # onclickを持つ要素を確認
+    for m in re.finditer(r'onclick="([^"]{0,150})"', html):
+        safe = m.group(1).replace("\n"," ")
+        print("  onclick:", safe)
+    # インラインscriptを確認（クエリ除去）
+    for m in re.finditer(r'<script[^>]*>(.*?)</script>', html, re.DOTALL):
+        sc = m.group(1).strip()
+        if sc and "function" in sc:
+            safe = sc.replace("\n"," ")[:200]
+            print("  script:", safe)
+    # 外部JSのsrc確認
+    for m in re.finditer(r'src="([^"]+)"', html):
+        print("  js_src:", m.group(1)[:80])
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
