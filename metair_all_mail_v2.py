@@ -704,11 +704,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: scriptフルパス解決→getDBKey捜索→ajax実行"""
-    import re, os
-    from urllib.parse import urljoin
-    print("=== フルパス解決+getDBKey ===")
+    """CSA024A: dbKey=RJAA,ALWIN1 でajaxUpdate実行→画像DL"""
+    import re, os, json
+    print("=== 正dbKeyでAJAX実行 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -735,25 +735,31 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    page_full = base + "/metair/view/winKobetsu/CSA024A.html"
-    rC = sess.get(page_full, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    html = rC.text
-    srcs = re.findall(r'<script[^>]+src="([^"]+)"', html)
-    found_dbkey = False
-    for s in srcs:
-        full = urljoin(page_full, s)
-        rjs = sess.get(full, timeout=10)
-        has = rjs.status_code==200 and "getDBKey" in rjs.text
-        fname = full.split("/")[-1]
-        print(f"  {fname}: {rjs.status_code} {len(rjs.text)} getDBKey={has}")
-        if has and not found_dbkey:
-            found_dbkey = True
-            idx = rjs.text.find("function getDBKey")
-            if idx < 0: idx = rjs.text.find("getDBKey")
-            body = rjs.text[idx:idx+500]
-            for i, ln in enumerate(body.split(chr(10))[:15]):
-                t = ln.rstrip().replace("<","[").replace(">","]").replace("=","~")
-                if t.strip(): print(f"    G{i}| {t[:150]}")
+    # ページを一度開く（サーバー側の画面初期化のため）
+    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
+    sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+    # 正しいdbKeyでajaxUpdate
+    ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+        params={"did1":"CSA024A","dbKey":"RJAA,ALWIN1","lastDate":""},
+        headers={"X-Requested-With":"XMLHttpRequest","Accept":"application/json, text/javascript"},
+        timeout=20)
+    print(f"  ajax: {ra.status_code} len={len(ra.text)}")
+    if ra.status_code == 200:
+        body = ra.text[:1500].replace("<","[").replace(">","]")
+        print("  body:", body[:800])
+        try:
+            obj = ra.json()
+            keys = list(obj.keys()) if isinstance(obj, dict) else "list"
+            print("  json keys:", keys)
+            ds = obj.get("dataSet") if isinstance(obj, dict) else None
+            if ds:
+                print("  dataSet len:", len(ds))
+                print("  dataSet[0]:", json.dumps(ds[0])[:300] if isinstance(ds,list) else str(ds)[:300])
+        except Exception as e:
+            print("  json parse err:", e)
+    else:
+        err = re.sub(r"<[^>]+>"," ",ra.text)
+        print("  err:", " ".join(err.split())[:150])
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
