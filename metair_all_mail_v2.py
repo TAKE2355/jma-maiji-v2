@@ -688,53 +688,47 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: ログインエラー詳細確認"""
+    """CSA024A: 2段階ログイン→AJAX"""
     import re, os
-    print("=== CSA024A ログイン詳細 ===")
+    print("=== CSA024A 2段階ログイン ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
     sess = requests.Session()
-    sess.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
-    })
+    sess.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"})
     login_url = base + "/metair/view/login/index.html"
+    def get_vs(html):
+        for m in re.finditer(r'<input[^>]+>', html):
+            inp = m.group(0)
+            if "javax.faces.ViewState" in inp:
+                vm = re.search(r'value="([^"]+)"', inp)
+                if vm: return vm.group(1)
+        return None
+    # Step1: GETでViewState取得
     rL = sess.get(login_url, timeout=15)
-    print("  GET:", rL.status_code, len(rL.text))
-    vs = []
-    for m in re.finditer(r'<input[^>]+>', rL.text):
-        inp = m.group(0)
-        if "javax.faces.ViewState" in inp:
-            vm = re.search(r'value="([^"]+)"', inp)
-            if vm: vs = [vm.group(1)]
-            break
-    print("  ViewState:", ("OK len="+str(len(vs[0]))) if vs else "NG")
-    if not vs: return
-    login_data = {
-        "loginForm": "loginForm",
-        "loginForm:username": user,
-        "loginForm:password": pw,
-        "loginForm:doLogin": "ログイン",
-        "loginForm:forceflg": "false",
-        "javax.faces.ViewState": vs[0],
-    }
-    sess.headers["Referer"] = login_url
-    rP = sess.post(login_url, data=login_data, timeout=15, allow_redirects=True)
-    print("  POST:", rP.status_code, "url="+str(rP.url))
-    # エラーメッセージを探す
-    err_matches = re.findall(r'(?:class="[^"]*(?:error|message|warn)[^"]*"|id="[^"]*(?:error|message|warn)[^"]*")[^>]*>([^<]+)', rP.text, re.I)
-    print("  errors:", err_matches[:5])
-    # POSTレスポンスとGETレスポンスの差分（追加されたテキスト）
-    diff_len = len(rP.text) - len(rL.text)
-    print("  diff_len:", diff_len)
-    # メッセージ領域を確認
-    msg_area = re.findall(r'<span[^>]*>([^<]{5,50})</span>', rP.text)
-    print("  spans:", [s for s in msg_area if any(k in s for k in ["エラー","NG","失","invalid","error","ログイン"])][:5])
-    is_login = "loginForm" in rP.text
-    print("  Login success:", not is_login)
-    print("=== 終了 ===")
+    vs1 = get_vs(rL.text)
+    print("  Step1 VS:", ("OK len="+str(len(vs1))) if vs1 else "NG")
+    if not vs1: return
+    # Step2: 1回目ログインPOST
+    rP1 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":vs1}, timeout=15, allow_redirects=True)
+    is_force = "強制ログイン" in rP1.text
+    is_done = "loginForm" not in rP1.text
+    print("  Step2:", rP1.status_code, "force="+str(is_force), "done="+str(is_done))
+    if is_done:
+        print("  直接ログイン成功！")
+    elif is_force:
+        # Step3: 強制ログイン確認ページのViewState取得→強制ログインPOST
+        vs2 = get_vs(rP1.text)
+        print("  Step3 force VS:", ("OK len="+str(len(vs2))) if vs2 else "NG")
+        if vs2:
+            rP2 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":vs2}, timeout=15, allow_redirects=True)
+            is_login2 = "loginForm" not in rP2.text
+            print("  Step3:", rP2.status_code, "url="+str(rP2.url), "success="+str(is_login2))
+            if is_login2:
+                # AJAX呼び出し
+                ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate", params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+                print("  AJAX:", ra.status_code, ra.text[:400])
+    print("=== テスト終了 ===")
 
 if __name__ == "__main__":
     test_csa024a()
