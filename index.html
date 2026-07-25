@@ -123,19 +123,19 @@ input:focus,select:focus{border-color:var(--accent);}
   color:var(--accent);cursor:pointer;line-height:1;}
 
 /* ── 向き選択 ── */
-.orient-btn{padding:9px 18px;font-size:14px;font-family:var(--font);font-weight:600;
+.orient-btn{padding:6px 12px;font-size:13px;font-family:var(--font);font-weight:600;
   border:2px solid var(--border);border-radius:9px;background:var(--bg);
   color:var(--sub);cursor:pointer;transition:all .15s;}
 .orient-btn.sel{border-color:var(--accent);background:#e8f0fe;color:var(--accent);}
 
 /* ── グリッド数ステッパー ── */
-.stepper{display:flex;align-items:center;gap:12px;}
-.stepper-btn{width:36px;height:36px;border-radius:18px;border:2px solid var(--border);
-  background:var(--bg);font-size:20px;font-family:var(--font);cursor:pointer;
+.stepper{display:flex;align-items:center;gap:6px;}
+.stepper-btn{width:28px;height:28px;border-radius:14px;border:2px solid var(--border);
+  background:var(--bg);font-size:16px;font-family:var(--font);cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;
   transition:all .15s;flex-shrink:0;}
 .stepper-btn:active{background:var(--accent);color:white;}
-.stepper-val{font-size:20px;font-weight:700;color:var(--text);min-width:28px;text-align:center;}
+.stepper-val{font-size:16px;font-weight:700;color:var(--text);min-width:20px;text-align:center;}
 
 /* ── スロット割り当てリスト ── */
 .slot-assign-item{
@@ -242,32 +242,26 @@ body.has-bar main{padding-bottom:78px;}
   <div id="page-editor">
     <!-- 向き・グリッド -->
     <div class="card">
-      <div class="card-title">向き・グリッド</div>
-      <div class="row">
-        <div class="row-label">向き</div>
-        <div style="display:flex;gap:10px;">
+      <div class="row" style="flex-wrap:wrap;gap:8px;padding:8px 12px;border-bottom:none;">
+        <span style="font-size:13px;font-weight:600;color:var(--sub);">向き・グリッド</span>
+        <div style="display:flex;gap:5px;align-items:center;">
           <button id="orient-portrait" class="orient-btn sel" onclick="setOrient('portrait')">📄 縦</button>
           <button id="orient-landscape" class="orient-btn" onclick="setOrient('landscape')">📋 横</button>
         </div>
-      </div>
-      <div class="row">
-        <div class="row-label">列数</div>
-        <div class="stepper">
-          <button class="stepper-btn" onclick="adjustGrid('cols',-1)">−</button>
-          <span class="stepper-val" id="cols-val">2</span>
-          <button class="stepper-btn" onclick="adjustGrid('cols',1)">＋</button>
+        <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+          <span style="font-size:12px;color:var(--sub);">列</span>
+          <div class="stepper">
+            <button class="stepper-btn" onclick="adjustGrid('cols',-1)">−</button>
+            <span class="stepper-val" id="cols-val">2</span>
+            <button class="stepper-btn" onclick="adjustGrid('cols',1)">＋</button>
+          </div>
+          <span style="font-size:12px;color:var(--sub);margin-left:6px;">行</span>
+          <div class="stepper">
+            <button class="stepper-btn" onclick="adjustGrid('rows',-1)">−</button>
+            <span class="stepper-val" id="rows-val">4</span>
+            <button class="stepper-btn" onclick="adjustGrid('rows',1)">＋</button>
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="row-label">行数</div>
-        <div class="stepper">
-          <button class="stepper-btn" onclick="adjustGrid('rows',-1)">−</button>
-          <span class="stepper-val" id="rows-val">4</span>
-          <button class="stepper-btn" onclick="adjustGrid('rows',1)">＋</button>
-        </div>
-      </div>
-      <div class="row" style="gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-sm btn-del" onclick="deletePage()">🗑 削除</button>
       </div>
     </div>
 
