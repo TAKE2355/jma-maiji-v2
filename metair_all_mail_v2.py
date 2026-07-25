@@ -695,10 +695,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: CSA024A.js と timeImage.js の関数定義を確認"""
-    import re, os
-    print("=== CSA024A JS関数調査 ===")
+    """CSA024A: セッション認証でAJAXエンドポイントを試す"""
+    import re, os, json
+    print("=== CSA024A AJAX試行 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -725,24 +726,27 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    # JSファイルを直接取得（セッション不要かも）
-    js_files = [
-        base + "/metair/view/winKobetsu/../../js/CSA024A.js",
-        base + "/metair/view/winKobetsu/../../common/timeImage.js",
-        base + "/metair/view/winKobetsu/../../common/CSAcommon.js",
-    ]
-    target_fns = ["doDownload","changeTime","listE","listR","listL","ajaxUpdate","getImageUrl","initTime"]
-    for js_url in js_files:
-        rjs = sess.get(js_url, timeout=15)
-        fname = js_url.split("/")[-1]
-        print(f"  [{fname}] {rjs.status_code} {len(rjs.text)}")
-        if rjs.status_code == 200:
-            for fn in target_fns:
-                idx = rjs.text.find("function " + fn)
-                if idx < 0: idx = rjs.text.find(fn + " =")
-                if idx >= 0:
-                    snip = rjs.text[idx:idx+300].replace(chr(10)," ").replace(chr(13),"")
-                    print(f"    [{fn}]: {snip[:250]}")
+    # 1) BasicAuth (session不使用) でAJAX
+    r1 = requests.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+        auth=(user,pw), params={"dataKindCode":"ALWIN1","editPlace":"RJAA","csid":"CSA024A"}, timeout=15)
+    print(f"  BasicAuth: {r1.status_code} {len(r1.text)}")
+    if r1.status_code==200:
+        try: print("  json:", json.dumps(r1.json())[:200])
+        except: print("  text:", r1.text[:200].replace(chr(10)," "))
+    # 2) セッション認証でAJAX
+    r2 = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+        params={"dataKindCode":"ALWIN1","editPlace":"RJAA","csid":"CSA024A"}, timeout=15)
+    print(f"  Session GET: {r2.status_code} {len(r2.text)}")
+    if r2.status_code==200:
+        try: print("  json:", json.dumps(r2.json())[:300])
+        except: print("  text:", r2.text[:300].replace(chr(10)," "))
+    # 3) セッション POST
+    r3 = sess.post(base+"/metair/ajax/CSA024A/ajaxUpdate",
+        data={"dataKindCode":"ALWIN1","editPlace":"RJAA","csid":"CSA024A"}, timeout=15)
+    print(f"  Session POST: {r3.status_code} {len(r3.text)}")
+    if r3.status_code==200:
+        try: print("  json:", json.dumps(r3.json())[:300])
+        except: print("  text:", r3.text[:300].replace(chr(10)," "))
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
