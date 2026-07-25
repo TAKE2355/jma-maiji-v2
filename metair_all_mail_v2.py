@@ -686,5 +686,42 @@ def main():
     print("\n=== プレビューキャッシュ更新 ===")
     save_preview_cache()
 
+
+def test_csa024a():
+    """CSA024A: ALWIN1をdid1として試行 + common.jsを確認"""
+    import re
+    print("=== CSA024A テスト開始 ===")
+    base = METAIR_BASE
+
+    # common.jsを取得してAJAXパターンを探す
+    for js_path in ["/metair/js/common.js", "/metair/view/winKobetsu/js/common.js"]:
+        rj = requests.get(base + js_path, headers=METAIR_HEADERS, timeout=15)
+        if rj.status_code == 200 and len(rj.text) > 100:
+            print(f"  common.js: {js_path} ({len(rj.text)}bytes)")
+            urls = re.findall(r'["\'](/[^"\'\s]+ajax[^"\'\s]+)["\'"]', rj.text)
+            print(f"  AJAX URLs in common.js: {urls[:10]}")
+            break
+        else:
+            print(f"  common.js {js_path}: {rj.status_code}")
+
+    # did1=ALWIN1 や ajax_url変形を試す
+    tests = [
+        ("/metair/ajax/CSA024A/ajaxUpdate", {"did1":"ALWIN1","did2":"RJAA","lastDate":""}),
+        ("/metair/ajax/CSA024A/ajaxUpdate", {"did1":"CSA024A","did2":"ALWIN1","lastDate":""}),
+        ("/metair/ajax/ALWIN1/ajaxUpdate",  {"did1":"ALWIN1","did2":"RJAA","lastDate":""}),
+        ("/metair/ajax/CSA024A/ajaxUpdate", {"did1":"CSA024A","did2":"RJAA","dataKindCode":"ALWIN1","lastDate":""}),
+    ]
+    for url, params in tests:
+        try:
+            rr = requests.get(base+url, headers=METAIR_HEADERS, params=params, timeout=10)
+            print(f"  {url} {list(params.values())[:3]}: {rr.status_code} len={len(rr.text)}")
+            if rr.status_code==200 and '{' in rr.text[:50]:
+                print(f"    -> JSON: {rr.text[:300]}")
+        except Exception as e:
+            print(f"  エラー: {e}")
+    print("=== CSA024A テスト終了 ===")
+
+
 if __name__ == "__main__":
+    test_csa024a()
     main()
