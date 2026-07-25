@@ -701,69 +701,45 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: getDBKey特定 + 正パラメータでajaxUpdate実行"""
-    import re, os, json
-    print("=== getDBKey+AJAX実行 ===")
+    """CSA024A: BasicAuth単独ajax + getDBKey全JS捜索"""
+    import re, os
+    print("=== BasicAuth単独+getDBKey捜索 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
-    sess = requests.Session()
-    sess.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
-    login_url = base + "/metair/view/login/index.html"
-    def get_vs(html):
-        for m in re.finditer(r'<input[^>]+>', html):
-            inp = m.group(0)
-            if "javax.faces.ViewState" in inp:
-                vm = re.search(r'value="([^"]+)"', inp)
-                if vm: return vm.group(1)
-        return None
-    def login():
-        rL = sess.get(login_url, timeout=15)
-        vs1 = get_vs(rL.text)
-        if not vs1: return False
-        rP1 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":vs1}, timeout=15, allow_redirects=True)
-        if "loginForm" not in rP1.text: return True
-        if "強制ログイン" in rP1.text:
-            vs2 = get_vs(rP1.text)
-            if not vs2: return False
-            rP2 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":vs2}, timeout=15, allow_redirects=True)
-            return "loginForm" not in rP2.text
-        return False
-    if not login(): print("login failed"); return
-    # 1) kobetsuCommon.jsからgetDBKeyを探す
-    for jsf in ["/metair/js/kobetsuCommon.js", "/metair/js/contentsFunc.js", "/metair/js/common.js"]:
-        rjs = sess.get(base + jsf, timeout=15)
-        if rjs.status_code != 200: continue
-        idx = rjs.text.find("function getDBKey")
-        if idx >= 0:
-            body = rjs.text[idx:idx+400]
-            for i, ln in enumerate(body.split(chr(10))[:12]):
+    # 1) getDBKeyを全JSから捜索（認証なしで試す）
+    js_list = ["/metair/js/CSAcommon.js","/metair/common/CSAcommon.js","/metair/js/ajax.js","/metair/js/imageFunc.js","/metair/js/ecl_new.js","/metair/js/kumu.js","/metair/common/timeImage.js"]
+    plain = requests.Session()
+    plain.headers.update({"User-Agent": "Mozilla/5.0"})
+    for jsf in js_list:
+        try:
+            rjs = plain.get(base + jsf, timeout=10)
+        except Exception as e:
+            print(f"  {jsf}: EXC"); continue
+        found = "getDBKey" in rjs.text if rjs.status_code==200 else False
+        print(f"  {jsf}: {rjs.status_code} {len(rjs.text)} getDBKey={found}")
+        if found:
+            idx = rjs.text.find("function getDBKey")
+            if idx < 0: idx = rjs.text.find("getDBKey")
+            body = rjs.text[idx:idx+500]
+            for i, ln in enumerate(body.split(chr(10))[:15]):
                 s = ln.rstrip().replace("<","[").replace(">","]").replace("=","~")
-                if s.strip(): print(f"  K{i}| {s[:140]}")
-            break
-    # 2) ページHTMLからdbKey関連のhidden inputを探す
-    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
-    rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    for m in re.finditer(r'<input[^>]+type="hidden"[^>]*>', rC.text):
-        inp = m.group(0)
-        nm = re.search(r'name="([^"]+)"', inp)
-        vl = re.search(r'value="([^"]*)"', inp)
-        if nm and "ViewState" not in nm.group(1):
-            v = (vl.group(1) if vl else "")[:60].replace("<","[").replace(">","]")
-            print(f"  hidden: {nm.group(1)} ~ {v}")
-    # 3) ajaxUpdateを正パラメータで実行（dbKey候補を試す）
-    for dbkey in ["RJAAALWIN1", "RJAA_ALWIN1", "RJAA-ALWIN1", "ALWIN1RJAA", "RJAA/ALWIN1"]:
-        ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
-            params={"did1":"CSA024A","dbKey":dbkey,"lastDate":""},
-            headers={"X-Requested-With":"XMLHttpRequest","Accept":"application/json"},
-            timeout=15)
-        ok = ra.status_code
-        body = ra.text[:100].replace("<","[").replace(">","]").replace("=","~")
-        print(f"  try dbKey~{dbkey}: {ok} len~{len(ra.text)} head~{body[:80]}")
-        if ok == 200 and ("dataSet" in ra.text or ra.text.strip().startswith("{")):
+                if s.strip(): print(f"    G{i}| {s[:140]}")
+    # 2) BasicAuth単独でajaxUpdate（フォームログインなし）
+    for params in [
+        {"did1":"CSA024A","dbKey":"RJAAALWIN1","lastDate":""},
+        {"did1":"CSA024A","dbKey":"RJAA","lastDate":""},
+        {"did1":"CSA024A","dbKey":"ALWIN1","lastDate":""},
+    ]:
+        ra = requests.get(base+"/metair/ajax/CSA024A/ajaxUpdate", auth=(user,pw),
+            params=params, headers={"X-Requested-With":"XMLHttpRequest"}, timeout=15)
+        body = ra.text[:80].replace("<","[").replace(">","]").replace("=","~")
+        print(f"  BA dbKey~{params[chr(100)+chr(98)+chr(75)+chr(101)+chr(121)]}: {ra.status_code} len~{len(ra.text)} {body[:60]}")
+        if ra.status_code == 200 and "dataSet" in ra.text:
             print("  *** SUCCESS ***")
-            print("  json:", ra.text[:400].replace("<","[").replace(">","]"))
+            print("  json:", ra.text[:500].replace("<","[").replace(">","]"))
             break
     print("=== テスト終了 ===")
 if __name__ == "__main__":
