@@ -688,43 +688,37 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: 500応答解析 + JSFセッション方式試行"""
+    """CSA024A: X-Requested-With + JSESSIONID方式"""
     import re
     print("=== CSA024A テスト開始 ===")
     base = METAIR_BASE
     sess = requests.Session()
     sess.headers.update(METAIR_HEADERS)
 
-    # Step1: ページを取得してViewStateを取得
+    # Step1: ページ取得でJSESSIONIDを取得
     page_url = base + "/metair/view/winKobetsu/CSA024A.html"
     rp = sess.get(page_url, timeout=20)
-    print(f"  page: {rp.status_code} len={len(rp.text)}")
-    vs = re.findall(r'ViewState[^>]*value=["\'"]([^"\'"]+)', rp.text)
-    print(f"  ViewState: {vs[:2]}")
+    print(f"  page: {rp.status_code} len={len(rp.text)} cookies={dict(sess.cookies)}")
 
-    # Step2: 500の本文を詳しく見る
+    # AJAX専用ヘッダー追加
+    ajax_headers = dict(METAIR_HEADERS)
+    ajax_headers["X-Requested-With"] = "XMLHttpRequest"
+    ajax_headers["Accept"] = "application/json, text/javascript, */*; q=0.01"
+    ajax_headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
+    ajax_headers["Referer"] = page_url
+
     ajax_url = base + "/metair/ajax/CSA024A/ajaxUpdate"
-    rg = sess.get(ajax_url, params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
-    print(f"  GET AJAX: {rg.status_code}")
-    # XML内のエラーメッセージを探す
-    err_msgs = re.findall(r'<error-message>([^<]+)</error-message>', rg.text)
-    exc_msgs = re.findall(r'<error-name>([^<]+)</error-name>', rg.text)
-    print(f"  error-message: {err_msgs[:3]}")
-    print(f"  error-name: {exc_msgs[:3]}")
-    # 生のXMLの最初の部分
-    clean = rg.text.replace('\n',' ').replace('\r','')
-    print(f"  XML先頭: {clean[:400]}")
-
-    # Step3: ViewStateがあればAJAXに含めて再試行
-    if vs:
-        rg2 = sess.get(ajax_url, params={
-            "did1":"CSA024A","did2":"RJAA","lastDate":"",
-            "javax.faces.ViewState": vs[0]
-        }, timeout=15)
-        print(f"  GET+ViewState: {rg2.status_code} len={len(rg2.text)}")
-        if rg2.status_code == 200:
-            ds = re.findall(r'fname["\'"]\s*:\s*["\'"]([^\'"]+)', rg2.text)
-            print(f"  fname: {ds[:5]}")
+    # パラメータバリエーション試行
+    for params in [
+        {"did1":"CSA024A","did2":"RJAA","lastDate":""},
+        {"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1","lastDate":""},
+    ]:
+        r1 = sess.get(ajax_url, headers=ajax_headers, params=params, timeout=15)
+        print(f"  GET+XHR {list(params.keys())}: {r1.status_code} len={len(r1.text)}")
+        if r1.status_code == 200:
+            print(f"  本文: {r1.text[:300]}")
+            fnames = re.findall(r'fname[^:]*:\s*["\'"]([^\'"]+)', r1.text)
+            print(f"  fname: {fnames[:5]}")
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
