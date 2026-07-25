@@ -698,10 +698,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: JSF-AJAX応答の全文確認"""
+    """CSA024A: JSのデータ取得先URL特定"""
     import re, os
-    print("=== CSA024A AJAX応答確認 ===")
+    print("=== CSA024A JSデータソース調査 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -728,28 +729,17 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
-    rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    vs = get_vs(rC.text)
-    ajax_headers = {
-        "Faces-Request": "partial/ajax",
-        "X-Requested-With": "XMLHttpRequest",
-    }
-    rA = sess.post(page_url, headers=ajax_headers, data={
-        "Form": "Form",
-        "javax.faces.partial.ajax": "true",
-        "javax.faces.source": "Form:last",
-        "javax.faces.partial.execute": "Form",
-        "javax.faces.partial.render": "Form",
-        "Form:last": "最新表示",
-        "contentsType": "IMG",
-        "javax.faces.ViewState": vs,
-    }, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    print(f"  status: {rA.status_code} len: {len(rA.text)}")
-    # 全文を500文字ずつ、タグの<>を[]に変換して出力
-    body = rA.text.replace("<","[").replace(">","]")
-    for i in range(0, min(len(body), 3500), 500):
-        print(f"  B{i}: {body[i:i+500]}")
+    for jsname in ["/metair/js/CSA024A.js", "/metair/common/timeImage.js", "/metair/view/common/timeImage.js", "/metair/view/js/CSA024A.js"]:
+        rjs = sess.get(base + jsname, timeout=15)
+        print(f"  try {jsname}: {rjs.status_code} {len(rjs.text)}")
+        if rjs.status_code != 200 or "<html" in rjs.text[:100].lower(): continue
+        js = rjs.text
+        # URL/ajax/openを含む行を抽出
+        for ln in js.split(chr(10)):
+            s = ln.strip()
+            if re.search(r'(url|Url|URL|ajax|Ajax|XMLHttp|\.open\(|getJSON|\$\.get|\$\.post|list|List)', s) and len(s) > 5:
+                safe = s.replace("<","[").replace(">","]").replace("=","~")
+                print(f"    {jsname.split(chr(47))[-1]}| {safe[:160]}")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
