@@ -688,50 +688,23 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: login debug"""
-    import re, os
-    print("=== CSA024A テスト開始 ===")
+    """CSA024A: BasicAuth直接AJAX方式（CSA019と同じ方法）"""
+    import os
+    print("=== CSA024A BasicAuth AJAX テスト ===")
     base = METAIR_BASE
-    user = os.environ.get("METAIR_USER","")
-    pw   = os.environ.get("METAIR_PASS","")
-    sess = requests.Session()
-    login_url = base + "/metair/view/login/index.html"
-    rL = sess.get(login_url, timeout=15)
-    print("  GET login:", rL.status_code, len(rL.text))
-    # ViewState取得: inputタグ全体をスキャン
-    vs = []
-    for m in re.finditer(r'<input[^>]+>', rL.text):
-        inp = m.group(0)
-        if "javax.faces.ViewState" in inp:
-            vm = re.search(r'value="([^"]+)"', inp)
-            if not vm: vm = re.search(r"value='([^']+)'", inp)
-            if vm: vs = [vm.group(1)]
-            print("  ViewState input:", inp[:120])
-            break
-    print("  ViewState:", ("OK len="+str(len(vs[0]))) if vs else "NG")
-    if vs: print("  VS[:40]:", vs[0][:40])
-    login_data = {
-        "loginForm": "loginForm",
-        "loginForm:username": user,
-        "loginForm:password": pw,
-        "loginForm:doLogin": "\u30ed\u30b0\u30a4\u30f3",
-        "loginForm:forceflg": "false",
-        "javax.faces.ViewState": vs[0] if vs else "",
-    }
-    rP = sess.post(login_url, data=login_data, timeout=15, allow_redirects=True)
-    print("  POST:", rP.status_code, "url="+str(rP.url), "len="+str(len(rP.text)))
-    is_login = "loginForm" in rP.text
-    print("  Login success:", not is_login)
-    if not is_login:
-        rC = sess.get(base+"/metair/view/winKobetsu/CSA024A.html",
-                      params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-        lp = "loginForm" in rC.text
-        print("  CSA024A:", rC.status_code, len(rC.text), "loginPage="+str(lp))
-        if not lp:
-            ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
-                         params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
-            print("  AJAX:", ra.status_code, ra.text[:300])
-    print("=== CSA024A テスト終了 ===")
+    # CSA019と同じ方法: BasicAuthヘッダーで直接AJAXを叩く
+    ajax_url = base + "/metair/ajax/CSA024A/ajaxUpdate"
+    params = {"did1":"CSA024A","did2":"RJAA","lastDate":""}
+    r = requests.get(ajax_url, headers=METAIR_HEADERS, params=params, timeout=15)
+    print("  status:", r.status_code, "len:", len(r.text))
+    print("  head:", r.text[:500])
+    if r.status_code == 200:
+        try:
+            ds = r.json().get("dataSet")
+            print("  dataSet:", str(ds)[:300])
+        except Exception as e:
+            print("  JSON parse error:", e)
+    print("=== テスト終了 ===")
 
 if __name__ == "__main__":
     test_csa024a()
