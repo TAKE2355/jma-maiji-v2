@@ -703,10 +703,12 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: dbKey出現箇所をHTML+ログイン必須JSから捜索"""
+    """CSA024A: scriptフルパス解決→getDBKey捜索→ajax実行"""
     import re, os
-    print("=== dbKey捜索2 ===")
+    from urllib.parse import urljoin
+    print("=== フルパス解決+getDBKey ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -733,27 +735,25 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    # 1) ページHTMLのdbKey出現箇所
-    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
-    rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+    page_full = base + "/metair/view/winKobetsu/CSA024A.html"
+    rC = sess.get(page_full, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
     html = rC.text
-    for kw in ["dbKey", "did1", "getDBKey", "onload", "init("]:
-        for m in re.finditer(re.escape(kw), html):
-            s = html[max(0,m.start()-60):m.start()+120].replace(chr(10)," ")
-            s = s.replace("<","[").replace(">","]").replace("=","~")
-            print(f"  HTML[{kw}]: {s[:170]}")
-    # 2) ログイン必須JSからgetDBKey捜索
-    for jsf in ["/metair/common/timeImage.js","/metair/common/CSAcommon.js","/metair/js/kobetsuCommon.js","/metair/js/contentsFunc.js","/metair/js/common.js"]:
-        rjs = sess.get(base + jsf, timeout=10)
-        found = rjs.status_code==200 and "getDBKey" in rjs.text
-        print(f"  {jsf}: {rjs.status_code} {len(rjs.text)} getDBKey={found}")
-        if found:
+    srcs = re.findall(r'<script[^>]+src="([^"]+)"', html)
+    found_dbkey = False
+    for s in srcs:
+        full = urljoin(page_full, s)
+        rjs = sess.get(full, timeout=10)
+        has = rjs.status_code==200 and "getDBKey" in rjs.text
+        fname = full.split("/")[-1]
+        print(f"  {fname}: {rjs.status_code} {len(rjs.text)} getDBKey={has}")
+        if has and not found_dbkey:
+            found_dbkey = True
             idx = rjs.text.find("function getDBKey")
             if idx < 0: idx = rjs.text.find("getDBKey")
-            body = rjs.text[idx:idx+400]
-            for i, ln in enumerate(body.split(chr(10))[:12]):
-                s = ln.rstrip().replace("<","[").replace(">","]").replace("=","~")
-                if s.strip(): print(f"    G{i}| {s[:150]}")
+            body = rjs.text[idx:idx+500]
+            for i, ln in enumerate(body.split(chr(10))[:15]):
+                t = ln.rstrip().replace("<","[").replace(">","]").replace("=","~")
+                if t.strip(): print(f"    G{i}| {t[:150]}")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
