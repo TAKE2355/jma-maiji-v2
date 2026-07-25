@@ -688,30 +688,16 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: common.js詳細解析 + 500レスポンス本文確認"""
+    """CSA024A: common.jsのwind行を全部出力"""
     import re
     print("=== CSA024A テスト開始 ===")
-    base = METAIR_BASE
-
-    # common.js取得・詳細解析
-    rj = requests.get(base + "/metair/js/common.js", headers=METAIR_HEADERS, timeout=15)
-    print(f"  common.js: {rj.status_code} {len(rj.text)}bytes")
-    # ajax, pict, wind, CSA, ALWIN含む行を抽出
-    for kw in ['ajax', 'pict', 'wind', 'ALWIN', 'winKobetsu', 'imgUrl', 'fname']:
-        hits = [l.strip() for l in rj.text.split('\n') if kw.lower() in l.lower()]
-        if hits:
-            print(f"  [{kw}]: {hits[:3]}")
-
-    # 500レスポンスのHTML本文確認（エラー詳細）
-    rr = requests.get(base + "/metair/ajax/CSA024A/ajaxUpdate",
-                      headers=METAIR_HEADERS,
-                      params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
-    # HTMLからエラーメッセージや手がかりを探す
-    err = re.findall(r'<h[1-4][^>]*>([^<]+)</h[1-4]>', rr.text)
-    msg = re.findall(r'(?:message|error|エラー)[^<]{0,50}', rr.text, re.I)
-    print(f"  500 HTML見出し: {err[:5]}")
-    print(f"  500 メッセージ系: {msg[:5]}")
-    print(f"  500 HTML先頭100: {rr.text[:100]}")
+    rj=requests.get(METAIR_BASE+"/metair/js/common.js", headers=METAIR_HEADERS, timeout=15)
+    lines=rj.text.split('\n')
+    # wind/pict/ajax/winKo/img関連行を全部出力
+    for kw in ['wind','pict','ajax','winKo','imgSrc','imgUrl','.png','fname']:
+        hits=[l.strip() for l in lines if re.search(kw,l,re.I)]
+        for h in hits[:5]:
+            print(f"  [{kw}]: {h[:200]}")
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
