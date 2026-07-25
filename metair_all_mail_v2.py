@@ -296,6 +296,7 @@ def apply_overlay_layers(base_im, base_ts, url_fn):
         return base_im
     result = base_im
     for ly in OVERLAY_LAYERS:
+        if not ly.get("enabled", True): continue
         try:
             minutes = int(ly.get("minutes", 60))
             alpha   = float(ly.get("alpha", OVERLAY_ALPHA))
@@ -802,6 +803,7 @@ def get_csa024a_image(code, overlay=False):
                 try:
                     base_dt = datetime.datetime.strptime(latest["date"], "%Y%m%d%H%M%S")
                     for ly in OVERLAY_LAYERS:
+                        if not ly.get("enabled", True): continue
                         minutes = int(ly.get("minutes", 60))
                         alpha   = float(ly.get("alpha", OVERLAY_ALPHA))
                         tgt = (base_dt - datetime.timedelta(minutes=minutes)).strftime("%Y%m%d%H%M%S")
