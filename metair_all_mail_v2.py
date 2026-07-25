@@ -693,10 +693,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: インラインscriptからdoDownload/changeTime関数を確認"""
+    """CSA024A: 外部JS全src + 全inlineスクリプトの中身確認"""
     import re, os
-    print("=== CSA024A script調査 ===")
+    print("=== CSA024A 外部JS調査 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -726,21 +727,31 @@ def test_csa024a():
     page_url = base + "/metair/view/winKobetsu/CSA024A.html"
     rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
     html = rC.text
-    # インラインscriptを全て抽出
+    # 全scriptタグのsrc属性
+    all_srcs = re.findall(r'<script[^>]+src="([^"]+)"', html)
+    print(f"  script srcs({len(all_srcs)}):")
+    for s in all_srcs:
+        print("    src:", s[:100])
+    # 外部JSを1つ取得（jquery以外）
+    for s in all_srcs:
+        if "jquery" not in s.lower():
+            js_url = base + s if s.startswith("/") else base + "/metair/view/winKobetsu/" + s
+            rjs = sess.get(js_url, timeout=15)
+            print(f"  JS {s[-30:]}: {rjs.status_code} {len(rjs.text)}")
+            # doDownload/changeTime/listE関数を探す
+            for fn in ["doDownload","changeTime","listE","ajaxUpdate","initPage","onLoad"]:
+                idx = rjs.text.find(fn)
+                if idx >= 0:
+                    print(f"    [{fn}]:", rjs.text[idx:idx+120].replace(chr(10)," "))
+    # inline scriptのdoDownload検索（URLフィルターなし）
     scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
     for i, sc in enumerate(scripts):
         sc = sc.strip()
-        if not sc: continue
-        # doDownloadまたはchangeTimeを含むスクリプト
-        if "doDownload" in sc or "changeTime" in sc or "listE" in sc or "ajax" in sc.lower():
-            print(f"  [script{i}] len={len(sc)}")
-            # 最初の500文字
-            safe = sc[:500].replace("<","[").replace(">","]")
-            print("  "+safe)
-    # selectタグのoptionを確認（timeListの値）
-    for m in re.finditer(r'<select[^>]+name="Form:timeList"[^>]*>(.*?)</select>', html, re.DOTALL):
-        opts = re.findall(r'<option[^>]+value="([^"]*)"[^>]*>([^<]*)</option>', m.group(1))
-        print(f"  timeList options({len(opts)}): {opts[:3]} ... {opts[-3:]}")
+        for fn in ["doDownload","changeTime","listE","ajaxUpdate"]:
+            if fn in sc:
+                idx = sc.find(fn)
+                snip = sc[max(0,idx-50):idx+200].replace(chr(10)," ")
+                print(f"  inline[{i}] {fn}: {snip[:200]}")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
