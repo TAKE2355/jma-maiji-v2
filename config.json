@@ -375,8 +375,8 @@
     },
     {
       "orientation": "landscape",
-      "cols": 4,
-      "rows": 4,
+      "cols": 3,
+      "rows": 5,
       "slots": [
         {
           "type": "metair_csa003",
@@ -448,7 +448,6 @@
           "code": "ROAH_ALWIN1",
           "label": "ALWIN・OKA"
         },
-        null,
         null
       ]
     }
