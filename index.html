@@ -310,10 +310,6 @@ body.has-bar main{padding-bottom:78px;}
 <div id="tab-overlay" class="tab-panel">
   <div class="card">
     <div class="card-title">レイヤー設定</div>
-    <div class="row">
-      <div class="row-label">レイヤー有効<div class="row-sub">ページ設定でレイヤーONにした画像に過去画像を重ねる</div></div>
-      <label class="toggle"><input type="checkbox" id="ov-enabled" checked onchange="updateOvUI();markDirty()"><span class="toggle-slider"></span></label>
-    </div>
     <div id="ov-layers-wrap">
       <div id="ov-layers"></div>
       <div class="row" style="border-bottom:none;">
@@ -518,7 +514,6 @@ function collectFromUI(){
   p.label_h=+document.getElementById('in-labelh').value;
   p.max_dpi=+document.getElementById('sl-maxdpi').value;
   p.max_mail_mb=+document.getElementById('in-maxmb').value;
-  config.overlay.enabled=document.getElementById('ov-enabled').checked;
 }
 function applyToUI(){
   const p=config.pdf;
@@ -529,9 +524,7 @@ setSl('jpeg',p.jpeg_quality,'%');
   document.getElementById('in-labelh').value=p.label_h;
   setSl('maxdpi',p.max_dpi||300,'');
   document.getElementById('in-maxmb').value=p.max_mail_mb||20;
-  document.getElementById('ov-enabled').checked=config.overlay.enabled;
   renderOvLayers();
-  updateOvUI();
   renderRecipients();
   if(document.getElementById('tab-layout').classList.contains('active')){
     renderPageTabs();renderPageEditor();
@@ -554,6 +547,7 @@ function renderOvLayers(){
     div.style.cssText='gap:8px;flex-wrap:wrap;';
     div.innerHTML=
       '<span style="font-size:13px;font-weight:600;color:var(--sub);min-width:70px;">レイヤー'+(i+1)+'</span>'+
+      '<label class="toggle sm"><input type="checkbox" '+(ly.enabled!==false?'checked':'')+' onchange="setOvLayer('+i+',\'enabled\',this.checked)"><span class="toggle-slider"></span></label>'+
       '<label class="cmp-item">過去<input type="number" class="input-sm cmp-num" value="'+(ly.minutes||60)+'" min="5" max="720" step="5" onchange="setOvLayer('+i+',\'minutes\',this.value)">分前</label>'+
       '<label class="cmp-item">濃さ<input type="number" class="input-sm cmp-num" value="'+Math.round((ly.alpha!=null?ly.alpha:0.2)*100)+'" min="5" max="90" step="5" onchange="setOvLayer('+i+',\'alpha\',this.value)">%</label>'+
       '<button class="btn" style="background:none;color:var(--danger);font-size:13px;padding:4px 8px;margin-left:auto;" onclick="delOvLayer('+i+')">削除</button>';
@@ -562,7 +556,7 @@ function renderOvLayers(){
 }
 function setOvLayer(i,k,v){
   const ls=ovLayers();if(!ls[i])return;
-  ls[i][k]=(k==='alpha')?(+v/100):+v;
+  ls[i][k]=(k==='alpha')?(+v/100):(k==='enabled')?!!v:+v;
   markDirty();
 }
 function addOvLayer(){
@@ -576,7 +570,6 @@ function delOvLayer(i){
   if(ls.length<=1){showToast('最低1レイヤー必要です');return;}
   ls.splice(i,1);renderOvLayers();markDirty();
 }
-function updateOvUI(){const e=document.getElementById('ov-enabled').checked;const row=document.getElementById('ov-layers-wrap');row.style.opacity=e?'1':'0.4';row.style.pointerEvents=e?'auto':'none';}
 
 // ══════════════════════════════════════════════════════════════════════
 //  ページ設定
