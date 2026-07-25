@@ -688,29 +688,44 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: ViewState詳細デバッグ"""
+    """CSA024A: フォームログイン→AJAX確認"""
     import re, os
-    print("=== CSA024A ViewStateデバッグ ===")
+    print("=== CSA024A ログインテスト ===")
     base = METAIR_BASE
+    user = os.environ.get("METAIR_USER","")
+    pw   = os.environ.get("METAIR_PASS","")
     sess = requests.Session()
     login_url = base + "/metair/view/login/index.html"
     rL = sess.get(login_url, timeout=15)
-    print("  status:", rL.status_code, "len:", len(rL.text))
-    print("  encoding:", rL.encoding)
-    # ViewState文字列を検索
-    vs_idx = rL.text.find("ViewState")
-    print("  ViewState idx:", vs_idx)
-    if vs_idx >= 0:
-        chunk = rL.text[max(0,vs_idx-50):vs_idx+200]
-        safe = chunk.replace("\n"," ").replace("\r","").replace("<","[").replace(">","]")
-        print("  chunk:", safe[:200])
-    # javax.faces.ViewStateを検索
-    vs_idx2 = rL.text.find("javax.faces.ViewState")
-    print("  javax.faces.ViewState idx:", vs_idx2)
-    # input[^>]+パターンでスキャン
-    inputs_with_vs = [m.group(0)[:80] for m in re.finditer(r'<input[^>]+>', rL.text) if "ViewState" in m.group(0)]
-    print("  inputs_with_VS:", inputs_with_vs)
-    print("=== 終了 ===")
+    print("  GET:", rL.status_code, len(rL.text))
+    vs = []
+    for m in re.finditer(r'<input[^>]+>', rL.text):
+        inp = m.group(0)
+        if "javax.faces.ViewState" in inp:
+            vm = re.search(r'value="([^"]+)"', inp)
+            if vm: vs = [vm.group(1)]
+            break
+    print("  ViewState:", ("OK len="+str(len(vs[0]))) if vs else "NG")
+    if not vs:
+        print("  ViewState取得失敗 - 終了")
+        return
+    login_data = {
+        "loginForm": "loginForm",
+        "loginForm:username": user,
+        "loginForm:password": pw,
+        "loginForm:doLogin": "ログイン",
+        "loginForm:forceflg": "false",
+        "javax.faces.ViewState": vs[0],
+    }
+    rP = sess.post(login_url, data=login_data, timeout=15, allow_redirects=True)
+    print("  POST:", rP.status_code, "url="+str(rP.url), "len="+str(len(rP.text)))
+    is_login = "loginForm" in rP.text
+    print("  Login success:", not is_login)
+    if not is_login:
+        ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+                     params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+        print("  AJAX:", ra.status_code, ra.text[:400])
+    print("=== テスト終了 ===")
 
 if __name__ == "__main__":
     test_csa024a()
