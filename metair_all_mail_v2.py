@@ -688,58 +688,46 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: ログイン詳細デバッグ"""
+    """CSA024A: login debug"""
     import re, os
     print("=== CSA024A テスト開始 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
-    print(f"  user={user} pw_len={len(pw)}")
     sess = requests.Session()
-
     login_url = base + "/metair/view/login/index.html"
     rL = sess.get(login_url, timeout=15)
-    print(f"  GET login: {rL.status_code} {len(rL.text)}bytes")
-
-    # ViewState取得（複数パターン試行）
-    vs = re.findall(r'name=["']javax\.faces\.ViewState["'][^>]*value=["']([^"']+)', rL.text)
-    if not vs:
-        vs = re.findall(r'value=["']([^"']+)["'][^>]*name=["']javax\.faces\.ViewState["']', rL.text)
-    if not vs:
-        # hiddenフィールドからViewStateを探す
-        hidden = re.findall(r'<input[^>]+type=["']hidden["'][^>]*>', rL.text)
-        for h in hidden:
-            if 'ViewState' in h or 'j_id__v' in h:
-                m = re.search(r'value=["']([^"']+)', h)
-                if m: vs = [m.group(1)]
-    print(f"  ViewState: {'取得OK len='+str(len(vs[0])) if vs else '取得失敗'}")
-    if vs: print(f"  VS値: {vs[0][:60]}")
-
-    # フォームPOST
+    print("  GET login:", rL.status_code, len(rL.text))
+    vs = []
+    idx = rL.text.find("javax.faces.ViewState")
+    if idx >= 0:
+        vm = re.search(r'value="([^"]+)"', rL.text[idx:idx+400])
+        if vm: vs = [vm.group(1)]
+    print("  ViewState:", ("OK len="+str(len(vs[0]))) if vs else "NG")
+    if vs: print("  VS[:40]:", vs[0][:40])
     login_data = {
         "loginForm": "loginForm",
         "loginForm:username": user,
         "loginForm:password": pw,
-        "loginForm:doLogin": "ログイン",
+        "loginForm:doLogin": "\u30ed\u30b0\u30a4\u30f3",
         "loginForm:forceflg": "false",
         "javax.faces.ViewState": vs[0] if vs else "",
     }
     rP = sess.post(login_url, data=login_data, timeout=15, allow_redirects=True)
-    print(f"  POST: {rP.status_code} url={rP.url} len={len(rP.text)}")
-
-    # エラーメッセージを抽出
-    errs = re.findall(r'class=["'][^"']*error[^"']*["'][^>]*>([^<]+)', rP.text)
-    msgs = re.findall(r'class=["'][^"']*message[^"']*["'][^>]*>([^<]+)', rP.text)
-    alerts = re.findall(r'<span[^>]*>([^<]*(?:エラー|error|失敗|invalid|incorrect)[^<]*)', rP.text, re.I)
-    print(f"  errors: {[e.strip() for e in errs[:5]]}")
-    print(f"  messages: {[m.strip() for m in msgs[:5]]}")
-    print(f"  alerts: {[a.strip() for a in alerts[:5]]}")
-
-    # レスポンス先頭500文字
-    print(f"  resp_head: {rP.text[:500]}")
-
-    is_login = "/login/" in rP.url or "loginForm" in rP.text
-    print(f"  ログイン成功?: {not is_login}")
+    print("  POST:", rP.status_code, "url="+str(rP.url), "len="+str(len(rP.text)))
+    resp_head = rP.text[:500].replace("\n"," ").replace("\r","")
+    print("  RESP500:", resp_head)
+    is_login = "loginForm" in rP.text
+    print("  Login success:", not is_login)
+    if not is_login:
+        rC = sess.get(base+"/metair/view/winKobetsu/CSA024A.html",
+                      params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+        lp = "loginForm" in rC.text
+        print("  CSA024A:", rC.status_code, len(rC.text), "loginPage="+str(lp))
+        if not lp:
+            ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+                         params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+            print("  AJAX:", ra.status_code, ra.text[:300])
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
