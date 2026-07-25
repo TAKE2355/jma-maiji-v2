@@ -687,15 +687,16 @@ def main():
     save_preview_cache()
 
 
+
 def test_csa024a():
-    """CSA024A: 2段階ログイン→AJAX"""
+    """CSA024A: ページ訪問後AJAX"""
     import re, os
-    print("=== CSA024A 2段階ログイン ===")
+    print("=== CSA024A AJAX調査 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
     sess = requests.Session()
-    sess.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"})
+    sess.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
     login_url = base + "/metair/view/login/index.html"
     def get_vs(html):
         for m in re.finditer(r'<input[^>]+>', html):
@@ -704,32 +705,36 @@ def test_csa024a():
                 vm = re.search(r'value="([^"]+)"', inp)
                 if vm: return vm.group(1)
         return None
-    # Step1: GETでViewState取得
-    rL = sess.get(login_url, timeout=15)
-    vs1 = get_vs(rL.text)
-    print("  Step1 VS:", ("OK len="+str(len(vs1))) if vs1 else "NG")
-    if not vs1: return
-    # Step2: 1回目ログインPOST
-    rP1 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":vs1}, timeout=15, allow_redirects=True)
-    is_force = "強制ログイン" in rP1.text
-    is_done = "loginForm" not in rP1.text
-    print("  Step2:", rP1.status_code, "force="+str(is_force), "done="+str(is_done))
-    if is_done:
-        print("  直接ログイン成功！")
-    elif is_force:
-        # Step3: 強制ログイン確認ページのViewState取得→強制ログインPOST
-        vs2 = get_vs(rP1.text)
-        print("  Step3 force VS:", ("OK len="+str(len(vs2))) if vs2 else "NG")
-        if vs2:
+    def login():
+        rL = sess.get(login_url, timeout=15)
+        vs1 = get_vs(rL.text)
+        if not vs1: return False
+        rP1 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":vs1}, timeout=15, allow_redirects=True)
+        if "loginForm" not in rP1.text: return True
+        if "強制ログイン" in rP1.text:
+            vs2 = get_vs(rP1.text)
+            if not vs2: return False
             rP2 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":vs2}, timeout=15, allow_redirects=True)
-            is_login2 = "loginForm" not in rP2.text
-            print("  Step3:", rP2.status_code, "url="+str(rP2.url), "success="+str(is_login2))
-            if is_login2:
-                # AJAX呼び出し
-                ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate", params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
-                print("  AJAX:", ra.status_code, ra.text[:400])
+            return "loginForm" not in rP2.text
+        return False
+    ok = login()
+    print("  Login:", ok)
+    if not ok: return
+    # CSA024Aページ訪問
+    rC = sess.get(base+"/metair/view/winKobetsu/CSA024A.html", params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+    print("  Page:", rC.status_code, len(rC.text), "login="+str("loginForm" in rC.text))
+    # ページ内のajax文字列確認
+    ai = rC.text.find("ajax")
+    if ai >= 0:
+        ctx = rC.text[ai:ai+300].replace("\n"," ").replace("\r","")
+        print("  ajax ctx:", ctx[:200])
+    # AJAXを呼び出す（異なるパラメータで試行）
+    for did2 in ["RJAA", "RJTT", "ALWIN1", ""]:
+        ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate", params={"did1":"CSA024A","did2":did2,"lastDate":""}, timeout=15)
+        txt = ra.text.replace("\n"," ")[:100]
+        print("  AJAX did2="+did2+":", ra.status_code, txt)
+        if ra.status_code == 200: break
     print("=== テスト終了 ===")
-
 if __name__ == "__main__":
     test_csa024a()
     main()
