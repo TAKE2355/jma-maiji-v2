@@ -64,6 +64,7 @@ input:focus,select:focus{border-color:var(--accent);}
 .cmp-item{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sub);white-space:nowrap;}
 .cmp-num{width:52px;padding:5px 6px;font-size:13px;}
 .cmp-val{font-size:12px;min-width:34px;text-align:left;}
+.ov-slot{display:flex;align-items:center;gap:3px;font-size:12px;color:var(--sub);white-space:nowrap;flex-shrink:0;}
 
 .btn{display:block;width:100%;padding:15px;font-size:17px;font-weight:600;
   font-family:var(--font);border:none;border-radius:var(--radius);cursor:pointer;
@@ -1018,6 +1019,19 @@ function renderSlotAssignList(){
     codeEl.onchange=()=>{ onSlotCodeChange(i, codeEl.value); };
     sels.appendChild(codeEl);
 
+    // 重ね合わせスイッチ
+    const ovLab=document.createElement('label');
+    ovLab.className='ov-slot';
+    ovLab.title='この画像に過去レイヤーを重ねる';
+    const ovCb=document.createElement('input');
+    ovCb.type='checkbox';
+    ovCb.checked=!!(slot&&slot.overlay);
+    ovCb.disabled=!hasChart;
+    ovCb.onchange=()=>{onSlotOverlayChange(i,ovCb.checked);};
+    ovLab.appendChild(ovCb);
+    ovLab.appendChild(document.createTextNode('重ね'));
+    sels.appendChild(ovLab);
+
     div.appendChild(sels);
     container.appendChild(div);
   }
@@ -1051,6 +1065,11 @@ function onSlotGroupChange(i, grp, codeEl){
   if(badge)badge.className='slot-assign-num empty';
 }
 
+function onSlotOverlayChange(i,on){
+  const pg=curPage();if(!pg||!pg.slots[i])return;
+  pg.slots[i].overlay=!!on;
+  markDirty();
+}
 function onSlotCodeChange(i, encodedValue){
   const pg=curPage();if(!pg)return;
   if(!encodedValue){pg.slots[i]=null;}
@@ -1058,12 +1077,13 @@ function onSlotCodeChange(i, encodedValue){
     const sep=encodedValue.indexOf(':::');
     const type=encodedValue.slice(0,sep),code=encodedValue.slice(sep+3);
     const entry=(CHART_MASTER[type]||[]).find(e=>e.code===code);
-    pg.slots[i]={type,code,label:entry?entry.label:code};
+    pg.slots[i]={type,code,label:entry?entry.label:code,overlay:!!(pg.slots[i]&&pg.slots[i].overlay)};
   }
   markDirty();drawPreview();
   // バッジ更新
   const badge=document.querySelector(`#slot-item-${i} .slot-assign-num`);
   if(badge)badge.className='slot-assign-num'+(encodedValue?'':' empty');
+  renderSlotAssignList();
 }
 
 // ══════════════════════════════════════════════════════════════════════
