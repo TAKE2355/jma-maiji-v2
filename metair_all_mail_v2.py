@@ -696,10 +696,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: セッション認証でAJAXエンドポイントを試す"""
+    """CSA024A: JSF部分AJAX + 500エラー内容確認"""
     import re, os, json
-    print("=== CSA024A AJAX試行 ===")
+    print("=== CSA024A JSF-AJAX試行 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -712,6 +713,14 @@ def test_csa024a():
             if "javax.faces.ViewState" in inp:
                 vm = re.search(r'value="([^"]+)"', inp)
                 if vm: return vm.group(1)
+        return None
+    def get_val(html, name):
+        for m in re.finditer(r'<input([^>]+>)', html):
+            inp = m.group(1)
+            nm = re.search(r'name="([^"]+)"', inp)
+            if nm and nm.group(1) == name:
+                vl = re.search(r'value="([^"]*?)"', inp)
+                return vl.group(1) if vl else ""
         return None
     def login():
         rL = sess.get(login_url, timeout=15)
@@ -726,27 +735,49 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    # 1) BasicAuth (session不使用) でAJAX
-    r1 = requests.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
-        auth=(user,pw), params={"dataKindCode":"ALWIN1","editPlace":"RJAA","csid":"CSA024A"}, timeout=15)
-    print(f"  BasicAuth: {r1.status_code} {len(r1.text)}")
-    if r1.status_code==200:
-        try: print("  json:", json.dumps(r1.json())[:200])
-        except: print("  text:", r1.text[:200].replace(chr(10)," "))
-    # 2) セッション認証でAJAX
-    r2 = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
+    rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+    vs = get_vs(rC.text)
+    ctx = get_val(rC.text, "contextRoot") or "/home/www/html/"
+    print(f"  Page: {rC.status_code} vs={vs[:20] if vs else None}")
+    # A) JSF部分AJAX: timeListを更新
+    ajax_headers = {
+        "Faces-Request": "partial/ajax",
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    }
+    rA = sess.post(page_url, headers=ajax_headers, data={
+        "Form": "Form",
+        "javax.faces.partial.ajax": "true",
+        "javax.faces.source": "Form:last",
+        "javax.faces.partial.execute": "Form",
+        "javax.faces.partial.render": "Form",
+        "Form:last": "最新表示",
+        "contextRoot": ctx,
+        "currentFileName": "",
+        "contentsType": "IMG",
+        "javax.faces.ViewState": vs,
+    }, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+    print(f"  JSF AJAX last: {rA.status_code} {len(rA.text)}")
+    # currentFileNameを探す
+    fn = get_val(rA.text, "currentFileName")
+    print(f"  currentFileName: {fn!r}")
+    # img srcを探す
+    imgs = re.findall(r'src="(/[^"]+\.(?:png|gif|jpg|PNG))', rA.text)
+    print(f"  img srcs: {imgs[:3]}")
+    # partial responseを確認
+    if "<partial-response>" in rA.text:
+        print("  partial-response found")
+        updates = re.findall(r'<update[^>]*>(.*?)</update>', rA.text, re.DOTALL)
+        for u in updates[:2]:
+            print(f"  update: {u[:100].replace(chr(10)," ")}")
+    # B) 500エラーの内容確認
+    r500 = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
         params={"dataKindCode":"ALWIN1","editPlace":"RJAA","csid":"CSA024A"}, timeout=15)
-    print(f"  Session GET: {r2.status_code} {len(r2.text)}")
-    if r2.status_code==200:
-        try: print("  json:", json.dumps(r2.json())[:300])
-        except: print("  text:", r2.text[:300].replace(chr(10)," "))
-    # 3) セッション POST
-    r3 = sess.post(base+"/metair/ajax/CSA024A/ajaxUpdate",
-        data={"dataKindCode":"ALWIN1","editPlace":"RJAA","csid":"CSA024A"}, timeout=15)
-    print(f"  Session POST: {r3.status_code} {len(r3.text)}")
-    if r3.status_code==200:
-        try: print("  json:", json.dumps(r3.json())[:300])
-        except: print("  text:", r3.text[:300].replace(chr(10)," "))
+    # エラーから有用なメッセージを探す（タグ除去）
+    err_text = re.sub(r'<[^>]+>', " ", r500.text)
+    err_text = " ".join(err_text.split())[:200]
+    print(f"  500 msg: {err_text}")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
