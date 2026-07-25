@@ -284,53 +284,54 @@ def get_akuten_latest_ts():
     print("  WARN: 悪天TSプローブ失敗")
     return None
 
-def fetch_with_echo_overlay(wmo_code, latest_url, latest_ts):
-    """最新画像に過去レイヤー（overlay.layers: minutes/alpha指定）を順に重ねる"""
-    latest_im = fetch_image(latest_url)
-    if latest_im is None or not OVERLAY_ENABLED: return latest_im
-    dir_path  = CSA019_DIR.get(wmo_code)
-    if not dir_path or not latest_ts: return latest_im
+def apply_overlay_layers(base_im, base_ts, url_fn):
+    """base_im に OVERLAY_LAYERS を重ねる汎用関数。
+    url_fn(dt) は datetime を受け取り候補URLのリストを返す。
+    画像欠落時は5分刻みで最大30分さらに遡る。"""
+    if base_im is None or not OVERLAY_ENABLED or not base_ts: return base_im
     try:
-        fmt = "%Y%m%d%H%M%S" if len(latest_ts)==14 else "%Y%m%d%H%M"
-        base_dt = datetime.datetime.strptime(latest_ts, fmt)
-        result = latest_im
-        for ly in OVERLAY_LAYERS:
-            try:
-                minutes = int(ly.get("minutes", 60))
-                alpha   = float(ly.get("alpha", OVERLAY_ALPHA))
-            except Exception:
-                continue
-            old_im = None
-            for extra in (0, 5, 10, 15, 20, 25, 30):  # 画像欠落時は5分刻みで最大30分さらに遡る
-                dt_old = base_dt - datetime.timedelta(minutes=minutes+extra)
-                for ts_fmt in [dt_old.strftime("%Y%m%d%H%M%S"), dt_old.strftime("%Y%m%d%H%M")]:
-                    url_old = f"{METAIR_BASE}{dir_path}{wmo_code}_RJTD_{ts_fmt}.png"
-                    try:
-                        rr = requests.head(url_old, headers=METAIR_HEADERS, timeout=6)
-                        if rr.status_code == 200:
-                            old_im = fetch_image(url_old)
-                            if old_im:
-                                print(f"  overlay OK [{wmo_code}] -{minutes+extra}min alpha={alpha}")
-                                break
-                    except Exception: pass
-                if old_im: break
-            if old_im:
-                if old_im.size != result.size:
-                    old_im = old_im.resize(result.size, Image.LANCZOS)
-                result = Image.blend(result, old_im, alpha=alpha)
-            else:
-                print(f"  overlay skip [{wmo_code}] -{minutes}min: 画像なし")
-        return result
-    except Exception as e:
-        print(f"  overlay error [{wmo_code}]: {e}")
-        return latest_im
+        fmt = "%Y%m%d%H%M%S" if len(base_ts)==14 else "%Y%m%d%H%M"
+        base_dt = datetime.datetime.strptime(base_ts, fmt)
+    except Exception:
+        return base_im
+    result = base_im
+    for ly in OVERLAY_LAYERS:
+        try:
+            minutes = int(ly.get("minutes", 60))
+            alpha   = float(ly.get("alpha", OVERLAY_ALPHA))
+        except Exception:
+            continue
+        old_im = None
+        tried = set()
+        for extra in (0, 5, 10, 15, 20, 25, 30):
+            dt_old = base_dt - datetime.timedelta(minutes=minutes+extra)
+            for url in url_fn(dt_old):
+                if url in tried: continue
+                tried.add(url)
+                try:
+                    rr = requests.head(url, headers=METAIR_HEADERS, timeout=6)
+                    if rr.status_code == 200:
+                        old_im = fetch_image(url)
+                        if old_im:
+                            print(f"  overlay OK -{minutes+extra}min alpha={alpha}")
+                            break
+                except Exception: pass
+            if old_im: break
+        if old_im:
+            if old_im.size != result.size:
+                old_im = old_im.resize(result.size, Image.LANCZOS)
+            result = Image.blend(result, old_im, alpha=alpha)
+        else:
+            print(f"  overlay skip -{minutes}min: 画像なし")
+    return result
 def fetch_slot_image(slot, jma_ts, akuten_ts):
-    """スロット定義1つ分の画像と表示ラベルを返す。"""
+    """スロット定義1つ分の画像と表示ラベルを返す。slot.overlay=true なら過去レイヤーを重ねる。"""
     if slot is None:
         return None, ""
     chart_type = slot.get("type", "")
     code       = slot.get("code", "")
     label      = slot.get("label", code)
+    want_ov    = bool(slot.get("overlay"))
 
     if chart_type in ("jma_wanlc", "jma_wanlf"):
         if not jma_ts:
@@ -338,6 +339,13 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         prefix = "WANLC" if chart_type == "jma_wanlc" else "WANLF"
         url    = f"{JMA_BASE}{prefix}{code}_RJTD_{jma_ts}.PNG"
         im     = fetch_image(url)
+        if want_ov and im is not None:
+            def _urls(dt):
+                dt = dt.replace(minute=(dt.minute//30)*30)  # 30分グリッドに丸め
+                b = dt.strftime("%Y%m%d%H%M")
+                return [f"{JMA_BASE}{prefix}{code}_RJTD_{b}00.PNG",
+                        f"{JMA_BASE}{prefix}{code}_RJTD_{b}.PNG"]
+            im = apply_overlay_layers(im, jma_ts, _urls)
         return im, f"{label}\n{ts_to_label(jma_ts)}"
 
     elif chart_type == "metair_csa019":
@@ -355,8 +363,13 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         else:
             url, ts = get_csa019_latest(code)
             if url:
-                im = fetch_with_echo_overlay(code, url, ts) if code in OVERLAY_CODES \
-                     else fetch_image(url)
+                im = fetch_image(url)
+                dir_path = CSA019_DIR.get(code)
+                if want_ov and im is not None and dir_path and ts:
+                    def _urls(dt):
+                        return [f"{METAIR_BASE}{dir_path}{code}_RJTD_{dt.strftime('%Y%m%d%H%M%S')}.png",
+                                f"{METAIR_BASE}{dir_path}{code}_RJTD_{dt.strftime('%Y%m%d%H%M')}.png"]
+                    im = apply_overlay_layers(im, ts, _urls)
                 return im, f"{label}\n{ts_to_label(ts) if ts else '取得失敗'}"
             return None, label
 
@@ -365,15 +378,27 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
             return None, label
         url = f"{METAIR_BASE}/pict/akuten/{code}/{code}03_RJTD_{akuten_ts}.png"
         im  = fetch_image(url)
+        if want_ov and im is not None:
+            def _urls(dt):
+                dt = dt.replace(hour=(dt.hour//3)*3, minute=0)  # 3時間グリッドに丸め
+                b = dt.strftime("%Y%m%d%H%M")
+                return [f"{METAIR_BASE}/pict/akuten/{code}/{code}03_RJTD_{b}00.png",
+                        f"{METAIR_BASE}/pict/akuten/{code}/{code}03_RJTD_{b}.png"]
+            im = apply_overlay_layers(im, akuten_ts, _urls)
         return im, f"{label}\n{ts_to_label(akuten_ts)} FT+03h"
 
     elif chart_type == "metair_csa003":
         im, date_str = get_csa003_image(code)
+        if want_ov and im is not None and date_str:
+            def _urls(dt):
+                dt = dt.replace(minute=(dt.minute//5)*5)  # 5分グリッドに丸め
+                return [f"https://www3.metair.go.jp/pict/radar/rectp99/RECTP99_RJTD_{dt.strftime('%Y%m%d%H%M')}00.png"]
+            im = apply_overlay_layers(im, date_str, _urls)
         lbl = f"{label}\n{date_str}" if date_str else label
         return im, lbl
 
     elif chart_type == "metair_csa024a":
-        im, ts = get_csa024a_image(code)
+        im, ts = get_csa024a_image(code, overlay=want_ov)
         lbl = f"{label}\n{ts_to_label(ts)}" if ts else label
         return im, lbl
 
@@ -723,7 +748,7 @@ def main():
 
 
 
-def get_csa024a_image(code):
+def get_csa024a_image(code, overlay=False):
     """CSA024A ウィンドプロファイラ(ALWIN)最新画像取得
     フォームログイン + ajaxUpdate(dbKey="PLACE,KIND") 方式
     code形式: PLACE_KIND (例: RJAA_ALWIN1)"""
@@ -773,6 +798,26 @@ def get_csa024a_image(code):
         if ri.status_code == 200 and "image" in ri.headers.get("Content-Type",""):
             im = Image.open(io.BytesIO(ri.content)).convert("RGB")
             print(f"  CSA024A取得成功: {code} ts={latest.get('date')}")
+            if overlay and OVERLAY_ENABLED:
+                try:
+                    base_dt = datetime.datetime.strptime(latest["date"], "%Y%m%d%H%M%S")
+                    for ly in OVERLAY_LAYERS:
+                        minutes = int(ly.get("minutes", 60))
+                        alpha   = float(ly.get("alpha", OVERLAY_ALPHA))
+                        tgt = (base_dt - datetime.timedelta(minutes=minutes)).strftime("%Y%m%d%H%M%S")
+                        olds = [e for e in ds if e.get("date","") <= tgt]
+                        if not olds:
+                            print(f"  CSA024A overlay skip -{minutes}min"); continue
+                        ent = max(olds, key=lambda x: x.get("date",""))
+                        ro = sess.get(METAIR_BASE + ent["fname"], timeout=30)
+                        if ro.status_code == 200 and "image" in ro.headers.get("Content-Type",""):
+                            oim = Image.open(io.BytesIO(ro.content)).convert("RGB")
+                            if oim.size != im.size:
+                                oim = oim.resize(im.size, Image.LANCZOS)
+                            im = Image.blend(im, oim, alpha=alpha)
+                            print(f"  CSA024A overlay OK ts={ent.get('date')} alpha={alpha}")
+                except Exception as e:
+                    print(f"  CSA024A overlayエラー: {e}")
             return im, latest.get("date")
         print(f"  CSA024A: 画像DL失敗 status={ri.status_code}")
     except Exception as e:
