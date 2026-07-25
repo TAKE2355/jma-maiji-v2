@@ -397,8 +397,8 @@
     },
     {
       "orientation": "landscape",
-      "cols": 3,
-      "rows": 5,
+      "cols": 2,
+      "rows": 2,
       "slots": [
         {
           "type": "metair_csa003",
@@ -407,55 +407,17 @@
         },
         {
           "type": "metair_csa003",
-          "code": "CSA003_TOPH_7_30",
-          "label": "レーダー頂高度・0.5h前"
+          "code": "CSA003_TOPH_7_180",
+          "label": "レーダー頂高度・3.0h前",
+          "overlay": false
         },
         {
           "type": "metair_csa003",
-          "code": "CSA003_TOPH_7_60",
-          "label": "レーダー頂高度・1.0前"
+          "code": "CSA003_TOPH_7",
+          "label": "レーダー頂高度・最新",
+          "overlay": true
         },
-        {
-          "type": "metair_csa003",
-          "code": "CSA003_TOPH_7_90",
-          "label": "レーダー頂高度・1.5h前"
-        },
-        {
-          "type": "metair_csa003",
-          "code": "CSA003_TOPH_7_120",
-          "label": "レーダー頂高度・2.0h前"
-        },
-        {
-          "type": "metair_csa003",
-          "code": "CSA003_TOPH_7_150",
-          "label": "レーダー頂高度・2.5h前"
-        },
-        {
-          "type": "metair_csa024a",
-          "code": "RJAA_ALWIN1",
-          "label": "ALWIN・NRT"
-        },
-        {
-          "type": "jikkyou",
-          "code": "",
-          "label": ""
-        },
-        null,
-        {
-          "type": "metair_csa024a",
-          "code": "RJGG_ALWIN1",
-          "label": "ALWIN・NGO"
-        },
-        {
-          "type": "metair_csa024a",
-          "code": "RJBB_ALWIN1",
-          "label": "ALWIN・KIX"
-        },
-        {
-          "type": "metair_csa024a",
-          "code": "RJFF_ALWIN1",
-          "label": "ALWIN・FUK"
-        }
+        null
       ]
     }
   ]
