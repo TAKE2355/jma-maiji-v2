@@ -700,10 +700,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: updateAjax関数全文と呼び出し元を確認"""
-    import re, os
-    print("=== updateAjax全文調査 ===")
+    """CSA024A: getDBKey特定 + 正パラメータでajaxUpdate実行"""
+    import re, os, json
+    print("=== getDBKey+AJAX実行 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -730,18 +731,40 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    rjs = sess.get(base + "/metair/js/CSA024A.js", timeout=15)
-    js = rjs.text
-    # updateAjax関数の全文を出力
-    idx = js.find("function updateAjax")
-    if idx >= 0:
-        body = js[idx:idx+1500]
-        for i, ln in enumerate(body.split(chr(10))):
-            s = ln.rstrip().replace("<","[").replace(">","]").replace("=","~")
-            if s.strip(): print(f"  U{i}| {s[:150]}")
-    # updateAjaxの呼び出し元
-    for m in re.finditer(r'updateAjax\s*\(([^)]*)\)', js):
-        print(f"  call: updateAjax({m.group(1)[:80]})")
+    # 1) kobetsuCommon.jsからgetDBKeyを探す
+    for jsf in ["/metair/js/kobetsuCommon.js", "/metair/js/contentsFunc.js", "/metair/js/common.js"]:
+        rjs = sess.get(base + jsf, timeout=15)
+        if rjs.status_code != 200: continue
+        idx = rjs.text.find("function getDBKey")
+        if idx >= 0:
+            body = rjs.text[idx:idx+400]
+            for i, ln in enumerate(body.split(chr(10))[:12]):
+                s = ln.rstrip().replace("<","[").replace(">","]").replace("=","~")
+                if s.strip(): print(f"  K{i}| {s[:140]}")
+            break
+    # 2) ページHTMLからdbKey関連のhidden inputを探す
+    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
+    rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+    for m in re.finditer(r'<input[^>]+type="hidden"[^>]*>', rC.text):
+        inp = m.group(0)
+        nm = re.search(r'name="([^"]+)"', inp)
+        vl = re.search(r'value="([^"]*)"', inp)
+        if nm and "ViewState" not in nm.group(1):
+            v = (vl.group(1) if vl else "")[:60].replace("<","[").replace(">","]")
+            print(f"  hidden: {nm.group(1)} ~ {v}")
+    # 3) ajaxUpdateを正パラメータで実行（dbKey候補を試す）
+    for dbkey in ["RJAAALWIN1", "RJAA_ALWIN1", "RJAA-ALWIN1", "ALWIN1RJAA", "RJAA/ALWIN1"]:
+        ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+            params={"did1":"CSA024A","dbKey":dbkey,"lastDate":""},
+            headers={"X-Requested-With":"XMLHttpRequest","Accept":"application/json"},
+            timeout=15)
+        ok = ra.status_code
+        body = ra.text[:100].replace("<","[").replace(">","]").replace("=","~")
+        print(f"  try dbKey~{dbkey}: {ok} len~{len(ra.text)} head~{body[:80]}")
+        if ok == 200 and ("dataSet" in ra.text or ra.text.strip().startswith("{")):
+            print("  *** SUCCESS ***")
+            print("  json:", ra.text[:400].replace("<","[").replace(">","]"))
+            break
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
