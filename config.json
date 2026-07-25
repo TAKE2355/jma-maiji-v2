@@ -19,7 +19,8 @@
       },
       {
         "minutes": 120,
-        "alpha": 0.1
+        "alpha": 0.1,
+        "enabled": false
       },
       {
         "minutes": 180,
