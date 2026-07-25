@@ -360,6 +360,11 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         lbl = f"{label}\n{date_str}" if date_str else label
         return im, lbl
 
+    elif chart_type == "metair_csa024a":
+        im, ts = get_csa024a_image(code)
+        lbl = f"{label}\n{ts_to_label(ts)}" if ts else label
+        return im, lbl
+
     return None, label
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -706,56 +711,61 @@ def main():
 
 
 
-def test_csa024a():
-    """CSA024A: 最新画像の実ダウンロード確認"""
-    import re, os
-    print("=== 画像DL確認 ===")
-    base = METAIR_BASE
-    user = os.environ.get("METAIR_USER","")
-    pw   = os.environ.get("METAIR_PASS","")
+def get_csa024a_image(code):
+    """CSA024A ウィンドプロファイラ(ALWIN)最新画像取得
+    フォームログイン + ajaxUpdate(dbKey="PLACE,KIND") 方式
+    code形式: PLACE_KIND (例: RJAA_ALWIN1)"""
+    import re as _re, os as _os
+    try:
+        place, kind = code.split("_", 1)
+    except ValueError:
+        print(f"  CSA024A: code形式不正 {code}")
+        return None, None
+    user = _os.environ.get("METAIR_USER", "")
+    pw   = _os.environ.get("METAIR_PASS", "")
     sess = requests.Session()
     sess.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
-    login_url = base + "/metair/view/login/index.html"
-    def get_vs(html):
-        for m in re.finditer(r'<input[^>]+>', html):
+    login_url = METAIR_BASE + "/metair/view/login/index.html"
+    def _vs(html):
+        for m in _re.finditer(r'<input[^>]+>', html):
             inp = m.group(0)
             if "javax.faces.ViewState" in inp:
-                vm = re.search(r'value="([^"]+)"', inp)
+                vm = _re.search(r'value="([^"]+)"', inp)
                 if vm: return vm.group(1)
         return None
-    def login():
+    try:
         rL = sess.get(login_url, timeout=15)
-        vs1 = get_vs(rL.text)
-        if not vs1: return False
-        rP1 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":vs1}, timeout=15, allow_redirects=True)
-        if "loginForm" not in rP1.text: return True
-        if "強制ログイン" in rP1.text:
-            vs2 = get_vs(rP1.text)
-            if not vs2: return False
-            rP2 = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":vs2}, timeout=15, allow_redirects=True)
-            return "loginForm" not in rP2.text
-        return False
-    if not login(): print("login failed"); return
-    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
-    sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
-        params={"did1":"CSA024A","dbKey":"RJAA,ALWIN1","lastDate":""},
-        headers={"X-Requested-With":"XMLHttpRequest"}, timeout=20)
-    obj = ra.json()
-    ds = obj["dataSet"]
-    latest = max(ds, key=lambda x: x["date"])
-    print(f"  latest: {latest[chr(100)+chr(97)+chr(116)+chr(101)]} {latest[chr(102)+chr(110)+chr(97)+chr(109)+chr(101)]}")
-    fname = latest["fname"]
-    # URL候補を試す
-    for prefix in ["/metair", ""]:
-        img_url = base + prefix + fname
-        ri = sess.get(img_url, timeout=20)
-        ct = ri.headers.get("Content-Type","?")
-        print(f"  {prefix or chr(47)}: {ri.status_code} {len(ri.content)}bytes type={ct}")
-        if ri.status_code==200 and "image" in ct:
-            print(f"  *** ダウンロード成功: {len(ri.content)} bytes PNG ***")
-            break
-    print("=== テスト終了 ===")
+        vs1 = _vs(rL.text)
+        if not vs1:
+            print("  CSA024A: ViewState取得失敗"); return None, None
+        rP = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":vs1}, timeout=15, allow_redirects=True)
+        if "loginForm" in rP.text:
+            if "強制ログイン" not in rP.text:
+                print("  CSA024A: ログイン失敗"); return None, None
+            vs2 = _vs(rP.text)
+            if not vs2:
+                print("  CSA024A: ViewState2取得失敗"); return None, None
+            rP = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":vs2}, timeout=15, allow_redirects=True)
+            if "loginForm" in rP.text:
+                print("  CSA024A: 強制ログイン失敗"); return None, None
+        page_url = METAIR_BASE + "/metair/view/winKobetsu/CSA024A.html"
+        sess.get(page_url, params={"csid":"CSA024A","editPlace":place,"dataKindCode":kind}, timeout=20)
+        ra = sess.get(METAIR_BASE + "/metair/ajax/CSA024A/ajaxUpdate",
+            params={"did1":"CSA024A","dbKey":place+","+kind,"lastDate":""},
+            headers={"X-Requested-With":"XMLHttpRequest"}, timeout=20)
+        ds = (ra.json() or {}).get("dataSet") or []
+        if not ds:
+            print("  CSA024A: dataSet空"); return None, None
+        latest = max(ds, key=lambda x: x.get("date",""))
+        ri = sess.get(METAIR_BASE + latest["fname"], timeout=30)
+        if ri.status_code == 200 and "image" in ri.headers.get("Content-Type",""):
+            im = Image.open(io.BytesIO(ri.content)).convert("RGB")
+            print(f"  CSA024A取得成功: {code} ts={latest.get('date')}")
+            return im, latest.get("date")
+        print(f"  CSA024A: 画像DL失敗 status={ri.status_code}")
+    except Exception as e:
+        print(f"  CSA024Aエラー: {e}")
+    return None, None
+
 if __name__ == "__main__":
-    test_csa024a()
     main()
