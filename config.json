@@ -15,7 +15,8 @@
     "layers": [
       {
         "minutes": 60,
-        "alpha": 0.25
+        "alpha": 0.25,
+        "enabled": false
       },
       {
         "minutes": 120,
@@ -24,7 +25,8 @@
       },
       {
         "minutes": 180,
-        "alpha": 0.05
+        "alpha": 0.05,
+        "enabled": true
       }
     ]
   },
