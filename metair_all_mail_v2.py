@@ -301,7 +301,7 @@ def fetch_with_echo_overlay(wmo_code, latest_url, latest_ts):
             except Exception:
                 continue
             old_im = None
-            for extra in (0, 5, 10, 15, 20):  # 画像欠落時は5分刻みで最大20分さらに遡る
+            for extra in (0, 5, 10, 15, 20, 25, 30):  # 画像欠落時は5分刻みで最大30分さらに遡る
                 dt_old = base_dt - datetime.timedelta(minutes=minutes+extra)
                 for ts_fmt in [dt_old.strftime("%Y%m%d%H%M%S"), dt_old.strftime("%Y%m%d%H%M")]:
                     url_old = f"{METAIR_BASE}{dir_path}{wmo_code}_RJTD_{ts_fmt}.png"
