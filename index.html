@@ -64,7 +64,12 @@ input:focus,select:focus{border-color:var(--accent);}
 .cmp-item{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sub);white-space:nowrap;}
 .cmp-num{width:52px;padding:5px 6px;font-size:13px;}
 .cmp-val{font-size:12px;min-width:34px;text-align:left;}
-.ov-slot{display:flex;align-items:center;gap:3px;font-size:12px;color:var(--sub);white-space:nowrap;flex-shrink:0;}
+.ov-slot{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sub);white-space:nowrap;flex-shrink:0;}
+.toggle.sm{width:36px;height:22px;}
+.toggle.sm .toggle-slider{border-radius:11px;}
+.toggle.sm .toggle-slider::before{width:18px;height:18px;left:2px;top:2px;}
+.toggle.sm input:checked+.toggle-slider::before{transform:translateX(14px);}
+.toggle input:disabled+.toggle-slider{opacity:.35;cursor:default;}
 
 .btn{display:block;width:100%;padding:15px;font-size:17px;font-weight:600;
   font-family:var(--font);border:none;border-radius:var(--radius);cursor:pointer;
@@ -1019,18 +1024,24 @@ function renderSlotAssignList(){
     codeEl.onchange=()=>{ onSlotCodeChange(i, codeEl.value); };
     sels.appendChild(codeEl);
 
-    // 重ね合わせスイッチ
+    // 重ね合わせトグル
+    const ovWrap=document.createElement('div');
+    ovWrap.className='ov-slot';
+    ovWrap.title='この画像に過去レイヤーを重ねる';
+    ovWrap.appendChild(document.createTextNode('重ね'));
     const ovLab=document.createElement('label');
-    ovLab.className='ov-slot';
-    ovLab.title='この画像に過去レイヤーを重ねる';
+    ovLab.className='toggle sm';
     const ovCb=document.createElement('input');
     ovCb.type='checkbox';
     ovCb.checked=!!(slot&&slot.overlay);
     ovCb.disabled=!hasChart;
     ovCb.onchange=()=>{onSlotOverlayChange(i,ovCb.checked);};
+    const ovSl=document.createElement('span');
+    ovSl.className='toggle-slider';
     ovLab.appendChild(ovCb);
-    ovLab.appendChild(document.createTextNode('重ね'));
-    sels.appendChild(ovLab);
+    ovLab.appendChild(ovSl);
+    ovWrap.appendChild(ovLab);
+    sels.appendChild(ovWrap);
 
     div.appendChild(sels);
     container.appendChild(div);
