@@ -413,13 +413,41 @@
           "code": "RJAA_ALWIN1",
           "label": "ALWIN・NRT"
         },
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
+        {
+          "type": "metair_csa024a",
+          "code": "RJCC_ALWIN1",
+          "label": "ALWIN・CTS"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJTT_ALWIN1",
+          "label": "ALWIN・HND"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJGG_ALWIN1",
+          "label": "ALWIN・NGO"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJBB_ALWIN1",
+          "label": "ALWIN・KIX"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJFF_ALWIN1",
+          "label": "ALWIN・FUK"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJFK_ALWIN1",
+          "label": "ALWIN・KOJ"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "ROAH_ALWIN1",
+          "label": "ALWIN・OKA"
+        },
         null,
         null
       ]
