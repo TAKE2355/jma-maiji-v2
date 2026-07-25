@@ -688,16 +688,38 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: common.jsのwind行を全部出力"""
-    import re
+    """CSA024A: 直接画像URLパターン探索 + ページHTML詳細解析"""
+    import re, datetime
     print("=== CSA024A テスト開始 ===")
-    rj=requests.get(METAIR_BASE+"/metair/js/common.js", headers=METAIR_HEADERS, timeout=15)
-    lines=rj.text.split('\n')
-    # wind/pict/ajax/winKo/img関連行を全部出力
-    for kw in ['wind','pict','ajax','winKo','imgSrc','imgUrl','.png','fname']:
-        hits=[l.strip() for l in lines if re.search(kw,l,re.I)]
-        for h in hits[:5]:
-            print(f"  [{kw}]: {h[:200]}")
+    now=datetime.datetime.utcnow()
+    # 直近の毎30分刻みタイムスタンプ
+    mins=now.minute
+    rounded=now.replace(minute=(mins//30)*30,second=0,microsecond=0)
+    ts=rounded.strftime('%Y%m%d%H%M00')
+    print(f"  テスト用タイムスタンプ: {ts}")
+
+    # 画像URL候補パターンを試す
+    patterns=[
+        f"/pict/wind/alwin1/RJAA/{ts}.png",
+        f"/pict/wind/alwin/RJAA/{ts}.png",
+        f"/pict/wind/ALWIN1/RJAA_{ts}.png",
+        f"/pict/wind/RJAA/ALWIN1_{ts}.png",
+        f"/pict/alwin/RJAA_{ts}.png",
+        f"/metair/pict/wind/RJAA/{ts}.png",
+    ]
+    for p in patterns:
+        rr=requests.get(METAIR_BASE+p, headers=METAIR_HEADERS, timeout=8)
+        print(f"  {p}: {rr.status_code} {len(rr.content)}bytes ct={rr.headers.get('Content-Type','?')[:30]}")
+
+    # CSA024AのHTMLページ（パラメータなし）を取得してインラインJS解析
+    rp=requests.get(METAIR_BASE+"/metair/view/winKobetsu/CSA024A.html",
+                    headers=METAIR_HEADERS, timeout=20)
+    print(f"  page(no params): {rp.status_code} {len(rp.text)}bytes")
+    # scriptタグ内のインラインJSを抽出
+    scripts=re.findall(r'<script[^>]*>(.*?)</script>',rp.text,re.DOTALL)
+    for sc in scripts:
+        if len(sc.strip())>10:
+            print(f"  inline JS({len(sc)}): {sc.strip()[:200]}")
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
