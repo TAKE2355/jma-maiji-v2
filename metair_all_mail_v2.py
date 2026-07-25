@@ -688,38 +688,38 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: 直接画像URLパターン探索 + ページHTML詳細解析"""
-    import re, datetime
+    """CSA024A: ページHTML全体解析（form/inline JS/hidden input）"""
+    import re
     print("=== CSA024A テスト開始 ===")
-    now=datetime.datetime.utcnow()
-    # 直近の毎30分刻みタイムスタンプ
-    mins=now.minute
-    rounded=now.replace(minute=(mins//30)*30,second=0,microsecond=0)
-    ts=rounded.strftime('%Y%m%d%H%M00')
-    print(f"  テスト用タイムスタンプ: {ts}")
-
-    # 画像URL候補パターンを試す
-    patterns=[
-        f"/pict/wind/alwin1/RJAA/{ts}.png",
-        f"/pict/wind/alwin/RJAA/{ts}.png",
-        f"/pict/wind/ALWIN1/RJAA_{ts}.png",
-        f"/pict/wind/RJAA/ALWIN1_{ts}.png",
-        f"/pict/alwin/RJAA_{ts}.png",
-        f"/metair/pict/wind/RJAA/{ts}.png",
-    ]
-    for p in patterns:
-        rr=requests.get(METAIR_BASE+p, headers=METAIR_HEADERS, timeout=8)
-        print(f"  {p}: {rr.status_code} {len(rr.content)}bytes ct={rr.headers.get('Content-Type','?')[:30]}")
-
-    # CSA024AのHTMLページ（パラメータなし）を取得してインラインJS解析
     rp=requests.get(METAIR_BASE+"/metair/view/winKobetsu/CSA024A.html",
                     headers=METAIR_HEADERS, timeout=20)
-    print(f"  page(no params): {rp.status_code} {len(rp.text)}bytes")
-    # scriptタグ内のインラインJSを抽出
-    scripts=re.findall(r'<script[^>]*>(.*?)</script>',rp.text,re.DOTALL)
-    for sc in scripts:
-        if len(sc.strip())>10:
-            print(f"  inline JS({len(sc)}): {sc.strip()[:200]}")
+    html=rp.text
+    print(f"  page: {rp.status_code} {len(html)}bytes")
+
+    # formタグ解析
+    forms=re.findall(r'<form[^>]*>',html)
+    print(f"  forms: {forms[:3]}")
+
+    # hidden input（ViewState等）
+    hiddens=re.findall(r'<input[^>]+type=["\'"]hidden["\'"][^>]*>',html)
+    for h in hiddens[:5]:
+        print(f"  hidden: {h[:150]}")
+
+    # imgタグ全部
+    imgs=re.findall(r'<img[^>]+>',html)
+    for img in imgs[:5]:
+        print(f"  img: {img[:150]}")
+
+    # CDATAブロック全内容
+    cdatas=re.findall(r'//<!\[CDATA\[(.*?)//\]\]>',html,re.DOTALL)
+    for i,c in enumerate(cdatas):
+        print(f"  CDATA[{i}]({len(c)}): {c.strip()[:300]}")
+
+    # ajaxやfetchやxmlhttprequest含む行
+    for kw in ['ajax','fetch','XMLHttpRequest','imgSrc','.png','fname','imageData','winKobetsu']:
+        hits=[l.strip() for l in html.split('\n') if re.search(kw,l,re.I)]
+        if hits:
+            print(f"  [{kw}]: {hits[0][:200]}")
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
