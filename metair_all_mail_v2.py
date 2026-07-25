@@ -705,10 +705,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: dbKey=RJAA,ALWIN1 でajaxUpdate実行→画像DL"""
-    import re, os, json
-    print("=== 正dbKeyでAJAX実行 ===")
+    """CSA024A: 最新画像の実ダウンロード確認"""
+    import re, os
+    print("=== 画像DL確認 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -735,31 +736,25 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    # ページを一度開く（サーバー側の画面初期化のため）
     page_url = base + "/metair/view/winKobetsu/CSA024A.html"
     sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    # 正しいdbKeyでajaxUpdate
     ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
         params={"did1":"CSA024A","dbKey":"RJAA,ALWIN1","lastDate":""},
-        headers={"X-Requested-With":"XMLHttpRequest","Accept":"application/json, text/javascript"},
-        timeout=20)
-    print(f"  ajax: {ra.status_code} len={len(ra.text)}")
-    if ra.status_code == 200:
-        body = ra.text[:1500].replace("<","[").replace(">","]")
-        print("  body:", body[:800])
-        try:
-            obj = ra.json()
-            keys = list(obj.keys()) if isinstance(obj, dict) else "list"
-            print("  json keys:", keys)
-            ds = obj.get("dataSet") if isinstance(obj, dict) else None
-            if ds:
-                print("  dataSet len:", len(ds))
-                print("  dataSet[0]:", json.dumps(ds[0])[:300] if isinstance(ds,list) else str(ds)[:300])
-        except Exception as e:
-            print("  json parse err:", e)
-    else:
-        err = re.sub(r"<[^>]+>"," ",ra.text)
-        print("  err:", " ".join(err.split())[:150])
+        headers={"X-Requested-With":"XMLHttpRequest"}, timeout=20)
+    obj = ra.json()
+    ds = obj["dataSet"]
+    latest = max(ds, key=lambda x: x["date"])
+    print(f"  latest: {latest[chr(100)+chr(97)+chr(116)+chr(101)]} {latest[chr(102)+chr(110)+chr(97)+chr(109)+chr(101)]}")
+    fname = latest["fname"]
+    # URL候補を試す
+    for prefix in ["/metair", ""]:
+        img_url = base + prefix + fname
+        ri = sess.get(img_url, timeout=20)
+        ct = ri.headers.get("Content-Type","?")
+        print(f"  {prefix or chr(47)}: {ri.status_code} {len(ri.content)}bytes type={ct}")
+        if ri.status_code==200 and "image" in ct:
+            print(f"  *** ダウンロード成功: {len(ri.content)} bytes PNG ***")
+            break
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
