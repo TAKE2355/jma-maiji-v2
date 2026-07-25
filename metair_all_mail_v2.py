@@ -688,48 +688,43 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: JSファイル解析 + 別AJAXパス試行"""
+    """CSA024A: 500応答解析 + JSFセッション方式試行"""
     import re
     print("=== CSA024A テスト開始 ===")
     base = METAIR_BASE
+    sess = requests.Session()
+    sess.headers.update(METAIR_HEADERS)
 
-    # 1. index.jsを取得してAJAX URLパターンを探す
-    for js_path in ["/metair/js/index.js", "/metair/view/winKobetsu/js/index.js"]:
-        try:
-            rj = requests.get(base + js_path, headers=METAIR_HEADERS, timeout=15)
-            if rj.status_code == 200 and len(rj.text) > 100:
-                print(f"  JS取得成功: {js_path} ({len(rj.text)}bytes)")
-                # ajaxUpdate, fname, /pict/ パターンを探す
-                patterns = re.findall(r'["\']((?:[^"\']*ajax[^"\']*|[^"\']*\.png[^"\']*|/pict/[^"\']*)["\'"])', rj.text)
-                print(f"  パターン: {patterns[:10]}")
-                urls = re.findall(r'["\'](/(?:metair|pict)/[^"\'\s]+)["\'"]', rj.text)
-                print(f"  URL候補: {urls[:15]}")
-                break
-            else:
-                print(f"  JS {js_path}: {rj.status_code}")
-        except Exception as e:
-            print(f"  JS取得エラー: {e}")
+    # Step1: ページを取得してViewStateを取得
+    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
+    rp = sess.get(page_url, timeout=20)
+    print(f"  page: {rp.status_code} len={len(rp.text)}")
+    vs = re.findall(r'ViewState[^>]*value=["\'"]([^"\'"]+)', rp.text)
+    print(f"  ViewState: {vs[:2]}")
 
-    # 2. 別AJAXエンドポイントを試す
-    for ajax_path in [
-        "/metair/ajax/CSA024A/ajaxUpdate",
-        "/metair/ajax/winKobetsu/ajaxUpdate",
-        "/metair/ajax/winKobetsu/CSA024A/ajaxUpdate",
-    ]:
-        for method in ['GET', 'POST']:
-            try:
-                params = {"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1","lastDate":""}
-                if method == 'GET':
-                    resp = requests.get(base+ajax_path, headers=METAIR_HEADERS, params=params, timeout=10)
-                else:
-                    resp = requests.post(base+ajax_path, headers=METAIR_HEADERS, data=params, timeout=10)
-                print(f"  {method} {ajax_path}: {resp.status_code} len={len(resp.text)}")
-                if resp.status_code == 200:
-                    print(f"    本文先頭: {resp.text[:300]}")
-                    fnames = re.findall(r'fname["\'"]\s*:\s*["\'"]([^\'"]+)', resp.text)
-                    print(f"    fname: {fnames[:5]}")
-            except Exception as e:
-                print(f"  エラー {method} {ajax_path}: {e}")
+    # Step2: 500の本文を詳しく見る
+    ajax_url = base + "/metair/ajax/CSA024A/ajaxUpdate"
+    rg = sess.get(ajax_url, params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+    print(f"  GET AJAX: {rg.status_code}")
+    # XML内のエラーメッセージを探す
+    err_msgs = re.findall(r'<error-message>([^<]+)</error-message>', rg.text)
+    exc_msgs = re.findall(r'<error-name>([^<]+)</error-name>', rg.text)
+    print(f"  error-message: {err_msgs[:3]}")
+    print(f"  error-name: {exc_msgs[:3]}")
+    # 生のXMLの最初の部分
+    clean = rg.text.replace('\n',' ').replace('\r','')
+    print(f"  XML先頭: {clean[:400]}")
+
+    # Step3: ViewStateがあればAJAXに含めて再試行
+    if vs:
+        rg2 = sess.get(ajax_url, params={
+            "did1":"CSA024A","did2":"RJAA","lastDate":"",
+            "javax.faces.ViewState": vs[0]
+        }, timeout=15)
+        print(f"  GET+ViewState: {rg2.status_code} len={len(rg2.text)}")
+        if rg2.status_code == 200:
+            ds = re.findall(r'fname["\'"]\s*:\s*["\'"]([^\'"]+)', rg2.text)
+            print(f"  fname: {ds[:5]}")
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
