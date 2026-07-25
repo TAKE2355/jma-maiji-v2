@@ -16,6 +16,14 @@
       {
         "minutes": 60,
         "alpha": 0.25
+      },
+      {
+        "minutes": 120,
+        "alpha": 0.1
+      },
+      {
+        "minutes": 180,
+        "alpha": 0.05
       }
     ]
   },
