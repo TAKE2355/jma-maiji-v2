@@ -50,6 +50,7 @@ MAX_MAIL_MB  = float(_pdf.get("max_mail_mb", 20.0))  # メールサイズ上限(
 _ov             = CONFIG["overlay"]
 OVERLAY_ENABLED = _ov.get("enabled", True)
 OVERLAY_ALPHA   = float(_ov.get("alpha", 0.2))
+OVERLAY_LAYERS  = _ov.get("layers") or [{"minutes": 60, "alpha": OVERLAY_ALPHA}]
 OVERLAY_CODES   = {"QBSA95","QBCK95","QBRA95","QBQA95","QBFF95","QBUA95","QBIG95","QBAH95"}
 
 # ── URL定義 ───────────────────────────────────────────────────────────────
@@ -284,34 +285,45 @@ def get_akuten_latest_ts():
     return None
 
 def fetch_with_echo_overlay(wmo_code, latest_url, latest_ts):
+    """最新画像に過去レイヤー（overlay.layers: minutes/alpha指定）を順に重ねる"""
     latest_im = fetch_image(latest_url)
     if latest_im is None or not OVERLAY_ENABLED: return latest_im
     dir_path  = CSA019_DIR.get(wmo_code)
     if not dir_path or not latest_ts: return latest_im
     try:
         fmt = "%Y%m%d%H%M%S" if len(latest_ts)==14 else "%Y%m%d%H%M"
-        dt_old = datetime.datetime.strptime(latest_ts, fmt) - datetime.timedelta(hours=1)
-        for ts_fmt in [dt_old.strftime("%Y%m%d%H%M%S"), dt_old.strftime("%Y%m%d%H%M")]:
-            url_old = f"{METAIR_BASE}{dir_path}{wmo_code}_RJTD_{ts_fmt}.png"
+        base_dt = datetime.datetime.strptime(latest_ts, fmt)
+        result = latest_im
+        for ly in OVERLAY_LAYERS:
             try:
-                rr = requests.head(url_old, headers=METAIR_HEADERS, timeout=6)
-                if rr.status_code == 200:
-                    old_im = fetch_image(url_old)
-                    if old_im:
-                        if old_im.size != latest_im.size:
-                            old_im = old_im.resize(latest_im.size, Image.LANCZOS)
-                        print(f"  overlay OK [{wmo_code}] ts={ts_fmt}")
-                        return Image.blend(latest_im, old_im, alpha=OVERLAY_ALPHA)
-            except Exception: pass
+                minutes = int(ly.get("minutes", 60))
+                alpha   = float(ly.get("alpha", OVERLAY_ALPHA))
+            except Exception:
+                continue
+            old_im = None
+            for extra in (0, 5, 10, 15, 20):  # 画像欠落時は5分刻みで最大20分さらに遡る
+                dt_old = base_dt - datetime.timedelta(minutes=minutes+extra)
+                for ts_fmt in [dt_old.strftime("%Y%m%d%H%M%S"), dt_old.strftime("%Y%m%d%H%M")]:
+                    url_old = f"{METAIR_BASE}{dir_path}{wmo_code}_RJTD_{ts_fmt}.png"
+                    try:
+                        rr = requests.head(url_old, headers=METAIR_HEADERS, timeout=6)
+                        if rr.status_code == 200:
+                            old_im = fetch_image(url_old)
+                            if old_im:
+                                print(f"  overlay OK [{wmo_code}] -{minutes+extra}min alpha={alpha}")
+                                break
+                    except Exception: pass
+                if old_im: break
+            if old_im:
+                if old_im.size != result.size:
+                    old_im = old_im.resize(result.size, Image.LANCZOS)
+                result = Image.blend(result, old_im, alpha=alpha)
+            else:
+                print(f"  overlay skip [{wmo_code}] -{minutes}min: 画像なし")
+        return result
     except Exception as e:
         print(f"  overlay error [{wmo_code}]: {e}")
         return latest_im
-    print(f"  overlay skip [{wmo_code}]: 1æéåã®ç»åãªã")
-    return latest_im
-
-# ─────────────────────────────────────────────────────────────────────────
-#  スロット1枚の画像取得
-# ─────────────────────────────────────────────────────────────────────────
 def fetch_slot_image(slot, jma_ts, akuten_ts):
     """スロット定義1つ分の画像と表示ラベルを返す。"""
     if slot is None:
