@@ -699,10 +699,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: JSのデータ取得先URL特定"""
+    """CSA024A: updateAjax関数全文と呼び出し元を確認"""
     import re, os
-    print("=== CSA024A JSデータソース調査 ===")
+    print("=== updateAjax全文調査 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -729,17 +730,18 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    for jsname in ["/metair/js/CSA024A.js", "/metair/common/timeImage.js", "/metair/view/common/timeImage.js", "/metair/view/js/CSA024A.js"]:
-        rjs = sess.get(base + jsname, timeout=15)
-        print(f"  try {jsname}: {rjs.status_code} {len(rjs.text)}")
-        if rjs.status_code != 200 or "<html" in rjs.text[:100].lower(): continue
-        js = rjs.text
-        # URL/ajax/openを含む行を抽出
-        for ln in js.split(chr(10)):
-            s = ln.strip()
-            if re.search(r'(url|Url|URL|ajax|Ajax|XMLHttp|\.open\(|getJSON|\$\.get|\$\.post|list|List)', s) and len(s) > 5:
-                safe = s.replace("<","[").replace(">","]").replace("=","~")
-                print(f"    {jsname.split(chr(47))[-1]}| {safe[:160]}")
+    rjs = sess.get(base + "/metair/js/CSA024A.js", timeout=15)
+    js = rjs.text
+    # updateAjax関数の全文を出力
+    idx = js.find("function updateAjax")
+    if idx >= 0:
+        body = js[idx:idx+1500]
+        for i, ln in enumerate(body.split(chr(10))):
+            s = ln.rstrip().replace("<","[").replace(">","]").replace("=","~")
+            if s.strip(): print(f"  U{i}| {s[:150]}")
+    # updateAjaxの呼び出し元
+    for m in re.finditer(r'updateAjax\s*\(([^)]*)\)', js):
+        print(f"  call: updateAjax({m.group(1)[:80]})")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
