@@ -34,14 +34,14 @@
         {
           "start": 5,
           "end": 21,
-          "interval_minutes": 15
+          "interval_minutes": 60
         }
       ]
     },
     {
       "email": "odr20062023@gmail.com",
       "name": "Gmail23B",
-      "enabled": true,
+      "enabled": false,
       "time_slots": [
         {
           "start": 5,
