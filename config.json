@@ -1,7 +1,7 @@
 {
   "pdf": {
     "dpi": 600,
-    "page_margin": 55,
+    "page_margin": 20,
     "header_h": 30,
     "cell_gap": 5,
     "label_h": 50,
