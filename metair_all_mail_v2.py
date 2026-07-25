@@ -688,10 +688,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: ページ訪問後AJAX"""
+    """CSA024A: ページHTML調査とPOST AJAXテスト"""
     import re, os
-    print("=== CSA024A AJAX調査 ===")
+    print("=== CSA024A 詳細調査 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -720,20 +721,20 @@ def test_csa024a():
     ok = login()
     print("  Login:", ok)
     if not ok: return
-    # CSA024Aページ訪問
+    # CSA024Aページを取得してHTMLを調査
     rC = sess.get(base+"/metair/view/winKobetsu/CSA024A.html", params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    print("  Page:", rC.status_code, len(rC.text), "login="+str("loginForm" in rC.text))
-    # ページ内のajax文字列確認
-    ai = rC.text.find("ajax")
-    if ai >= 0:
-        ctx = rC.text[ai:ai+300].replace("\n"," ").replace("\r","")
-        print("  ajax ctx:", ctx[:200])
-    # AJAXを呼び出す（異なるパラメータで試行）
-    for did2 in ["RJAA", "RJTT", "ALWIN1", ""]:
-        ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate", params={"did1":"CSA024A","did2":did2,"lastDate":""}, timeout=15)
-        txt = ra.text.replace("\n"," ")[:100]
-        print("  AJAX did2="+did2+":", ra.status_code, txt)
-        if ra.status_code == 200: break
+    print("  Page:", rC.status_code, len(rC.text))
+    # script内容を確認（100文字単位）
+    scripts = re.findall(r'<script[^>]*>(.*?)</script>', rC.text, re.DOTALL)
+    for i, sc in enumerate(scripts):
+        safe = sc.replace("\n"," ").replace("\r","").strip()
+        if safe: print("  script"+str(i)+":", safe[:150])
+    # form情報確認
+    forms = re.findall(r'<form[^>]*>', rC.text)
+    print("  forms:", forms[:3])
+    # CSA024A ViewState
+    vs_page = get_vs(rC.text)
+    print("  Page VS:", ("OK len="+str(len(vs_page))) if vs_page else "NG")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
