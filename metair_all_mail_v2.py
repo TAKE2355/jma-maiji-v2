@@ -688,13 +688,18 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: フォームログイン→AJAX確認"""
+    """CSA024A: ログインエラー詳細確認"""
     import re, os
-    print("=== CSA024A ログインテスト ===")
+    print("=== CSA024A ログイン詳細 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
     sess = requests.Session()
+    sess.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
+    })
     login_url = base + "/metair/view/login/index.html"
     rL = sess.get(login_url, timeout=15)
     print("  GET:", rL.status_code, len(rL.text))
@@ -706,9 +711,7 @@ def test_csa024a():
             if vm: vs = [vm.group(1)]
             break
     print("  ViewState:", ("OK len="+str(len(vs[0]))) if vs else "NG")
-    if not vs:
-        print("  ViewState取得失敗 - 終了")
-        return
+    if not vs: return
     login_data = {
         "loginForm": "loginForm",
         "loginForm:username": user,
@@ -717,15 +720,21 @@ def test_csa024a():
         "loginForm:forceflg": "false",
         "javax.faces.ViewState": vs[0],
     }
+    sess.headers["Referer"] = login_url
     rP = sess.post(login_url, data=login_data, timeout=15, allow_redirects=True)
-    print("  POST:", rP.status_code, "url="+str(rP.url), "len="+str(len(rP.text)))
+    print("  POST:", rP.status_code, "url="+str(rP.url))
+    # エラーメッセージを探す
+    err_matches = re.findall(r'(?:class="[^"]*(?:error|message|warn)[^"]*"|id="[^"]*(?:error|message|warn)[^"]*")[^>]*>([^<]+)', rP.text, re.I)
+    print("  errors:", err_matches[:5])
+    # POSTレスポンスとGETレスポンスの差分（追加されたテキスト）
+    diff_len = len(rP.text) - len(rL.text)
+    print("  diff_len:", diff_len)
+    # メッセージ領域を確認
+    msg_area = re.findall(r'<span[^>]*>([^<]{5,50})</span>', rP.text)
+    print("  spans:", [s for s in msg_area if any(k in s for k in ["エラー","NG","失","invalid","error","ログイン"])][:5])
     is_login = "loginForm" in rP.text
     print("  Login success:", not is_login)
-    if not is_login:
-        ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
-                     params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
-        print("  AJAX:", ra.status_code, ra.text[:400])
-    print("=== テスト終了 ===")
+    print("=== 終了 ===")
 
 if __name__ == "__main__":
     test_csa024a()
