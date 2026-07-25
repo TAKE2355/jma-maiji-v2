@@ -694,10 +694,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: 外部JS全src + 全inlineスクリプトの中身確認"""
+    """CSA024A: CSA024A.js と timeImage.js の関数定義を確認"""
     import re, os
-    print("=== CSA024A 外部JS調査 ===")
+    print("=== CSA024A JS関数調査 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -724,34 +725,24 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     if not login(): print("login failed"); return
-    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
-    rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    html = rC.text
-    # 全scriptタグのsrc属性
-    all_srcs = re.findall(r'<script[^>]+src="([^"]+)"', html)
-    print(f"  script srcs({len(all_srcs)}):")
-    for s in all_srcs:
-        print("    src:", s[:100])
-    # 外部JSを1つ取得（jquery以外）
-    for s in all_srcs:
-        if "jquery" not in s.lower():
-            js_url = base + s if s.startswith("/") else base + "/metair/view/winKobetsu/" + s
-            rjs = sess.get(js_url, timeout=15)
-            print(f"  JS {s[-30:]}: {rjs.status_code} {len(rjs.text)}")
-            # doDownload/changeTime/listE関数を探す
-            for fn in ["doDownload","changeTime","listE","ajaxUpdate","initPage","onLoad"]:
-                idx = rjs.text.find(fn)
+    # JSファイルを直接取得（セッション不要かも）
+    js_files = [
+        base + "/metair/view/winKobetsu/../../js/CSA024A.js",
+        base + "/metair/view/winKobetsu/../../common/timeImage.js",
+        base + "/metair/view/winKobetsu/../../common/CSAcommon.js",
+    ]
+    target_fns = ["doDownload","changeTime","listE","listR","listL","ajaxUpdate","getImageUrl","initTime"]
+    for js_url in js_files:
+        rjs = sess.get(js_url, timeout=15)
+        fname = js_url.split("/")[-1]
+        print(f"  [{fname}] {rjs.status_code} {len(rjs.text)}")
+        if rjs.status_code == 200:
+            for fn in target_fns:
+                idx = rjs.text.find("function " + fn)
+                if idx < 0: idx = rjs.text.find(fn + " =")
                 if idx >= 0:
-                    print(f"    [{fn}]:", rjs.text[idx:idx+120].replace(chr(10)," "))
-    # inline scriptのdoDownload検索（URLフィルターなし）
-    scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
-    for i, sc in enumerate(scripts):
-        sc = sc.strip()
-        for fn in ["doDownload","changeTime","listE","ajaxUpdate"]:
-            if fn in sc:
-                idx = sc.find(fn)
-                snip = sc[max(0,idx-50):idx+200].replace(chr(10)," ")
-                print(f"  inline[{i}] {fn}: {snip[:200]}")
+                    snip = rjs.text[idx:idx+300].replace(chr(10)," ").replace(chr(13),"")
+                    print(f"    [{fn}]: {snip[:250]}")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
