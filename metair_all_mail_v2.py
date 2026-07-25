@@ -689,10 +689,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: ページHTML調査とPOST AJAXテスト"""
+    """CSA024A: ページ全input確認→POSTでデータ取得試行"""
     import re, os
-    print("=== CSA024A 詳細調査 ===")
+    print("=== CSA024A フォーム詳細 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -719,22 +720,36 @@ def test_csa024a():
             return "loginForm" not in rP2.text
         return False
     ok = login()
-    print("  Login:", ok)
-    if not ok: return
-    # CSA024Aページを取得してHTMLを調査
+    if not ok: print("login failed"); return
+    # CSA024Aページのフォーム要素を確認
     rC = sess.get(base+"/metair/view/winKobetsu/CSA024A.html", params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
     print("  Page:", rC.status_code, len(rC.text))
-    # script内容を確認（100文字単位）
-    scripts = re.findall(r'<script[^>]*>(.*?)</script>', rC.text, re.DOTALL)
-    for i, sc in enumerate(scripts):
-        safe = sc.replace("\n"," ").replace("\r","").strip()
-        if safe: print("  script"+str(i)+":", safe[:150])
-    # form情報確認
-    forms = re.findall(r'<form[^>]*>', rC.text)
-    print("  forms:", forms[:3])
-    # CSA024A ViewState
     vs_page = get_vs(rC.text)
-    print("  Page VS:", ("OK len="+str(len(vs_page))) if vs_page else "NG")
+    # 全inputのname/value/typeを出力
+    all_inputs = re.findall(r'<input([^>]+)>', rC.text)
+    for inp_attr in all_inputs:
+        nm = re.search(r'name="([^"]+)"', inp_attr)
+        vl = re.search(r'value="([^"]{0,30})"', inp_attr)
+        tp = re.search(r'type="([^"]+)"', inp_attr)
+        if nm and "ViewState" not in nm.group(1):
+            print("  input:", (tp.group(1) if tp else "?"), nm.group(1), "=", (vl.group(1) if vl else "(empty)"))
+    # ページへのPOSTでJSF AJAXを試行
+    page_url = base + "/metair/view/winKobetsu/CSA024A.html"
+    post_data = {
+        "Form": "Form",
+        "Form:csid": "CSA024A",
+        "Form:editPlace": "RJAA",
+        "Form:dataKindCode": "ALWIN1",
+        "javax.faces.ViewState": vs_page or "",
+        "javax.faces.partial.ajax": "true",
+        "javax.faces.source": "Form:j_idt20",
+        "javax.faces.partial.execute": "@all",
+        "javax.faces.partial.render": "@all",
+    }
+    rPost = sess.post(page_url, data=post_data, timeout=15)
+    print("  POST:", rPost.status_code, len(rPost.text))
+    safe = rPost.text[:300].replace("<","[").replace(">","]").replace("\n"," ")
+    print("  resp:", safe)
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
