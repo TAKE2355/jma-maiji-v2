@@ -697,10 +697,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: JSF部分AJAX + 500エラー内容確認"""
-    import re, os, json
-    print("=== CSA024A JSF-AJAX試行 ===")
+    """CSA024A: JSF-AJAX応答の全文確認"""
+    import re, os
+    print("=== CSA024A AJAX応答確認 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -713,14 +714,6 @@ def test_csa024a():
             if "javax.faces.ViewState" in inp:
                 vm = re.search(r'value="([^"]+)"', inp)
                 if vm: return vm.group(1)
-        return None
-    def get_val(html, name):
-        for m in re.finditer(r'<input([^>]+>)', html):
-            inp = m.group(1)
-            nm = re.search(r'name="([^"]+)"', inp)
-            if nm and nm.group(1) == name:
-                vl = re.search(r'value="([^"]*?)"', inp)
-                return vl.group(1) if vl else ""
         return None
     def login():
         rL = sess.get(login_url, timeout=15)
@@ -738,13 +731,9 @@ def test_csa024a():
     page_url = base + "/metair/view/winKobetsu/CSA024A.html"
     rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
     vs = get_vs(rC.text)
-    ctx = get_val(rC.text, "contextRoot") or "/home/www/html/"
-    print(f"  Page: {rC.status_code} vs={vs[:20] if vs else None}")
-    # A) JSF部分AJAX: timeListを更新
     ajax_headers = {
         "Faces-Request": "partial/ajax",
         "X-Requested-With": "XMLHttpRequest",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
     }
     rA = sess.post(page_url, headers=ajax_headers, data={
         "Form": "Form",
@@ -753,31 +742,14 @@ def test_csa024a():
         "javax.faces.partial.execute": "Form",
         "javax.faces.partial.render": "Form",
         "Form:last": "最新表示",
-        "contextRoot": ctx,
-        "currentFileName": "",
         "contentsType": "IMG",
         "javax.faces.ViewState": vs,
     }, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    print(f"  JSF AJAX last: {rA.status_code} {len(rA.text)}")
-    # currentFileNameを探す
-    fn = get_val(rA.text, "currentFileName")
-    print(f"  currentFileName: {fn!r}")
-    # img srcを探す
-    imgs = re.findall(r'src="(/[^"]+\.(?:png|gif|jpg|PNG))', rA.text)
-    print(f"  img srcs: {imgs[:3]}")
-    # partial responseを確認
-    if "<partial-response>" in rA.text:
-        print("  partial-response found")
-        updates = re.findall(r'<update[^>]*>(.*?)</update>', rA.text, re.DOTALL)
-        for u in updates[:2]:
-            print(f"  update: {u[:100].replace(chr(10)," ")}")
-    # B) 500エラーの内容確認
-    r500 = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
-        params={"dataKindCode":"ALWIN1","editPlace":"RJAA","csid":"CSA024A"}, timeout=15)
-    # エラーから有用なメッセージを探す（タグ除去）
-    err_text = re.sub(r'<[^>]+>', " ", r500.text)
-    err_text = " ".join(err_text.split())[:200]
-    print(f"  500 msg: {err_text}")
+    print(f"  status: {rA.status_code} len: {len(rA.text)}")
+    # 全文を500文字ずつ、タグの<>を[]に変換して出力
+    body = rA.text.replace("<","[").replace(">","]")
+    for i in range(0, min(len(body), 3500), 500):
+        print(f"  B{i}: {body[i:i+500]}")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
