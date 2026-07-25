@@ -305,16 +305,14 @@ body.has-bar main{padding-bottom:78px;}
   <div class="card">
     <div class="card-title">過去エコー画像との重ね合わせ</div>
     <div class="row">
-      <div class="row-label">重ね合わせ有効<div class="row-sub">1時間前の画像を現在画像に重ねる</div></div>
+      <div class="row-label">重ね合わせ有効<div class="row-sub">過去画像を最新画像に重ねる（狭域悪天実況図）</div></div>
       <label class="toggle"><input type="checkbox" id="ov-enabled" checked onchange="updateOvUI();markDirty()"><span class="toggle-slider"></span></label>
     </div>
-    <div class="row slider-row" id="ov-alpha-row">
-      <div class="slider-header">
-        <div><div class="row-label">過去画像の透過率</div><div class="row-sub">0%=最新のみ / 100%=過去のみ</div></div>
-        <span class="slider-val" id="val-alpha">20%</span>
+    <div id="ov-layers-wrap">
+      <div id="ov-layers"></div>
+      <div class="row" style="border-bottom:none;">
+        <button class="btn" style="background:var(--border);color:var(--text);font-size:13px;padding:8px 14px;" onclick="addOvLayer()">＋ レイヤー追加</button>
       </div>
-      <input type="range" id="sl-alpha" min="0" max="100" step="5" value="20"
-        oninput="updateSl('alpha',this.value,'%')" onchange="markDirty()">
     </div>
   </div>
 </div>
@@ -437,7 +435,7 @@ function initDefaultConfig(){
   if(config) return;
   config={
     pdf:{dpi:300,page_margin:55,header_h:65,cell_gap:12,label_h:50,jpeg_quality:90,max_dpi:300,max_mail_mb:20},
-    overlay:{enabled:true,alpha:0.2},
+    overlay:{enabled:true,alpha:0.2,layers:[{minutes:60,alpha:0.2}]},
     recipients:[],
     pages:[{orientation:'portrait',cols:2,rows:4,
       slots:[null,null,null,null,null,null,null,null]}]
@@ -515,7 +513,6 @@ function collectFromUI(){
   p.max_dpi=+document.getElementById('sl-maxdpi').value;
   p.max_mail_mb=+document.getElementById('in-maxmb').value;
   config.overlay.enabled=document.getElementById('ov-enabled').checked;
-  config.overlay.alpha=+document.getElementById('sl-alpha').value/100;
 }
 function applyToUI(){
   const p=config.pdf;
@@ -527,7 +524,7 @@ setSl('jpeg',p.jpeg_quality,'%');
   setSl('maxdpi',p.max_dpi||300,'');
   document.getElementById('in-maxmb').value=p.max_mail_mb||20;
   document.getElementById('ov-enabled').checked=config.overlay.enabled;
-  setSl('alpha',Math.round(config.overlay.alpha*100),'%');
+  renderOvLayers();
   updateOvUI();
   renderRecipients();
   if(document.getElementById('tab-layout').classList.contains('active')){
@@ -536,7 +533,44 @@ setSl('jpeg',p.jpeg_quality,'%');
 }
 function setSl(n,v,s){const sl=document.getElementById('sl-'+n),vl=document.getElementById('val-'+n);if(sl)sl.value=v;if(vl)vl.textContent=v+s;}
 function updateSl(n,v,s=''){document.getElementById('val-'+n).textContent=v+s;}
-function updateOvUI(){const e=document.getElementById('ov-enabled').checked;const row=document.getElementById('ov-alpha-row');row.style.opacity=e?'1':'0.4';row.style.pointerEvents=e?'auto':'none';}
+function ovLayers(){
+  if(!config.overlay.layers||!config.overlay.layers.length){
+    config.overlay.layers=[{minutes:60,alpha:(config.overlay.alpha!=null?config.overlay.alpha:0.2)}];
+  }
+  return config.overlay.layers;
+}
+function renderOvLayers(){
+  const box=document.getElementById('ov-layers');if(!box||!config)return;
+  box.innerHTML='';
+  ovLayers().forEach((ly,i)=>{
+    const div=document.createElement('div');
+    div.className='row';
+    div.style.cssText='gap:8px;flex-wrap:wrap;';
+    div.innerHTML=
+      '<span style="font-size:13px;font-weight:600;color:var(--sub);min-width:70px;">レイヤー'+(i+1)+'</span>'+
+      '<label class="cmp-item">過去<input type="number" class="input-sm cmp-num" value="'+(ly.minutes||60)+'" min="5" max="720" step="5" onchange="setOvLayer('+i+',\'minutes\',this.value)">分前</label>'+
+      '<label class="cmp-item">濃さ<input type="number" class="input-sm cmp-num" value="'+Math.round((ly.alpha!=null?ly.alpha:0.2)*100)+'" min="5" max="90" step="5" onchange="setOvLayer('+i+',\'alpha\',this.value)">%</label>'+
+      '<button class="btn" style="background:none;color:var(--danger);font-size:13px;padding:4px 8px;margin-left:auto;" onclick="delOvLayer('+i+')">削除</button>';
+    box.appendChild(div);
+  });
+}
+function setOvLayer(i,k,v){
+  const ls=ovLayers();if(!ls[i])return;
+  ls[i][k]=(k==='alpha')?(+v/100):+v;
+  markDirty();
+}
+function addOvLayer(){
+  const ls=ovLayers();
+  const last=ls[ls.length-1]||{minutes:60,alpha:0.2};
+  ls.push({minutes:(+last.minutes||60)+60,alpha:Math.max(0.05,(+last.alpha||0.2)-0.05)});
+  renderOvLayers();markDirty();
+}
+function delOvLayer(i){
+  const ls=ovLayers();
+  if(ls.length<=1){showToast('最低1レイヤー必要です');return;}
+  ls.splice(i,1);renderOvLayers();markDirty();
+}
+function updateOvUI(){const e=document.getElementById('ov-enabled').checked;const row=document.getElementById('ov-layers-wrap');row.style.opacity=e?'1':'0.4';row.style.pointerEvents=e?'auto':'none';}
 
 // ══════════════════════════════════════════════════════════════════════
 //  ページ設定
