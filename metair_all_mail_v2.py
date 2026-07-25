@@ -688,19 +688,48 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: JSファイルURL一覧を取得"""
-    print("=== CSA024A テスト開始 ===")
+    """CSA024A: JSファイル解析 + 別AJAXパス試行"""
     import re
-    page_url = METAIR_BASE + "/metair/view/winKobetsu/CSA024A.html"
-    params = {"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}
-    resp = requests.get(page_url, headers=METAIR_HEADERS, params=params, timeout=20)
-    print(f"  status={resp.status_code} len={len(resp.text)}")
-    # スクリプト参照
-    scripts = re.findall(r'<script[^>]+src=["\'"]([^"\'"]+)["\'"]', resp.text)
-    print(f"  scripts: {scripts}")
-    # ページ本文の先頭と末尾
-    print("  HTML先頭:", resp.text[:300])
-    print("  HTML末尾:", resp.text[-500:])
+    print("=== CSA024A テスト開始 ===")
+    base = METAIR_BASE
+
+    # 1. index.jsを取得してAJAX URLパターンを探す
+    for js_path in ["/metair/js/index.js", "/metair/view/winKobetsu/js/index.js"]:
+        try:
+            rj = requests.get(base + js_path, headers=METAIR_HEADERS, timeout=15)
+            if rj.status_code == 200 and len(rj.text) > 100:
+                print(f"  JS取得成功: {js_path} ({len(rj.text)}bytes)")
+                # ajaxUpdate, fname, /pict/ パターンを探す
+                patterns = re.findall(r'["\']((?:[^"\']*ajax[^"\']*|[^"\']*\.png[^"\']*|/pict/[^"\']*)["\'"])', rj.text)
+                print(f"  パターン: {patterns[:10]}")
+                urls = re.findall(r'["\'](/(?:metair|pict)/[^"\'\s]+)["\'"]', rj.text)
+                print(f"  URL候補: {urls[:15]}")
+                break
+            else:
+                print(f"  JS {js_path}: {rj.status_code}")
+        except Exception as e:
+            print(f"  JS取得エラー: {e}")
+
+    # 2. 別AJAXエンドポイントを試す
+    for ajax_path in [
+        "/metair/ajax/CSA024A/ajaxUpdate",
+        "/metair/ajax/winKobetsu/ajaxUpdate",
+        "/metair/ajax/winKobetsu/CSA024A/ajaxUpdate",
+    ]:
+        for method in ['GET', 'POST']:
+            try:
+                params = {"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1","lastDate":""}
+                if method == 'GET':
+                    resp = requests.get(base+ajax_path, headers=METAIR_HEADERS, params=params, timeout=10)
+                else:
+                    resp = requests.post(base+ajax_path, headers=METAIR_HEADERS, data=params, timeout=10)
+                print(f"  {method} {ajax_path}: {resp.status_code} len={len(resp.text)}")
+                if resp.status_code == 200:
+                    print(f"    本文先頭: {resp.text[:300]}")
+                    fnames = re.findall(r'fname["\'"]\s*:\s*["\'"]([^\'"]+)', resp.text)
+                    print(f"    fname: {fnames[:5]}")
+            except Exception as e:
+                print(f"  エラー {method} {ajax_path}: {e}")
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
