@@ -688,23 +688,29 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: BasicAuth直接AJAX方式（CSA019と同じ方法）"""
-    import os
-    print("=== CSA024A BasicAuth AJAX テスト ===")
+    """CSA024A: ViewState詳細デバッグ"""
+    import re, os
+    print("=== CSA024A ViewStateデバッグ ===")
     base = METAIR_BASE
-    # CSA019と同じ方法: BasicAuthヘッダーで直接AJAXを叩く
-    ajax_url = base + "/metair/ajax/CSA024A/ajaxUpdate"
-    params = {"did1":"CSA024A","did2":"RJAA","lastDate":""}
-    r = requests.get(ajax_url, headers=METAIR_HEADERS, params=params, timeout=15)
-    print("  status:", r.status_code, "len:", len(r.text))
-    print("  head:", r.text[:500])
-    if r.status_code == 200:
-        try:
-            ds = r.json().get("dataSet")
-            print("  dataSet:", str(ds)[:300])
-        except Exception as e:
-            print("  JSON parse error:", e)
-    print("=== テスト終了 ===")
+    sess = requests.Session()
+    login_url = base + "/metair/view/login/index.html"
+    rL = sess.get(login_url, timeout=15)
+    print("  status:", rL.status_code, "len:", len(rL.text))
+    print("  encoding:", rL.encoding)
+    # ViewState文字列を検索
+    vs_idx = rL.text.find("ViewState")
+    print("  ViewState idx:", vs_idx)
+    if vs_idx >= 0:
+        chunk = rL.text[max(0,vs_idx-50):vs_idx+200]
+        safe = chunk.replace("\n"," ").replace("\r","").replace("<","[").replace(">","]")
+        print("  chunk:", safe[:200])
+    # javax.faces.ViewStateを検索
+    vs_idx2 = rL.text.find("javax.faces.ViewState")
+    print("  javax.faces.ViewState idx:", vs_idx2)
+    # input[^>]+パターンでスキャン
+    inputs_with_vs = [m.group(0)[:80] for m in re.finditer(r'<input[^>]+>', rL.text) if "ViewState" in m.group(0)]
+    print("  inputs_with_VS:", inputs_with_vs)
+    print("=== 終了 ===")
 
 if __name__ == "__main__":
     test_csa024a()
