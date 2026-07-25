@@ -688,55 +688,58 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: フォームログイン→セッション→AJAX試行"""
+    """CSA024A: ログインフォームの全input詳細確認→正確なPOST"""
     import re, os
     print("=== CSA024A テスト開始 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
+    print(f"  user={user[:5]}... pw={'*'*len(pw)}")
     sess = requests.Session()
 
-    # Step1: ログインページ取得→ViewState取得
+    # ログインページ取得
     login_url = base + "/metair/view/login/index.html"
     rL = sess.get(login_url, timeout=15)
-    print(f"  login page: {rL.status_code} {len(rL.text)}bytes")
+
+    # 全input属性を確認（type/name/value）
+    inputs_full = re.findall(r'<input([^>]+)>', rL.text)
+    for inp in inputs_full:
+        name = re.search(r'name=["\'"]([^"\'"]+)', inp)
+        val  = re.search(r'value=["\'"]([^"\'"]*)', inp)
+        typ  = re.search(r'type=["\'"]([^"\'"]+)', inp)
+        nm = name.group(1) if name else '-'
+        vl = val.group(1)[:30] if val else ''
+        tp = typ.group(1) if typ else 'text'
+        if 'ViewState' not in nm:
+            print(f"  input: type={tp} name={nm} value={vl}")
+
+    # ViewState取得
     vs = re.findall(r'name=["\'"]javax\.faces\.ViewState["\'"][^>]*value=["\'"]([^"\'"]+)', rL.text)
-    print(f"  ViewState: {vs[0][:30] if vs else 'not found'}...")
-    # input フィールド名を全部取得
-    inputs = re.findall(r'<input[^>]+name=["\'"]([^"\'"]+)["\'"]',rL.text)
-    print(f"  input names: {inputs}")
+    if not vs: vs = re.findall(r'id=["\'"]j_id[^"\'"]+["\'"][^>]*value=["\'"]([^"\'"]+)', rL.text)
 
-    if not vs:
-        print("  ViewStateなし - ログイン不可"); return
-
-    # Step2: フォームPOSTログイン
+    # 正確なPOST（usernameとpasswordフィールド名で）
     login_data = {
         "loginForm": "loginForm",
-        "javax.faces.ViewState": vs[0],
+        "loginForm:username": user,
+        "loginForm:password": pw,
+        "loginForm:doLogin": "ログイン",
+        "javax.faces.ViewState": vs[0] if vs else "",
     }
-    # フィールド名候補を試す
-    for uid_field in ["loginForm:userId","loginForm:loginId","userId","loginId"]:
-        login_data[uid_field] = user
-    for pw_field in ["loginForm:password","loginForm:pass","password","pass"]:
-        login_data[pw_field] = pw
-    login_data["loginForm:loginBtn"] = "ログイン"
-
     rP = sess.post(login_url, data=login_data, timeout=15, allow_redirects=True)
-    print(f"  login POST: {rP.status_code} {len(rP.text)}bytes url={rP.url}")
+    print(f"  login POST: {rP.status_code} url={rP.url} len={len(rP.text)}")
+    is_login_page = "/login/" in rP.url or "loginForm" in rP.text
+    print(f"  ログイン成功?: {not is_login_page}")
 
-    # Step3: CSA024Aページにセッションでアクセス
-    rC = sess.get(base+"/metair/view/winKobetsu/CSA024A.html",
-                  params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
-    print(f"  CSA024A page: {rC.status_code} {len(rC.text)}bytes")
-    is_login = "loginForm" in rC.text
-    print(f"  ログインページ?: {is_login}")
-    if not is_login:
-        # Step4: AJAX呼び出し
-        ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
-                      params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
-        print(f"  AJAX: {ra.status_code} {len(ra.text)}bytes")
-        if ra.status_code==200:
-            print(f"  本文: {ra.text[:300]}")
+    if not is_login_page:
+        # CSA024Aにアクセス
+        rC = sess.get(base+"/metair/view/winKobetsu/CSA024A.html",
+                      params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+        print(f"  CSA024A: {rC.status_code} {len(rC.text)}bytes loginPage={('/login/' in rC.url)}")
+        if '/login/' not in rC.url:
+            ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+                         params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+            print(f"  AJAX: {ra.status_code} {len(ra.text)}bytes")
+            if ra.status_code==200: print(f"  JSON: {ra.text[:300]}")
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
