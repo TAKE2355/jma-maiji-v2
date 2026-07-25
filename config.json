@@ -74,42 +74,50 @@
         {
           "type": "metair_csa019",
           "code": "QBSA95",
-          "label": "UBSA 狭域悪天実況図・白神"
+          "label": "UBSA 狭域悪天実況図・白神",
+          "overlay": true
         },
         {
           "type": "metair_csa019",
           "code": "QBCK95",
-          "label": "UBCK 狭域悪天実況図・日高"
+          "label": "UBCK 狭域悪天実況図・日高",
+          "overlay": true
         },
         {
           "type": "metair_csa019",
           "code": "QBRA95",
-          "label": "UBGG 狭域悪天実況図・中部"
+          "label": "UBGG 狭域悪天実況図・中部",
+          "overlay": true
         },
         {
           "type": "metair_csa019",
           "code": "QBQA95",
-          "label": "UBTT 狭域悪天実況図・関東"
+          "label": "UBTT 狭域悪天実況図・関東",
+          "overlay": true
         },
         {
           "type": "metair_csa019",
           "code": "QBFF95",
-          "label": "UBFF 狭域悪天実況図・福岡"
+          "label": "UBFF 狭域悪天実況図・福岡",
+          "overlay": true
         },
         {
           "type": "metair_csa019",
           "code": "QBUA95",
-          "label": "UBBB 狭域悪天実況図・関西"
+          "label": "UBBB 狭域悪天実況図・関西",
+          "overlay": true
         },
         {
           "type": "metair_csa019",
           "code": "QBIG95",
-          "label": "UBIG 狭域悪天実況図・先島"
+          "label": "UBIG 狭域悪天実況図・先島",
+          "overlay": true
         },
         {
           "type": "metair_csa019",
           "code": "QBAH95",
-          "label": "UBAH 狭域悪天実況図・那覇"
+          "label": "UBAH 狭域悪天実況図・那覇",
+          "overlay": true
         }
       ]
     },
