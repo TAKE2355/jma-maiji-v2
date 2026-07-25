@@ -692,10 +692,11 @@ def main():
 
 
 
+
 def test_csa024a():
-    """CSA024A: ページJSとボタンのonclick確認"""
+    """CSA024A: インラインscriptからdoDownload/changeTime関数を確認"""
     import re, os
-    print("=== CSA024A JS調査 ===")
+    print("=== CSA024A script調査 ===")
     base = METAIR_BASE
     user = os.environ.get("METAIR_USER","")
     pw   = os.environ.get("METAIR_PASS","")
@@ -725,23 +726,21 @@ def test_csa024a():
     page_url = base + "/metair/view/winKobetsu/CSA024A.html"
     rC = sess.get(page_url, params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
     html = rC.text
-    # Form:lastボタンのHTML確認
-    for m in re.finditer(r'<input[^>]+Form:last[^>]*>', html):
-        safe = m.group(0).replace("<","[").replace(">","]")
-        print("  last_btn:", safe[:200])
-    # onclickを持つ要素を確認
-    for m in re.finditer(r'onclick="([^"]{0,150})"', html):
-        safe = m.group(1).replace("\n"," ")
-        print("  onclick:", safe)
-    # インラインscriptを確認（クエリ除去）
-    for m in re.finditer(r'<script[^>]*>(.*?)</script>', html, re.DOTALL):
-        sc = m.group(1).strip()
-        if sc and "function" in sc:
-            safe = sc.replace("\n"," ")[:200]
-            print("  script:", safe)
-    # 外部JSのsrc確認
-    for m in re.finditer(r'src="([^"]+)"', html):
-        print("  js_src:", m.group(1)[:80])
+    # インラインscriptを全て抽出
+    scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+    for i, sc in enumerate(scripts):
+        sc = sc.strip()
+        if not sc: continue
+        # doDownloadまたはchangeTimeを含むスクリプト
+        if "doDownload" in sc or "changeTime" in sc or "listE" in sc or "ajax" in sc.lower():
+            print(f"  [script{i}] len={len(sc)}")
+            # 最初の500文字
+            safe = sc[:500].replace("<","[").replace(">","]")
+            print("  "+safe)
+    # selectタグのoptionを確認（timeListの値）
+    for m in re.finditer(r'<select[^>]+name="Form:timeList"[^>]*>(.*?)</select>', html, re.DOTALL):
+        opts = re.findall(r'<option[^>]+value="([^"]*)"[^>]*>([^<]*)</option>', m.group(1))
+        print(f"  timeList options({len(opts)}): {opts[:3]} ... {opts[-3:]}")
     print("=== テスト終了 ===")
 if __name__ == "__main__":
     test_csa024a()
