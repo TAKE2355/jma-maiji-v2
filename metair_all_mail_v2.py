@@ -688,38 +688,55 @@ def main():
 
 
 def test_csa024a():
-    """CSA024A: ページHTML全体解析（form/inline JS/hidden input）"""
-    import re
+    """CSA024A: フォームログイン→セッション→AJAX試行"""
+    import re, os
     print("=== CSA024A テスト開始 ===")
-    rp=requests.get(METAIR_BASE+"/metair/view/winKobetsu/CSA024A.html",
-                    headers=METAIR_HEADERS, timeout=20)
-    html=rp.text
-    print(f"  page: {rp.status_code} {len(html)}bytes")
+    base = METAIR_BASE
+    user = os.environ.get("METAIR_USER","")
+    pw   = os.environ.get("METAIR_PASS","")
+    sess = requests.Session()
 
-    # formタグ解析
-    forms=re.findall(r'<form[^>]*>',html)
-    print(f"  forms: {forms[:3]}")
+    # Step1: ログインページ取得→ViewState取得
+    login_url = base + "/metair/view/login/index.html"
+    rL = sess.get(login_url, timeout=15)
+    print(f"  login page: {rL.status_code} {len(rL.text)}bytes")
+    vs = re.findall(r'name=["\'"]javax\.faces\.ViewState["\'"][^>]*value=["\'"]([^"\'"]+)', rL.text)
+    print(f"  ViewState: {vs[0][:30] if vs else 'not found'}...")
+    # input フィールド名を全部取得
+    inputs = re.findall(r'<input[^>]+name=["\'"]([^"\'"]+)["\'"]',rL.text)
+    print(f"  input names: {inputs}")
 
-    # hidden input（ViewState等）
-    hiddens=re.findall(r'<input[^>]+type=["\'"]hidden["\'"][^>]*>',html)
-    for h in hiddens[:5]:
-        print(f"  hidden: {h[:150]}")
+    if not vs:
+        print("  ViewStateなし - ログイン不可"); return
 
-    # imgタグ全部
-    imgs=re.findall(r'<img[^>]+>',html)
-    for img in imgs[:5]:
-        print(f"  img: {img[:150]}")
+    # Step2: フォームPOSTログイン
+    login_data = {
+        "loginForm": "loginForm",
+        "javax.faces.ViewState": vs[0],
+    }
+    # フィールド名候補を試す
+    for uid_field in ["loginForm:userId","loginForm:loginId","userId","loginId"]:
+        login_data[uid_field] = user
+    for pw_field in ["loginForm:password","loginForm:pass","password","pass"]:
+        login_data[pw_field] = pw
+    login_data["loginForm:loginBtn"] = "ログイン"
 
-    # CDATAブロック全内容
-    cdatas=re.findall(r'//<!\[CDATA\[(.*?)//\]\]>',html,re.DOTALL)
-    for i,c in enumerate(cdatas):
-        print(f"  CDATA[{i}]({len(c)}): {c.strip()[:300]}")
+    rP = sess.post(login_url, data=login_data, timeout=15, allow_redirects=True)
+    print(f"  login POST: {rP.status_code} {len(rP.text)}bytes url={rP.url}")
 
-    # ajaxやfetchやxmlhttprequest含む行
-    for kw in ['ajax','fetch','XMLHttpRequest','imgSrc','.png','fname','imageData','winKobetsu']:
-        hits=[l.strip() for l in html.split('\n') if re.search(kw,l,re.I)]
-        if hits:
-            print(f"  [{kw}]: {hits[0][:200]}")
+    # Step3: CSA024Aページにセッションでアクセス
+    rC = sess.get(base+"/metair/view/winKobetsu/CSA024A.html",
+                  params={"csid":"CSA024A","editPlace":"RJAA","dataKindCode":"ALWIN1"}, timeout=20)
+    print(f"  CSA024A page: {rC.status_code} {len(rC.text)}bytes")
+    is_login = "loginForm" in rC.text
+    print(f"  ログインページ?: {is_login}")
+    if not is_login:
+        # Step4: AJAX呼び出し
+        ra = sess.get(base+"/metair/ajax/CSA024A/ajaxUpdate",
+                      params={"did1":"CSA024A","did2":"RJAA","lastDate":""}, timeout=15)
+        print(f"  AJAX: {ra.status_code} {len(ra.text)}bytes")
+        if ra.status_code==200:
+            print(f"  本文: {ra.text[:300]}")
     print("=== CSA024A テスト終了 ===")
 
 if __name__ == "__main__":
