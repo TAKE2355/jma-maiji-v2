@@ -846,15 +846,7 @@ function drawPreview(){
       ctx.textAlign='center';ctx.textBaseline='top';
       const lbl=slot.label;
       const maxW=cellW-6;
-      const maxFs=Math.max(6,Math.round(H*0.016));
-      let fs=maxFs;
-      for(let s=maxFs;s>=5;s--){ctx.font=s+'px sans-serif';if(ctx.measureText(lbl).width<=maxW){fs=s;break;}}
-      ctx.font=fs+'px sans-serif';
-      const tw=ctx.measureText(lbl).width;
-      ctx.fillStyle='rgba(255,255,255,0.92)';
-      ctx.fillRect(x+cellW/2-tw/2-3,y+2,tw+6,fs+4);
-      ctx.fillStyle='#3a3a3c';
-      ctx.fillText(lbl,x+cellW/2,y+4);
+      // タイトルはHTMLレイヤーで画像の前面に描画（updatePreviewImages内）
     }
   }
 
@@ -926,6 +918,23 @@ function updatePreviewImages(){
     img.style.cssText=`position:absolute;left:${x*sx}px;top:${(y+labelH)*sy}px;width:${cellW*sx}px;height:${(cellH-labelH)*sy}px;object-fit:contain;background:rgba(255,255,255,.05);`;
     layer.appendChild(img);
     tryLoadImage(img,urls,0);
+  });
+  // タイトルを画像より前面に重ねる
+  (pg.slots||[]).forEach((slot,idx)=>{
+    if(!slot||!slot.label)return;
+    const r=Math.floor(idx/cols),c=idx%cols;
+    const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
+    const t=document.createElement('div');
+    t.textContent=slot.label;
+    t.style.cssText='position:absolute;left:'+(x*sx)+'px;top:'+(y*sy+2)+'px;width:'+(cellW*sx)+'px;'+
+      'text-align:center;pointer-events:none;font-size:'+Math.max(8,Math.round(cellH*sy*0.055))+'px;'+
+      'color:#3a3a3c;white-space:nowrap;overflow:hidden;';
+    const inner=document.createElement('span');
+    inner.textContent=slot.label;
+    inner.style.cssText='background:rgba(255,255,255,.92);padding:1px 4px;border-radius:3px;';
+    t.textContent='';
+    t.appendChild(inner);
+    layer.appendChild(t);
   });
 }
 
