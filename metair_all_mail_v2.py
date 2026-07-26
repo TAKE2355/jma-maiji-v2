@@ -343,6 +343,24 @@ def get_qyya86_latest():
         print(f"  QYYA86エラー: {e}")
         return None, None
 
+def get_ashfall_latest(idx):
+    """降灰予報(VAFALLR)を火山番号で取得。ファイル名の秒位=火山番号"""
+    try:
+        idx = int(idx)
+        r = requests.get(METAIR_BASE + "/metair/ajax/CSA019/ajaxUpdate",
+            params={"contentsType": "2", "dbKey": "RJTD,VAFALLR", "lastDate": ""},
+            headers=METAIR_HEADERS, timeout=20)
+        ds = r.json().get("dataSet") or []
+        cands = [d for d in ds if len(d.get("date","")) == 14 and int(d["date"][12:]) == idx]
+        if not cands:
+            print(f"    降灰予報: 火山[{idx}]のデータなし")
+            return None, None
+        latest = max(cands, key=lambda x: x["date"])
+        return METAIR_BASE + latest["fname"], latest["date"]
+    except Exception as e:
+        print(f"    降灰予報エラー[{idx}]: {e}")
+        return None, None
+
 def pdf_to_image(pdf_bytes):
     try:
         import fitz
@@ -513,6 +531,18 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
             im = apply_overlay_layers(im, date_str, _urls)
         lbl = f"{label}\n{date_str}" if date_str else label
         return im, lbl
+
+    elif chart_type == "metair_ashfall":
+        url, ts = get_ashfall_latest(code)
+        if url:
+            try:
+                rr = requests.get(url, headers=METAIR_HEADERS, timeout=30)
+                if rr.status_code == 200:
+                    im = pdf_to_image(rr.content)
+                    return im, f"{label}\n{ts_to_label(ts[:12]) if ts else '取得失敗'}"
+            except Exception as e:
+                print(f"  降灰予報取得エラー: {e}")
+        return None, label
 
     elif chart_type == "metair_csa024a":
         im, ts = get_csa024a_image(code, overlay=want_ov)
@@ -965,31 +995,5 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
-def probe_vafallr():
-    print("=== VAFALLR火山名確認 ===")
-    ra = requests.get(METAIR_BASE+"/metair/ajax/CSA019/ajaxUpdate",
-        params={"contentsType":"2","dbKey":"RJTD,VAFALLR","lastDate":""},
-        headers=METAIR_HEADERS, timeout=20)
-    ds = ra.json().get("dataSet") or []
-    # 最新の発表回（先頭12桁が同じグループ）
-    latest_grp = max(d["date"][:12] for d in ds)
-    grp = sorted([d for d in ds if d["date"].startswith(latest_grp)], key=lambda x:x["date"])
-    print("  発表:", latest_grp, "件数:", len(grp))
-    import fitz
-    for d in grp:
-        idx = d["date"][12:]
-        rr = requests.get(METAIR_BASE+d["fname"], headers=METAIR_HEADERS, timeout=25)
-        name = "?"
-        try:
-            doc = fitz.open(stream=rr.content, filetype="pdf")
-            t = doc[0].get_text()
-            for kw in ["阿蘇山","桜島","霧島山","浅間山","諏訪之瀬島","口永良部島","硫黄島","雌阿寒岳","十勝岳","草津白根山","富士山","三宅島","伊豆大島"]:
-                if kw in t: name = kw; break
-        except Exception as e:
-            name = "PDFerr"
-        print(f"  [{idx}] {name}  {d['fname'].split('/')[-1]}")
-    print("=== 確認終了 ===")
-
 if __name__ == "__main__":
-    probe_vafallr()
     main()
