@@ -966,35 +966,29 @@ def get_csa024a_image(code, overlay=False):
     return None, None
 
 def probe_vafallr():
-    import os as _os, json as _json
-    print("=== VAFALLR調査v4 ===")
+    print("=== VAFALLR火山名確認 ===")
     ra = requests.get(METAIR_BASE+"/metair/ajax/CSA019/ajaxUpdate",
         params={"contentsType":"2","dbKey":"RJTD,VAFALLR","lastDate":""},
         headers=METAIR_HEADERS, timeout=20)
-    print("  ajax:", ra.status_code, len(ra.text))
-    try:
-        ds = ra.json().get("dataSet") or []
-    except Exception as e:
-        print("  json err", e); return
-    print("  entries:", len(ds))
-    for e in ds[-4:]:
-        print("   ", e.get("date"), e.get("fname"))
-    if not ds: return
-    latest = max(ds, key=lambda x: x.get("date",""))
-    url = METAIR_BASE + latest["fname"]
-    rr = requests.get(url, headers=METAIR_HEADERS, timeout=30)
-    print("  file:", rr.status_code, len(rr.content), rr.headers.get("Content-Type"))
-    if rr.status_code!=200: return
-    try:
-        import fitz
-        doc = fitz.open(stream=rr.content, filetype="pdf")
-        print("  PDF pages:", doc.page_count)
-        for p in range(min(doc.page_count, 12)):
-            txt = doc[p].get_text().strip().replace(chr(10)," ")
-            print(f"   p{p+1}: {txt[:70]}")
-    except Exception as e:
-        print("  PDF err:", e)
-    print("=== 調査終了 ===")
+    ds = ra.json().get("dataSet") or []
+    # 最新の発表回（先頭12桁が同じグループ）
+    latest_grp = max(d["date"][:12] for d in ds)
+    grp = sorted([d for d in ds if d["date"].startswith(latest_grp)], key=lambda x:x["date"])
+    print("  発表:", latest_grp, "件数:", len(grp))
+    import fitz
+    for d in grp:
+        idx = d["date"][12:]
+        rr = requests.get(METAIR_BASE+d["fname"], headers=METAIR_HEADERS, timeout=25)
+        name = "?"
+        try:
+            doc = fitz.open(stream=rr.content, filetype="pdf")
+            t = doc[0].get_text()
+            for kw in ["阿蘇山","桜島","霧島山","浅間山","諏訪之瀬島","口永良部島","硫黄島","雌阿寒岳","十勝岳","草津白根山","富士山","三宅島","伊豆大島"]:
+                if kw in t: name = kw; break
+        except Exception as e:
+            name = "PDFerr"
+        print(f"  [{idx}] {name}  {d['fname'].split('/')[-1]}")
+    print("=== 確認終了 ===")
 
 if __name__ == "__main__":
     probe_vafallr()
