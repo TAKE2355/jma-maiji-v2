@@ -542,6 +542,126 @@
           "hours": 3,
           "metar": true,
           "taf": true
+        },
+        {
+          "ids": "RJFM",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "RJFK",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "ROAH",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "RODN",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "RCTP",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "RCKH",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "RPLL",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "RPLC",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "VHHH",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "VMMC",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "ZSSS",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "ZSPD",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
         }
       ]
     }
