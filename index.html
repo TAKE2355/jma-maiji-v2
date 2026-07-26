@@ -296,7 +296,8 @@ body.has-bar main{padding-bottom:78px;}
     <div class="row" style="flex-wrap:wrap;gap:6px 12px;padding:8px 12px;border-bottom:none;">
       <span style="font-size:13px;font-weight:600;color:var(--sub);">共通設定（全ページ）</span>
       <label class="cmp-item">余白<input type="number" class="input-sm cmp-num" id="in-margin" value="55" min="0" max="200" oninput="markDirty()"></label>
-      <label class="cmp-item">ヘッダー<input type="number" class="input-sm cmp-num" id="in-header" value="65" min="0" max="200" oninput="markDirty()"></label>
+      <label class="cmp-item">スタンプ高<input type="number" class="input-sm cmp-num" id="in-header" value="65" min="0" max="200" oninput="markDirty()"></label>
+      <label class="cmp-item">スタンプ字<input type="number" class="input-sm cmp-num" id="in-stampfs" value="7" min="4" max="40" oninput="markDirty()"></label>
       <label class="cmp-item">間隔<input type="number" class="input-sm cmp-num" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></label>
       <label class="cmp-item">ラベル<input type="number" class="input-sm cmp-num" id="in-labelh" value="50" min="20" max="120" oninput="markDirty()"></label>
       <label class="cmp-item">JPEG<input type="range" id="sl-jpeg" min="60" max="100" step="5" value="90" style="width:64px;" oninput="updateSl('jpeg',this.value,'%')" onchange="markDirty()"><span class="slider-val cmp-val" id="val-jpeg">90%</span></label>
@@ -510,6 +511,7 @@ function collectFromUI(){
   p.jpeg_quality=+document.getElementById('sl-jpeg').value;
   p.page_margin=+document.getElementById('in-margin').value;
   p.header_h=+document.getElementById('in-header').value;
+  p.stamp_size=+document.getElementById('in-stampfs').value;
   p.cell_gap=+document.getElementById('in-gap').value;
   p.label_h=+document.getElementById('in-labelh').value;
   p.max_dpi=+document.getElementById('sl-maxdpi').value;
@@ -520,6 +522,7 @@ function applyToUI(){
 setSl('jpeg',p.jpeg_quality,'%');
   document.getElementById('in-margin').value=p.page_margin;
   document.getElementById('in-header').value=p.header_h;
+  document.getElementById('in-stampfs').value=p.stamp_size||7;
   document.getElementById('in-gap').value=p.cell_gap;
   document.getElementById('in-labelh').value=p.label_h;
   setSl('maxdpi',p.max_dpi||300,'');
@@ -816,7 +819,7 @@ function drawPreview(){
   // ヘッダー
   ctx.fillStyle='#f2f2f7';ctx.fillRect(margin,margin,W-2*margin,headerH-4);
   ctx.fillStyle='#8e8e93';ctx.font=`${Math.round(H*0.03)}px sans-serif`;
-  ctx.fillText('気象情報  YYYY/MM/DD HH:MM UTC',margin+6,margin+headerH*0.65);
+  ctx.fillText('HH:MM UTC  MM/DD/YYYY',W*0.25,margin+headerH*0.65);
 
   // セル
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
