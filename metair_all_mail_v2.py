@@ -965,5 +965,50 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
+def probe_vafallr():
+    """降灰予報(VAFALLR)の火山別コードを調査"""
+    import re as _re, os as _os
+    print("=== VAFALLR調査 ===")
+    user = _os.environ.get("METAIR_USER",""); pw = _os.environ.get("METAIR_PASS","")
+    sess = requests.Session()
+    sess.headers.update({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+    login_url = METAIR_BASE + "/metair/view/login/index.html"
+    def _vs(html):
+        for m in _re.finditer(r'<input[^>]+>', html):
+            if "javax.faces.ViewState" in m.group(0):
+                vm = _re.search(r'value="([^"]+)"', m.group(0))
+                if vm: return vm.group(1)
+        return None
+    rL = sess.get(login_url, timeout=15); vs1=_vs(rL.text)
+    rP = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":vs1}, timeout=15)
+    if "loginForm" in rP.text and "強制ログイン" in rP.text:
+        vs2=_vs(rP.text)
+        rP = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":vs2}, timeout=15)
+    print("  login:", "NG" if "loginForm" in rP.text else "OK")
+
+    # 1) ページHTMLからselectのoptionを抽出
+    page = METAIR_BASE + "/metair/view/winKyoutsuu/CSA019.html"
+    rC = sess.get(page, params={"editPlace":"RJTD","dataKindCode":"VAFALLR"}, timeout=20)
+    print("  page:", rC.status_code, len(rC.text))
+    for m in _re.finditer(r'<select[^>]*id="([^"]*)"[^>]*>(.*?)</select>', rC.text, _re.DOTALL):
+        sid = m.group(1)
+        opts = _re.findall(r'<option[^>]*value="([^"]*)"[^>]*>([^<]*)</option>', m.group(2))
+        if opts:
+            safe = [(v, t.strip()) for v,t in opts][:12]
+            print(f"  [select {sid}] {safe}")
+
+    # 2) AJAXでdbKey候補を試す
+    for key in ["RJTD,VAFALLR","RJTD,VAFALLR,2","RJTD,VAFALLR,3","RJTD,VAFALLR,6"]:
+        try:
+            ra = sess.get(METAIR_BASE+"/metair/ajax/CSA019/ajaxUpdate",
+                params={"contentsType":"0","dbKey":key,"lastDate":""},
+                headers={"X-Requested-With":"XMLHttpRequest"}, timeout=15)
+            txt = ra.text[:180].replace("<","[").replace(">","]")
+            print(f"  ajax[{key}]: {ra.status_code} len={len(ra.text)} {txt[:150]}")
+        except Exception as e:
+            print(f"  ajax[{key}] ERR {e}")
+    print("=== 調査終了 ===")
+
 if __name__ == "__main__":
+    probe_vafallr()
     main()
