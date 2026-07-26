@@ -744,10 +744,10 @@ function renderMetarRows(){
     const opts=HOURS_OPTS.map(o=>'<option value="'+o.v+'"'+(+row.hours===o.v?' selected':'')+'>'+o.l+'</option>').join('');
     d.innerHTML=
       '<span style="font-size:13px;color:var(--sub);min-width:26px;">'+(i+1)+'</span>'+
-      '<input type="text" value="'+(row.ids||'').replace(/"/g,'&quot;')+'" placeholder="RJTT,RJAA" style="width:190px;text-transform:uppercase;" oninput="setMetarRow('+i+',\'ids\',this.value)">'+
+      '<input type="text" value="'+(row.ids||'').replace(/"/g,'&quot;')+'" style="width:190px;text-transform:uppercase;" oninput="setMetarRow('+i+',\'ids\',this.value)">'+
       '<select style="width:120px;" onchange="setMetarRow('+i+',\'hours\',this.value)">'+opts+'</select>'+
-      '<label class="cmp-item">METAR<input type="checkbox"'+(row.metar!==false?' checked':'')+' onchange="setMetarRow('+i+',\'metar\',this.checked)"></label>'+
-      '<label class="cmp-item">TAF<input type="checkbox"'+(row.taf!==false?' checked':'')+' onchange="setMetarRow('+i+',\'taf\',this.checked)"></label>';
+      '<div class="ov-slot">METAR<label class="toggle sm"><input type="checkbox"'+(row.metar!==false?' checked':'')+' onchange="setMetarRow('+i+',\'metar\',this.checked)"><span class="toggle-slider"></span></label></div>'+
+      '<div class="ov-slot">TAF<label class="toggle sm"><input type="checkbox"'+(row.taf!==false?' checked':'')+' onchange="setMetarRow('+i+',\'taf\',this.checked)"><span class="toggle-slider"></span></label></div>';
     box.appendChild(d);
   });
 }
