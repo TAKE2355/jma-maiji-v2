@@ -138,9 +138,10 @@
           "label": "全国航空気象解説報・飛行場"
         },
         {
-          "type": "metair_csa019",
-          "code": "QYYA82",
-          "label": "全国航空気象解説報・国内空域"
+          "type": "metair_csa003",
+          "code": "CSA003_TOPH_7",
+          "label": "レーダー頂高度・最新",
+          "overlay": false
         },
         {
           "type": "metair_csa019",
