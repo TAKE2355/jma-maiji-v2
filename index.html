@@ -132,7 +132,7 @@ input:focus,select:focus{border-color:var(--accent);}
 .orient-btn{padding:6px 12px;font-size:16.3px;font-family:var(--font);font-weight:600;
   border:1px solid var(--border);border-radius:2px;background:var(--card2);
   color:var(--sub);cursor:pointer;transition:all .15s;}
-.orient-btn.sel{border-color:var(--text);background:var(--text);color:var(--bg);}
+.orient-btn.sel{border-color:var(--danger);background:var(--danger);color:#fff;}
 
 /* ── グリッド数ステッパー ── */
 .stepper{display:flex;align-items:center;gap:6px;}
@@ -181,6 +181,9 @@ input:focus,select:focus{border-color:var(--accent);}
   ::-webkit-scrollbar{width:10px;height:10px;}
   ::-webkit-scrollbar-track{background:var(--bg);}
   ::-webkit-scrollbar-thumb{background:#3a4046;border-radius:2px;}
+#recent-runs .row{padding:6px 12px;}
+#recent-runs .row-label{font-size:13px;}
+#recent-runs .row-sub{font-size:11px;margin-top:1px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
@@ -209,7 +212,7 @@ input:focus,select:focus{border-color:var(--accent);}
         <circle cx="30" cy="36" r="18.5" opacity=".26"/>
         <circle cx="30" cy="36" r="10" opacity=".24"/>
         <path d="M3 36h5M52 36h5M30 9v5M30 58v5" opacity=".38"/>
-        <path d="M30 36 L12 47" opacity=".28" stroke-width="1.8"/>
+        <path d="M30 36 L12 47" stroke="#9acd32" opacity=".85" stroke-width="2.1"/>
         <g transform="translate(20,-9) scale(1.02)">
           <path d="M21 33a7.5 7.5 0 0 1 .8-14.9A11 11 0 0 1 42 20.8a7.1 7.1 0 0 1 2.2 13.9H21z"
                 fill="var(--card)" stroke="currentColor" stroke-width="1.7"/>
@@ -217,8 +220,7 @@ input:focus,select:focus{border-color:var(--accent);}
         <path d="M52 28l-3.4 6.8M59 26.5l-3.4 6.8M65 25l-3 6"
               stroke="#4da3ff" stroke-width="2.3" opacity=".95"/>
         <path d="M55 10 L40.5 26.5 L49 29.5 L30 36 L42.5 30.5 L34.5 27.5 L48 10 Z"
-              fill="var(--danger)" stroke="none"/>
-        <circle cx="30" cy="36" r="4" fill="var(--danger)" stroke="none"/>
+              fill="#ffd21e" stroke="none"/>
       </svg>
     </div>
     <h2 style="font-size:27.6px;margin-bottom:8px;letter-spacing:.06em;">MANUAL DISPATCH</h2>
@@ -272,8 +274,8 @@ input:focus,select:focus{border-color:var(--accent);}
       <div class="row" style="flex-wrap:wrap;gap:8px;padding:8px 12px;border-bottom:none;">
         <span style="font-size:16.3px;font-weight:600;color:var(--sub);">向き</span>
         <div style="display:flex;gap:5px;align-items:center;">
-          <button id="orient-portrait" class="orient-btn sel" onclick="setOrient('portrait')">📄 縦</button>
-          <button id="orient-landscape" class="orient-btn" onclick="setOrient('landscape')">📋 横</button>
+          <button id="orient-portrait" class="orient-btn sel" onclick="setOrient('portrait')"><svg width="11" height="15" viewBox="0 0 11 15" style="vertical-align:-2px;margin-right:5px;"><rect x="0.8" y="0.8" width="9.4" height="13.4" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>縦</button>
+          <button id="orient-landscape" class="orient-btn" onclick="setOrient('landscape')"><svg width="15" height="11" viewBox="0 0 15 11" style="vertical-align:-1px;margin-right:5px;"><rect x="0.8" y="0.8" width="13.4" height="9.4" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>横</button>
         </div>
         <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
           <span style="font-size:15px;color:var(--sub);">列</span>
@@ -310,21 +312,7 @@ input:focus,select:focus{border-color:var(--accent);}
     </div>
   </div>
 
-  <!-- PDF共通設定 -->
-  <div class="card">
-    <div class="row" style="flex-wrap:wrap;gap:6px 12px;padding:8px 12px;border-bottom:none;">
-      <span style="font-size:16.3px;font-weight:600;color:var(--sub);">共通設定（全ページ）</span>
-      <label class="cmp-item">タイトル字<input type="number" class="input-sm cmp-num" id="in-titlefs" value="7" min="4" max="40" oninput="markDirty()"></label>
-      <label class="cmp-item">スタンプ字<input type="number" class="input-sm cmp-num" id="in-stampfs" value="7" min="4" max="40" oninput="markDirty()"></label>
-      <label class="cmp-item">スタンプ位置<input type="number" class="input-sm cmp-num" id="in-stampx" value="25" min="0" max="100" step="5" oninput="markDirty()"></label>
-      <label class="cmp-item">余白<input type="number" class="input-sm cmp-num" id="in-margin" value="55" min="0" max="200" oninput="markDirty()"></label>
-      <label class="cmp-item">間隔<input type="number" class="input-sm cmp-num" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></label>
-      <label class="cmp-item">JPEG<input type="range" id="sl-jpeg" min="60" max="100" step="5" value="90" style="width:64px;" oninput="updateSl('jpeg',this.value,'%')" onchange="markDirty()"><span class="slider-val cmp-val" id="val-jpeg">90%</span></label>
-      <label class="cmp-item">DPI<input type="range" id="sl-maxdpi" min="72" max="600" step="12" value="300" style="width:64px;" oninput="updateSl('maxdpi',this.value)" onchange="markDirty()"><span class="slider-val cmp-val" id="val-maxdpi">300</span></label>
-      <label class="cmp-item">上限<input type="number" class="input-sm cmp-num" id="in-maxmb" value="20" min="1" max="25" step="0.5" oninput="markDirty()">MB</label>
-    </div>
-  </div>
-</div>
+  
 
 <!-- ─── レイヤー ─── -->
 <div id="tab-overlay" class="tab-panel">
@@ -341,6 +329,21 @@ input:focus,select:focus{border-color:var(--accent);}
 
 <!-- ─── 設定 ─── -->
 <div id="tab-settings" class="tab-panel">
+  <!-- ページ設定 -->
+  <div class="card">
+    <div class="row" style="flex-wrap:wrap;gap:6px 12px;padding:8px 12px;border-bottom:none;">
+      <span style="font-size:16.3px;font-weight:600;color:var(--sub);">ページ設定</span>
+      <label class="cmp-item">タイトル字<input type="number" class="input-sm cmp-num" id="in-titlefs" value="7" min="4" max="40" oninput="markDirty()"></label>
+      <label class="cmp-item">スタンプ字<input type="number" class="input-sm cmp-num" id="in-stampfs" value="7" min="4" max="40" oninput="markDirty()"></label>
+      <label class="cmp-item">スタンプ位置<input type="number" class="input-sm cmp-num" id="in-stampx" value="25" min="0" max="100" step="5" oninput="markDirty()"></label>
+      <label class="cmp-item">余白<input type="number" class="input-sm cmp-num" id="in-margin" value="55" min="0" max="200" oninput="markDirty()"></label>
+      <label class="cmp-item">間隔<input type="number" class="input-sm cmp-num" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></label>
+      <label class="cmp-item">JPEG<input type="range" id="sl-jpeg" min="60" max="100" step="5" value="90" style="width:64px;" oninput="updateSl('jpeg',this.value,'%')" onchange="markDirty()"><span class="slider-val cmp-val" id="val-jpeg">90%</span></label>
+      <label class="cmp-item">DPI<input type="range" id="sl-maxdpi" min="72" max="600" step="12" value="300" style="width:64px;" oninput="updateSl('maxdpi',this.value)" onchange="markDirty()"><span class="slider-val cmp-val" id="val-maxdpi">300</span></label>
+      <label class="cmp-item">上限<input type="number" class="input-sm cmp-num" id="in-maxmb" value="20" min="1" max="25" step="0.5" oninput="markDirty()">MB</label>
+    </div>
+  </div>
+</div>
   <div class="card">
     <div class="card-title">GitHub 接続設定</div>
     <div class="row"><div class="row-label">リポジトリ<div class="row-sub">owner/repo 形式</div></div></div>
@@ -956,6 +959,15 @@ function updatePreviewImages(){
     t.appendChild(inner);
     layer.appendChild(t);
   });
+  // 選択中スロットの枠を最前面に（画像で隠れないように）
+  if(selectedSlotIdx>=0&&selectedSlotIdx<(pg.slots||[]).length){
+    const r=Math.floor(selectedSlotIdx/cols),c=selectedSlotIdx%cols;
+    const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
+    const sel=document.createElement('div');
+    sel.style.cssText='position:absolute;left:'+(x*sx)+'px;top:'+(y*sy)+'px;width:'+(cellW*sx)+'px;'+
+      'height:'+(cellH*sy)+'px;border:2px solid #e82127;box-sizing:border-box;pointer-events:none;';
+    layer.appendChild(sel);
+  }
 }
 
 function handlePreviewClick(event){
