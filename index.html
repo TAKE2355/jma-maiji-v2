@@ -294,11 +294,11 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="card">
     <div class="row" style="flex-wrap:wrap;gap:6px 12px;padding:8px 12px;border-bottom:none;">
       <span style="font-size:13px;font-weight:600;color:var(--sub);">共通設定（全ページ）</span>
-      <label class="cmp-item">余白<input type="number" class="input-sm cmp-num" id="in-margin" value="55" min="0" max="200" oninput="markDirty()"></label>
-      <label class="cmp-item">スタンプ高<input type="number" class="input-sm cmp-num" id="in-header" value="65" min="0" max="200" oninput="markDirty()"></label>
-      <label class="cmp-item">スタンプ字<input type="number" class="input-sm cmp-num" id="in-stampfs" value="7" min="4" max="40" oninput="markDirty()"></label>
-      <label class="cmp-item">間隔<input type="number" class="input-sm cmp-num" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></label>
       <label class="cmp-item">タイトル字<input type="number" class="input-sm cmp-num" id="in-titlefs" value="7" min="4" max="40" oninput="markDirty()"></label>
+      <label class="cmp-item">スタンプ字<input type="number" class="input-sm cmp-num" id="in-stampfs" value="7" min="4" max="40" oninput="markDirty()"></label>
+      <label class="cmp-item">スタンプ位置<input type="number" class="input-sm cmp-num" id="in-stampx" value="25" min="0" max="100" step="5" oninput="markDirty()"></label>
+      <label class="cmp-item">余白<input type="number" class="input-sm cmp-num" id="in-margin" value="55" min="0" max="200" oninput="markDirty()"></label>
+      <label class="cmp-item">間隔<input type="number" class="input-sm cmp-num" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></label>
       <label class="cmp-item">JPEG<input type="range" id="sl-jpeg" min="60" max="100" step="5" value="90" style="width:64px;" oninput="updateSl('jpeg',this.value,'%')" onchange="markDirty()"><span class="slider-val cmp-val" id="val-jpeg">90%</span></label>
       <label class="cmp-item">DPI<input type="range" id="sl-maxdpi" min="72" max="600" step="12" value="300" style="width:64px;" oninput="updateSl('maxdpi',this.value)" onchange="markDirty()"><span class="slider-val cmp-val" id="val-maxdpi">300</span></label>
       <label class="cmp-item">上限<input type="number" class="input-sm cmp-num" id="in-maxmb" value="20" min="1" max="25" step="0.5" oninput="markDirty()">MB</label>
@@ -509,8 +509,8 @@ function collectFromUI(){
   const p=config.pdf;
   p.jpeg_quality=+document.getElementById('sl-jpeg').value;
   p.page_margin=+document.getElementById('in-margin').value;
-  p.header_h=+document.getElementById('in-header').value;
   p.stamp_size=+document.getElementById('in-stampfs').value;
+  p.stamp_x=+document.getElementById('in-stampx').value;
   p.cell_gap=+document.getElementById('in-gap').value;
   p.title_size=+document.getElementById('in-titlefs').value;
   p.max_dpi=+document.getElementById('sl-maxdpi').value;
@@ -520,8 +520,8 @@ function applyToUI(){
   const p=config.pdf;
 setSl('jpeg',p.jpeg_quality,'%');
   document.getElementById('in-margin').value=p.page_margin;
-  document.getElementById('in-header').value=p.header_h;
   document.getElementById('in-stampfs').value=p.stamp_size||7;
+  document.getElementById('in-stampx').value=(p.stamp_x!=null?p.stamp_x:25);
   document.getElementById('in-gap').value=p.cell_gap;
   document.getElementById('in-titlefs').value=p.title_size||7;
   setSl('maxdpi',p.max_dpi||300,'');
@@ -717,9 +717,9 @@ function _getSlotAt(cx,cy){
   const canvas=document.getElementById('layout-preview');
   const W=canvas.width,H=canvas.height;
   const cols=pg.cols,rows=pg.rows;
-  const margin=Math.round(W*0.05);
-  const headerH=Math.round(H*0.06);
-  const gap=Math.round(W*0.01);
+  const margin=Math.round(W*0.015);
+  const headerH=0;
+  const gap=Math.round(W*0.006);
   const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
   const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
@@ -949,9 +949,9 @@ function handlePreviewClick(event){
 
   const W=canvas.width,H=canvas.height;
   const cols=pg.cols,rows=pg.rows;
-  const margin=Math.round(W*0.05);
-  const headerH=Math.round(H*0.06);
-  const gap=Math.round(W*0.01);
+  const margin=Math.round(W*0.015);
+  const headerH=0;
+  const gap=Math.round(W*0.006);
   const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
   const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
 
