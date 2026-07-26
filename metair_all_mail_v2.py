@@ -43,6 +43,7 @@ CELL_GAP     = _pdf["cell_gap"]
 LABEL_H      = _pdf.get("label_h", 50)   # 旧設定（レイアウトには未使用）
 TITLE_SIZE   = float(_pdf.get("title_size", 7))  # タイトル文字サイズ(pt)
 STAMP_SIZE   = float(_pdf.get("stamp_size", 7))   # スタンプ文字サイズ(pt)
+STAMP_X      = float(_pdf.get("stamp_x", 25))    # スタンプ横位置(0=左端, 100=右端)
 JPEG_QUALITY = _pdf.get("jpeg_quality", 90)
 MAX_DPI      = _pdf.get("max_dpi", DPI)    # DPI上限
 MIN_DPI      = _pdf.get("min_dpi", 72)       # DPI下限
@@ -471,7 +472,7 @@ def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
         a4_pt = (img2pdf.mm_to_pt(210), img2pdf.mm_to_pt(297))
 
     cell_w = (pw - 2*PAGE_MARGIN - (cols-1)*CELL_GAP) // cols
-    cell_h = (ph - 2*PAGE_MARGIN - HEADER_H - (rows-1)*CELL_GAP) // rows
+    cell_h = (ph - 2*PAGE_MARGIN - (rows-1)*CELL_GAP) // rows
 
     now     = datetime.datetime.utcnow()
     header  = f"{now.strftime('%H:%M')} UTC  {now.strftime('%m/%d/%Y')}"
@@ -487,13 +488,25 @@ def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
         col = idx % cols
         row = idx // cols
         x0  = PAGE_MARGIN + col * (cell_w + CELL_GAP)
-        y0  = PAGE_MARGIN + HEADER_H + row * (cell_h + CELL_GAP)
+        y0  = PAGE_MARGIN + row * (cell_h + CELL_GAP)
         _draw_image_in_box(page_img, im, label, x0, y0, cell_w, cell_h, dpi)
 
-    # スタンプ・ページ番号を最前面に描画（画像に隠れないよう背景を敷く）
-    if HEADER_H > 0:
-        draw.rectangle([0, 0, pw-1, PAGE_MARGIN+HEADER_H-1], fill=(255,255,255))
-    draw.text((int(pw*0.25), PAGE_MARGIN), header, fill=(60,60,60), font=get_font(round(STAMP_SIZE*dpi/72)))
+    # スタンプ・ページ番号を最前面に描画（文字の背後だけ白地を敷く）
+    s_fs   = max(6, int(round(STAMP_SIZE * dpi / 72)))
+    s_font = get_font(s_fs)
+    try:
+        s_w = draw.textlength(header, font=s_font)
+    except Exception:
+        try:
+            s_w = s_font.getsize(header)[0]
+        except Exception:
+            s_w = len(header) * s_fs * 0.6
+    s_pad = max(2, s_fs // 6)
+    s_x   = max(0, min(pw - int(s_w) - s_pad*2, int(pw * STAMP_X / 100)))
+    draw.rectangle([s_x-s_pad, PAGE_MARGIN-s_pad,
+                    s_x+int(s_w)+s_pad, PAGE_MARGIN+s_fs+s_pad], fill=(255,255,255))
+    draw.text((s_x, PAGE_MARGIN), header, fill=(60,60,60), font=s_font)
+    draw.rectangle([pw-PAGE_MARGIN-155, PAGE_MARGIN-3, pw-PAGE_MARGIN, PAGE_MARGIN+36], fill=(255,255,255))
     draw.text((pw-PAGE_MARGIN-150, PAGE_MARGIN),
               f"P.{page_num}/{total_pages}", fill=(130,130,130), font=get_font(30))
 
