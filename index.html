@@ -86,7 +86,7 @@ input:focus,select:focus{border-color:var(--accent);}
 /* ── 受信者カード ── */
 .rc-card{background:var(--card);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
 .rc-header{display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer;user-select:none;}
-.rc-avatar{width:40px;height:40px;border-radius:2px;background:var(--accent);color:white;
+.rc-avatar{width:40px;height:40px;border-radius:2px;background:var(--accent);color:#000;
   display:flex;align-items:center;justify-content:center;font-size:21.3px;font-weight:700;flex-shrink:0;}
 .rc-info{flex:1;min-width:0;}
 .rc-name{font-size:20px;font-weight:600;}
@@ -121,7 +121,7 @@ input:focus,select:focus{border-color:var(--accent);}
 .page-tab{flex:none;width:48px;padding:9px 0;text-align:center;font-size:16.3px;
   font-family:var(--font);font-weight:600;border:1px solid var(--border);border-radius:2px;
   background:var(--card2);color:var(--sub);cursor:pointer;white-space:nowrap;transition:all .15s;}
-.page-tab.active{border-color:var(--text);background:var(--text);color:var(--bg);}
+.page-tab.active{border-color:var(--danger);background:var(--danger);color:#fff;}
 .page-tab-ghost{opacity:0.35;background:var(--border)!important;}
 .page-tab-chosen{cursor:grabbing!important;box-shadow:0 4px 12px rgba(0,0,0,.2);}
 .page-tab-add{flex:none;padding:8px 16px;font-size:22.6px;font-family:var(--font);
@@ -150,7 +150,7 @@ input:focus,select:focus{border-color:var(--accent);}
   transition:background .2s;
 }
 .slot-assign-item:last-child{border-bottom:none;}
-.slot-assign-item.highlighted{background:#232830;}
+.slot-assign-item.highlighted{background:#3a1f22;}
 .slot-assign-num{
   width:28px;height:28px;border-radius:2px;background:var(--accent);color:#000;
   font-size:16.3px;font-weight:700;display:flex;align-items:center;justify-content:center;
@@ -193,7 +193,7 @@ input:focus,select:focus{border-color:var(--accent);}
 <nav>
   <button class="active" onclick="showTab('send',this)">送信</button>
   <button onclick="showTab('recipients',this)">受信者</button>
-  <button onclick="showTab('layout',this)">ページ設定</button>
+  <button onclick="showTab('layout',this)">気象図選択</button>
   <button onclick="showTab('overlay',this)">レイヤー</button>
   <button onclick="showTab('settings',this)">設定</button>
 </nav>
@@ -216,8 +216,10 @@ input:focus,select:focus{border-color:var(--accent);}
         </g>
         <path d="M50 27l-3.4 6.8M57 25.5l-3.4 6.8M63 24l-3 6"
               stroke="#4da3ff" stroke-width="2.2" opacity=".95"/>
-        <path d="M49 12.5 L36.5 24.5 L43 26.4 L32 34 L39.8 27 L33.4 25.1 L45 12.5 Z"
-              fill="var(--danger)" stroke="none"/>
+        <g transform="translate(32,34) scale(2) translate(-32,-34)">
+          <path d="M49 12.5 L36.5 24.5 L43 26.4 L32 34 L39.8 27 L33.4 25.1 L45 12.5 Z"
+                fill="var(--danger)" stroke="none"/>
+        </g>
         <circle cx="32" cy="34" r="3.6" fill="var(--danger)" stroke="none"/>
       </svg>
     </div>
@@ -846,11 +848,11 @@ function drawPreview(){
     // セル背景（DnD状態を反映）
     const isDndSrc=idx===_dndSrc&&_dndDragging;
     const isDndOver=idx===_dndOver&&_dndDragging&&_dndSrc!==_dndOver;
-    ctx.fillStyle=isDndSrc?'rgba(200,200,200,0.4)':isDndOver?'#fff3cd':isSelected?'#e8f0fe':'#f2f2f7';
+    ctx.fillStyle=isDndSrc?'rgba(200,200,200,0.4)':isDndOver?'#fff3cd':isSelected?'#fdeaea':'#f2f2f7';
     ctx.fillRect(x,y,cellW,cellH);
 
     // 枠線（DnD状態を反映）
-    ctx.strokeStyle=isDndOver?'#ff9500':isSelected?'#007aff':'#d1d1d6';
+    ctx.strokeStyle=isDndOver?'#ff9500':isSelected?'#e82127':'#d1d1d6';
     ctx.lineWidth=(isDndOver||isSelected)?2:1;
     ctx.strokeRect(x+0.5,y+0.5,cellW-1,cellH-1);
 
@@ -1217,16 +1219,16 @@ function saveRc(){
 async function triggerWorkflow(){
   if(!getRepo()||!getPAT()){showToast('設定タブでリポジトリとPATを入力してください');return;}
   const btn=document.getElementById('send-btn'),log=document.getElementById('send-log');
-  btn.textContent='⏳ 起動中...';btn.disabled=true;log.style.display='block';log.textContent='→ GitHub Actions を起動しています...\n';
+  btn.textContent='SENDING...';btn.disabled=true;log.style.display='block';log.textContent='> Starting GitHub Actions...\n';
   try{
     const triggerTime = new Date().toISOString();
     const r=await fetch(`https://api.github.com/repos/${getRepo()}/actions/workflows/send_metair.yml/dispatches`,
       {method:'POST',headers:apiHdr(),body:JSON.stringify({ref:getBranch()})});
-    if(r.status===204){log.textContent+='✅ 起動しました！\n\n約2〜3分後にメールが届きます。\n';btn.textContent='✅ 送信開始';btn.style.background='var(--success)';
-      setTimeout(()=>{btn.textContent='🚀 今すぐ送信';btn.style.background='';btn.disabled=false;loadRuns();},5000);
+    if(r.status===204){log.textContent+='OK  Dispatched. Mail arrives in about 2-3 minutes.\n';btn.textContent='DISPATCHED';btn.style.background='var(--success)';
+      setTimeout(()=>{btn.textContent='SEND NOW';btn.style.background='';btn.disabled=false;loadRuns();},5000);
       pollRunUntilComplete(triggerTime, log);
-    }else{const d=await r.json();log.textContent+=`❌ ${d.message}\n`;btn.textContent='🚀 今すぐ送信';btn.disabled=false;}
-  }catch(e){log.textContent+=`❌ ${e.message}\n`;btn.textContent='🚀 今すぐ送信';btn.disabled=false;}
+    }else{const d=await r.json();log.textContent+=`❌ ${d.message}\n`;btn.textContent='SEND NOW';btn.disabled=false;}
+  }catch(e){log.textContent+=`❌ ${e.message}\n`;btn.textContent='SEND NOW';btn.disabled=false;}
 }
 
 async function pollRunUntilComplete(triggerTime, log) {
@@ -1242,16 +1244,16 @@ async function pollRunUntilComplete(triggerTime, log) {
       if (!run) continue;
       if (run.status === 'completed') {
         if (run.conclusion === 'success') {
-          log.textContent += '\n✅ メールが送信されました！！\n';
+          log.textContent += '\nCOMPLETE  Mail has been sent.\n';
         } else {
-          log.textContent += `\n❌ ワークフロー失敗 (${run.conclusion})\n`;
+          log.textContent += `\nFAILED  (${run.conclusion})\n`;
         }
         return;
       }
-      log.textContent += `⏳ 実行中... (${run.status})\n`;
+      log.textContent += `Running... (${run.status})\n`;
     } catch(e) { /* ignore */ }
   }
-  log.textContent += '\n⏰ タイムアウト: 完了を確認できませんでした。\n';
+  log.textContent += '\nTIMEOUT  Could not confirm completion.\n';
 }
 async function loadRuns(){
   if(!getRepo()||!getPAT())return;
