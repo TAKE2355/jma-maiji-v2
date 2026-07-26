@@ -568,6 +568,24 @@
           "taf": true
         },
         {
+          "ids": "RORS",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "ROMY",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "ROIG",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
           "ids": "ZSSS",
           "hours": 3,
           "metar": true,
@@ -611,24 +629,6 @@
         },
         {
           "ids": "VMMC",
-          "hours": 3,
-          "metar": true,
-          "taf": true
-        },
-        {
-          "ids": "RORS",
-          "hours": 3,
-          "metar": true,
-          "taf": true
-        },
-        {
-          "ids": "ROMY",
-          "hours": 3,
-          "metar": true,
-          "taf": true
-        },
-        {
-          "ids": "ROIG",
           "hours": 3,
           "metar": true,
           "taf": true
