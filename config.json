@@ -664,6 +664,19 @@
         },
         null
       ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 1,
+      "rows": 1,
+      "slots": [
+        {
+          "type": "metair_ashfall",
+          "code": "3",
+          "label": "降灰予報・桜島",
+          "overlay": false
+        }
+      ]
     }
   ]
 }
