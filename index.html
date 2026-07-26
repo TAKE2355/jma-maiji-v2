@@ -174,12 +174,11 @@ input:focus,select:focus{border-color:var(--accent);}
   background:rgba(0,0,0,.85);color:white;padding:11px 18px;border-radius:20px;
   font-size:15px;transition:transform .3s,opacity .3s;opacity:0;z-index:999;white-space:nowrap;}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-#save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);
-  border-top:1px solid var(--border);padding:10px 18px;display:none;gap:10px;
-  box-shadow:0 -2px 12px rgba(0,0,0,.08);z-index:98;}
+#save-bar{position:fixed;top:53px;left:0;right:0;background:var(--card);
+  border-bottom:1px solid var(--border);padding:6px 14px;display:none;gap:10px;
+  box-shadow:0 2px 12px rgba(0,0,0,.10);z-index:101;align-items:center;}
 #save-bar.show{display:flex;}
-#save-bar .btn{flex:1;padding:13px;font-size:16px;}
-body.has-bar main{padding-bottom:78px;}
+#save-bar .btn{flex:1;padding:9px;font-size:15px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
@@ -299,7 +298,7 @@ body.has-bar main{padding-bottom:78px;}
       <label class="cmp-item">スタンプ高<input type="number" class="input-sm cmp-num" id="in-header" value="65" min="0" max="200" oninput="markDirty()"></label>
       <label class="cmp-item">スタンプ字<input type="number" class="input-sm cmp-num" id="in-stampfs" value="7" min="4" max="40" oninput="markDirty()"></label>
       <label class="cmp-item">間隔<input type="number" class="input-sm cmp-num" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></label>
-      <label class="cmp-item">ラベル<input type="number" class="input-sm cmp-num" id="in-labelh" value="50" min="20" max="120" oninput="markDirty()"></label>
+      <label class="cmp-item">タイトル<input type="number" class="input-sm cmp-num" id="in-labelh" value="50" min="20" max="120" oninput="markDirty()"></label>
       <label class="cmp-item">JPEG<input type="range" id="sl-jpeg" min="60" max="100" step="5" value="90" style="width:64px;" oninput="updateSl('jpeg',this.value,'%')" onchange="markDirty()"><span class="slider-val cmp-val" id="val-jpeg">90%</span></label>
       <label class="cmp-item">DPI<input type="range" id="sl-maxdpi" min="72" max="600" step="12" value="300" style="width:64px;" oninput="updateSl('maxdpi',this.value)" onchange="markDirty()"><span class="slider-val cmp-val" id="val-maxdpi">300</span></label>
       <label class="cmp-item">上限<input type="number" class="input-sm cmp-num" id="in-maxmb" value="20" min="1" max="25" step="0.5" oninput="markDirty()">MB</label>
