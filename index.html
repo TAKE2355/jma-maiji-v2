@@ -298,7 +298,7 @@ input:focus,select:focus{border-color:var(--accent);}
       <label class="cmp-item">スタンプ高<input type="number" class="input-sm cmp-num" id="in-header" value="65" min="0" max="200" oninput="markDirty()"></label>
       <label class="cmp-item">スタンプ字<input type="number" class="input-sm cmp-num" id="in-stampfs" value="7" min="4" max="40" oninput="markDirty()"></label>
       <label class="cmp-item">間隔<input type="number" class="input-sm cmp-num" id="in-gap" value="12" min="0" max="60" oninput="markDirty()"></label>
-      <label class="cmp-item">タイトル<input type="number" class="input-sm cmp-num" id="in-labelh" value="50" min="20" max="120" oninput="markDirty()"></label>
+      <label class="cmp-item">タイトル字<input type="number" class="input-sm cmp-num" id="in-titlefs" value="7" min="4" max="40" oninput="markDirty()"></label>
       <label class="cmp-item">JPEG<input type="range" id="sl-jpeg" min="60" max="100" step="5" value="90" style="width:64px;" oninput="updateSl('jpeg',this.value,'%')" onchange="markDirty()"><span class="slider-val cmp-val" id="val-jpeg">90%</span></label>
       <label class="cmp-item">DPI<input type="range" id="sl-maxdpi" min="72" max="600" step="12" value="300" style="width:64px;" oninput="updateSl('maxdpi',this.value)" onchange="markDirty()"><span class="slider-val cmp-val" id="val-maxdpi">300</span></label>
       <label class="cmp-item">上限<input type="number" class="input-sm cmp-num" id="in-maxmb" value="20" min="1" max="25" step="0.5" oninput="markDirty()">MB</label>
@@ -512,7 +512,7 @@ function collectFromUI(){
   p.header_h=+document.getElementById('in-header').value;
   p.stamp_size=+document.getElementById('in-stampfs').value;
   p.cell_gap=+document.getElementById('in-gap').value;
-  p.label_h=+document.getElementById('in-labelh').value;
+  p.title_size=+document.getElementById('in-titlefs').value;
   p.max_dpi=+document.getElementById('sl-maxdpi').value;
   p.max_mail_mb=+document.getElementById('in-maxmb').value;
 }
@@ -523,7 +523,7 @@ setSl('jpeg',p.jpeg_quality,'%');
   document.getElementById('in-header').value=p.header_h;
   document.getElementById('in-stampfs').value=p.stamp_size||7;
   document.getElementById('in-gap').value=p.cell_gap;
-  document.getElementById('in-labelh').value=p.label_h;
+  document.getElementById('in-titlefs').value=p.title_size||7;
   setSl('maxdpi',p.max_dpi||300,'');
   document.getElementById('in-maxmb').value=p.max_mail_mb||20;
   renderOvLayers();
@@ -807,7 +807,7 @@ function drawPreview(){
   const margin=Math.round(W*0.015);
   const headerH=0;
   const gap=Math.round(W*0.006);
-  const labelH=Math.max(10,Math.round(H*0.018));
+  const labelH=0;  // タイトルは画像に重ねる（レイアウトに影響しない）
 
   const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
   const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
@@ -829,10 +829,6 @@ function drawPreview(){
     ctx.fillStyle=isDndSrc?'rgba(200,200,200,0.4)':isDndOver?'#fff3cd':isSelected?'#e8f0fe':'#f2f2f7';
     ctx.fillRect(x,y,cellW,cellH);
 
-    // ラベル帯
-    ctx.fillStyle=isSelected?'#c2d4fd':'#e5e5ea';
-    ctx.fillRect(x,y,cellW,labelH);
-
     // 枠線（DnD状態を反映）
     ctx.strokeStyle=isDndOver?'#ff9500':isSelected?'#007aff':'#d1d1d6';
     ctx.lineWidth=(isDndOver||isSelected)?2:1;
@@ -850,11 +846,15 @@ function drawPreview(){
       ctx.textAlign='center';ctx.textBaseline='top';
       const lbl=slot.label;
       const maxW=cellW-6;
-      const maxFs=Math.round(labelH*0.82);
+      const maxFs=Math.max(6,Math.round(H*0.016));
       let fs=maxFs;
       for(let s=maxFs;s>=5;s--){ctx.font=s+'px sans-serif';if(ctx.measureText(lbl).width<=maxW){fs=s;break;}}
-      ctx.fillStyle='#3a3a3c';ctx.font=fs+'px sans-serif';
-      ctx.fillText(lbl,x+cellW/2,y+(labelH-fs)/2);
+      ctx.font=fs+'px sans-serif';
+      const tw=ctx.measureText(lbl).width;
+      ctx.fillStyle='rgba(255,255,255,0.92)';
+      ctx.fillRect(x+cellW/2-tw/2-3,y+2,tw+6,fs+4);
+      ctx.fillStyle='#3a3a3c';
+      ctx.fillText(lbl,x+cellW/2,y+4);
     }
   }
 
@@ -904,7 +904,7 @@ function updatePreviewImages(){
   const margin=Math.round(W*0.015);
   const headerH=0;
   const gap=Math.round(W*0.006);
-  const labelH=Math.max(10,Math.round(H*0.018));
+  const labelH=0;  // タイトルは画像に重ねる（レイアウトに影響しない）
   const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
   const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
   const sx=displayW/W,sy=displayH/H;
