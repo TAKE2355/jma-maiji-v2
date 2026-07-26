@@ -3,7 +3,7 @@
     "dpi": 600,
     "page_margin": 10,
     "header_h": 15,
-    "cell_gap": 5,
+    "cell_gap": 0,
     "label_h": 50,
     "jpeg_quality": 60,
     "max_dpi": 600,
