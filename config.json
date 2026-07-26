@@ -10,7 +10,7 @@
     "max_mail_mb": 18,
     "stamp_size": 6,
     "title_size": 6,
-    "stamp_x": 25
+    "stamp_x": 15
   },
   "overlay": {
     "enabled": true,
