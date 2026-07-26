@@ -41,6 +41,7 @@ PAGE_MARGIN  = _pdf["page_margin"]
 HEADER_H     = _pdf["header_h"]
 CELL_GAP     = _pdf["cell_gap"]
 LABEL_H      = _pdf["label_h"]
+STAMP_SIZE   = float(_pdf.get("stamp_size", 7))   # スタンプ文字サイズ(pt)
 JPEG_QUALITY = _pdf.get("jpeg_quality", 90)
 MAX_DPI      = _pdf.get("max_dpi", DPI)    # DPI上限
 MIN_DPI      = _pdf.get("min_dpi", 72)       # DPI下限
@@ -467,11 +468,11 @@ def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
     cell_h = (ph - 2*PAGE_MARGIN - HEADER_H - (rows-1)*CELL_GAP) // rows
 
     now     = datetime.datetime.utcnow()
-    header  = f"気象情報  {now.strftime('%Y/%m/%d %H:%M')} UTC"
+    header  = f"{now.strftime('%H:%M')} UTC  {now.strftime('%m/%d/%Y')}"
 
     page_img = Image.new("RGB", (pw, ph), (255, 255, 255))
     draw     = ImageDraw.Draw(page_img)
-    draw.text((PAGE_MARGIN, PAGE_MARGIN), header, fill=(60,60,60), font=get_font(round(7*dpi/72)))
+    draw.text((int(pw*0.25), PAGE_MARGIN), header, fill=(60,60,60), font=get_font(round(STAMP_SIZE*dpi/72)))
     draw.text((pw-PAGE_MARGIN-150, PAGE_MARGIN),
               f"P.{page_num}/{total_pages}", fill=(130,130,130), font=get_font(30))
 
