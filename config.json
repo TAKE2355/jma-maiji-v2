@@ -16,17 +16,12 @@
       {
         "minutes": 60,
         "alpha": 0.25,
-        "enabled": false
+        "enabled": true
       },
       {
         "minutes": 120,
         "alpha": 0.1,
         "enabled": true
-      },
-      {
-        "minutes": 180,
-        "alpha": 0.05,
-        "enabled": false
       }
     ]
   },
