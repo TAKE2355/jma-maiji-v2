@@ -436,7 +436,7 @@
           "taf": true
         },
         {
-          "ids": "RJEC",
+          "ids": "RJEC,RJCB",
           "hours": 3,
           "metar": true,
           "taf": true
