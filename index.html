@@ -276,7 +276,11 @@ input:focus,select:focus{border-color:var(--accent);}
           <button id="orient-portrait" class="orient-btn sel" onclick="setOrient('portrait')"><svg width="11" height="15" viewBox="0 0 11 15" style="vertical-align:-2px;margin-right:5px;"><rect x="0.8" y="0.8" width="9.4" height="13.4" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>縦</button>
           <button id="orient-landscape" class="orient-btn" onclick="setOrient('landscape')"><svg width="15" height="11" viewBox="0 0 15 11" style="vertical-align:-1px;margin-right:5px;"><rect x="0.8" y="0.8" width="13.4" height="9.4" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>横</button>
         </div>
-        <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+        <div class="ov-slot" style="margin-left:14px;" title="このページをMETAR/TAFテキストページにする">
+          <span style="font-size:15px;color:var(--sub);">METAR/TAF</span>
+          <label class="toggle sm"><input type="checkbox" id="page-metar" onchange="setPageMode(this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="grid-ctrl" style="display:flex;align-items:center;gap:4px;margin-left:auto;">
           <span style="font-size:15px;color:var(--sub);">列</span>
           <div class="stepper">
             <button class="stepper-btn" onclick="adjustGrid('cols',-1)">−</button>
@@ -305,9 +309,15 @@ input:focus,select:focus{border-color:var(--accent);}
     </div>
 
     <!-- 天気図スロット割り当て -->
-    <div class="card">
+    <div class="card" id="chart-card">
       <div class="card-title">天気図配置</div>
       <div id="slot-assign-list"></div>
+    </div>
+
+    <!-- METAR/TAF -->
+    <div class="card" id="metar-card" style="display:none;">
+      <div class="card-title">METAR / TAF</div>
+      <div id="metar-rows"></div>
     </div>
   </div>
 </div>
@@ -692,10 +702,60 @@ function renderPageEditor(){
   }
 
   // キャンバスは常に描画（pg=null でもデフォルトグリッドを表示）
+  applyPageMode();
   drawPreview();
   renderSlotAssignList();
 }
 
+const METAR_ROWS=20;
+const HOURS_OPTS=[{v:0,l:'最新のみ'},{v:1,l:'past 1h'},{v:2,l:'past 2h'},{v:3,l:'past 3h'},
+  {v:6,l:'past 6h'},{v:12,l:'past 12h'},{v:24,l:'past 24h'},{v:48,l:'past 48h'},{v:96,l:'past 96h'}];
+
+function metarRows(){
+  const pg=curPage();if(!pg)return[];
+  if(!pg.metar_rows||!pg.metar_rows.length){
+    pg.metar_rows=Array.from({length:METAR_ROWS},()=>({ids:'',hours:3,metar:true,taf:true}));
+  }
+  while(pg.metar_rows.length<METAR_ROWS)pg.metar_rows.push({ids:'',hours:3,metar:true,taf:true});
+  return pg.metar_rows;
+}
+function setPageMode(on){
+  const pg=curPage();if(!pg)return;
+  pg.mode=on?'metar':'charts';
+  if(on)metarRows();
+  applyPageMode();markDirty();
+}
+function applyPageMode(){
+  const pg=curPage();
+  const isM=!!(pg&&pg.mode==='metar');
+  const cb=document.getElementById('page-metar');if(cb)cb.checked=isM;
+  const set=(id,show)=>{const el=document.getElementById(id);if(el)el.style.display=show?'':'none';};
+  set('preview-card',!isM); set('chart-card',!isM); set('metar-card',isM);
+  const g=document.getElementById('grid-ctrl');if(g)g.style.display=isM?'none':'flex';
+  if(isM)renderMetarRows();
+}
+function renderMetarRows(){
+  const box=document.getElementById('metar-rows');if(!box)return;
+  const rows=metarRows();
+  box.innerHTML='';
+  rows.forEach((row,i)=>{
+    const d=document.createElement('div');
+    d.className='row';d.style.cssText='gap:8px;flex-wrap:wrap;';
+    const opts=HOURS_OPTS.map(o=>'<option value="'+o.v+'"'+(+row.hours===o.v?' selected':'')+'>'+o.l+'</option>').join('');
+    d.innerHTML=
+      '<span style="font-size:13px;color:var(--sub);min-width:26px;">'+(i+1)+'</span>'+
+      '<input type="text" value="'+(row.ids||'').replace(/"/g,'&quot;')+'" placeholder="RJTT,RJAA" style="width:190px;text-transform:uppercase;" oninput="setMetarRow('+i+',\'ids\',this.value)">'+
+      '<select style="width:120px;" onchange="setMetarRow('+i+',\'hours\',this.value)">'+opts+'</select>'+
+      '<label class="cmp-item">METAR<input type="checkbox"'+(row.metar!==false?' checked':'')+' onchange="setMetarRow('+i+',\'metar\',this.checked)"></label>'+
+      '<label class="cmp-item">TAF<input type="checkbox"'+(row.taf!==false?' checked':'')+' onchange="setMetarRow('+i+',\'taf\',this.checked)"></label>';
+    box.appendChild(d);
+  });
+}
+function setMetarRow(i,k,v){
+  const rows=metarRows();if(!rows[i])return;
+  rows[i][k]=(k==='hours')?+v:(k==='ids')?String(v).toUpperCase():!!v;
+  markDirty();
+}
 function setOrient(o){
   const pg=curPage();if(!pg)return;
   pg.orientation=o;
