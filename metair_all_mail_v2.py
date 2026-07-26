@@ -149,6 +149,107 @@ def get_font(size=36):
     except Exception:
         return ImageFont.load_default()
 
+def get_mono_font(size=30):
+    for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+              "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+              "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"):
+        try:
+            return ImageFont.truetype(p, size)
+        except Exception:
+            continue
+    return get_font(size)
+
+AWC_API = "https://aviationweather.gov/api/data/metar"
+
+def fetch_metar_text(row):
+    """METAR/TAFをAWC公式APIから取得（認証不要）"""
+    ids = (row.get("ids") or "").strip()
+    if not ids:
+        return []
+    want_metar = row.get("metar", True)
+    want_taf   = row.get("taf", True)
+    if not want_metar and not want_taf:
+        return []
+    hours = int(row.get("hours", 3) or 3)
+    try:
+        params = {"ids": ids, "format": "raw", "taf": "true" if want_taf else "false"}
+        if want_metar:
+            params["hours"] = hours
+        else:
+            params["hours"] = 0
+        r = requests.get(AWC_API, params=params, timeout=25)
+        if r.status_code != 200:
+            print(f"    METAR HTTP {r.status_code} [{ids}]")
+            return [f"{ids}: 取得失敗 (HTTP {r.status_code})"]
+        lines = [ln.rstrip() for ln in r.text.splitlines() if ln.strip()]
+        if not want_metar:
+            lines = [ln for ln in lines if not ln.startswith("METAR ")]
+        print(f"    METAR OK [{ids}] {len(lines)}行")
+        return lines
+    except Exception as e:
+        print(f"    METARエラー [{ids}]: {e}")
+        return [f"{ids}: 取得エラー"]
+
+def build_metar_page(page_cfg, page_num, total_pages, dpi):
+    """METAR/TAFテキストページを生成"""
+    orient = page_cfg.get("orientation", "portrait")
+    if orient == "landscape":
+        pw = int(297 / 25.4 * dpi); ph = int(210 / 25.4 * dpi)
+        a4_pt = (img2pdf.mm_to_pt(297), img2pdf.mm_to_pt(210))
+    else:
+        pw = int(210 / 25.4 * dpi); ph = int(297 / 25.4 * dpi)
+        a4_pt = (img2pdf.mm_to_pt(210), img2pdf.mm_to_pt(297))
+
+    page_img = Image.new("RGB", (pw, ph), (255, 255, 255))
+    draw     = ImageDraw.Draw(page_img)
+
+    rows  = page_cfg.get("metar_rows", []) or []
+    blocks = []
+    for row in rows:
+        lines = fetch_metar_text(row)
+        if lines:
+            blocks.append(((row.get("ids") or "").upper(), lines))
+
+    # 収まるフォントサイズを自動決定
+    total_lines = sum(len(b[1]) + 1 for b in blocks) or 1
+    avail_h = ph - 2*PAGE_MARGIN - int(round(STAMP_SIZE*dpi/72)) - 20
+    fs = max(8, min(int(round(9*dpi/72)), int(avail_h / max(total_lines, 1) / 1.35)))
+    font  = get_mono_font(fs)
+    bfont = get_mono_font(fs)
+    lh    = int(fs * 1.35)
+    max_w = pw - 2*PAGE_MARGIN
+
+    def _w(txt, fnt):
+        try:    return draw.textlength(txt, font=fnt)
+        except Exception: return len(txt) * fs * 0.6
+
+    y = PAGE_MARGIN + int(round(STAMP_SIZE*dpi/72)) + 14
+    for ids, lines in blocks:
+        if y > ph - PAGE_MARGIN - lh: break
+        draw.rectangle([PAGE_MARGIN, y-2, pw-PAGE_MARGIN, y+lh-2], fill=(238,238,238))
+        draw.text((PAGE_MARGIN+4, y), ids, fill=(0,0,120), font=bfont)
+        y += lh
+        for ln in lines:
+            if y > ph - PAGE_MARGIN - lh: break
+            # 長い行は折り返し
+            while _w(ln, font) > max_w and len(ln) > 4:
+                cut = int(len(ln) * max_w / _w(ln, font))
+                draw.text((PAGE_MARGIN+4, y), ln[:cut], fill=(20,20,20), font=font)
+                ln = "   " + ln[cut:]
+                y += lh
+                if y > ph - PAGE_MARGIN - lh: break
+            draw.text((PAGE_MARGIN+4, y), ln, fill=(20,20,20), font=font)
+            y += lh
+        y += int(lh * 0.4)
+
+    now = datetime.datetime.utcnow()
+    header = f"{now.strftime('%H:%M')} UTC  {now.strftime('%m/%d/%Y')}"
+    s_fs = max(6, int(round(STAMP_SIZE * dpi / 72)))
+    draw.text((int(pw * STAMP_X / 100), PAGE_MARGIN), header, fill=(60,60,60), font=get_font(s_fs))
+    draw.text((pw-PAGE_MARGIN-150, PAGE_MARGIN),
+              f"P.{page_num}/{total_pages}", fill=(130,130,130), font=get_font(30))
+    return page_img, a4_pt
+
 def fetch_image(url):
     hdrs = METAIR_HEADERS if "metair.go.jp" in url else {}
     try:
@@ -517,7 +618,10 @@ def build_pdf(all_page_data, dpi):
     page_images = []
 
     for pg_num, (page_cfg, slot_images) in enumerate(all_page_data, start=1):
-        page_img, _ = build_one_page(page_cfg, slot_images, pg_num, n_pages, dpi)
+        if page_cfg.get("mode") == "metar":
+            page_img, _ = build_metar_page(page_cfg, pg_num, n_pages, dpi)
+        else:
+            page_img, _ = build_one_page(page_cfg, slot_images, pg_num, n_pages, dpi)
         page_images.append(page_img.convert("RGB"))
 
     if not page_images:
@@ -600,7 +704,7 @@ def collect_charts():
     for pg_idx, page_cfg in enumerate(pages_cfg):
         print(f"\n=== ページ {pg_idx+1} ({page_cfg.get('orientation','portrait')} "
               f"{page_cfg.get('cols',2)}×{page_cfg.get('rows',4)}) ===")
-        slots      = page_cfg.get("slots", [])
+        slots      = [] if page_cfg.get("mode") == "metar" else page_cfg.get("slots", [])
         slot_images = []
         for s_idx, slot in enumerate(slots):
             if slot is None:
