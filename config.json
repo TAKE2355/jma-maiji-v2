@@ -574,6 +574,12 @@
           "taf": true
         },
         {
+          "ids": "ZSPD",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
           "ids": "RCTP",
           "hours": 3,
           "metar": true,
@@ -605,12 +611,6 @@
         },
         {
           "ids": "VMMC",
-          "hours": 3,
-          "metar": true,
-          "taf": true
-        },
-        {
-          "ids": "ZSPD",
           "hours": 3,
           "metar": true,
           "taf": true
