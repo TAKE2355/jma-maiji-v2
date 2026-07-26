@@ -805,21 +805,16 @@ function drawPreview(){
   const W=Math.round(dispW), H=Math.round(dispW/aspect);
   canvas.width=W; canvas.height=H;
 
-  const margin=Math.round(W*0.05);
-  const headerH=Math.round(H*0.06);
-  const gap=Math.round(W*0.01);
-  const labelH=Math.round(H*0.05);
+  const margin=Math.round(W*0.015);
+  const headerH=0;
+  const gap=Math.round(W*0.006);
+  const labelH=Math.max(10,Math.round(H*0.018));
 
   const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
   const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
 
   const ctx=canvas.getContext('2d');
   ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
-
-  // ヘッダー
-  ctx.fillStyle='#f2f2f7';ctx.fillRect(margin,margin,W-2*margin,headerH-4);
-  ctx.fillStyle='#8e8e93';ctx.font=`${Math.round(H*0.03)}px sans-serif`;
-  ctx.fillText('HH:MM UTC  MM/DD/YYYY',W*0.25,margin+headerH*0.65);
 
   // セル
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
@@ -856,11 +851,11 @@ function drawPreview(){
       ctx.textAlign='center';ctx.textBaseline='top';
       const lbl=slot.label;
       const maxW=cellW-6;
-      const maxFs=Math.round(cellH*0.09);
+      const maxFs=Math.round(labelH*0.82);
       let fs=maxFs;
-      for(let s=maxFs;s>=6;s--){ctx.font=s+'px sans-serif';if(ctx.measureText(lbl).width<=maxW){fs=s;break;}}
+      for(let s=maxFs;s>=5;s--){ctx.font=s+'px sans-serif';if(ctx.measureText(lbl).width<=maxW){fs=s;break;}}
       ctx.fillStyle='#3a3a3c';ctx.font=fs+'px sans-serif';
-      ctx.fillText(lbl,x+cellW/2,y+labelH*0.25);
+      ctx.fillText(lbl,x+cellW/2,y+(labelH-fs)/2);
     }
   }
 
@@ -907,10 +902,10 @@ function updatePreviewImages(){
   if(!W||!H)return;
   const displayW=canvas.clientWidth,displayH=canvas.clientHeight;
   const cols=pg.cols,rows=pg.rows;
-  const margin=Math.round(W*0.05);
-  const headerH=Math.round(H*0.06);
-  const gap=Math.round(W*0.01);
-  const labelH=Math.round(H*0.05);
+  const margin=Math.round(W*0.015);
+  const headerH=0;
+  const gap=Math.round(W*0.006);
+  const labelH=Math.max(10,Math.round(H*0.018));
   const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
   const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
   const sx=displayW/W,sy=displayH/H;
