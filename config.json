@@ -15,12 +15,12 @@
     "layers": [
       {
         "minutes": 60,
-        "alpha": 0.25,
+        "alpha": 0.4,
         "enabled": true
       },
       {
         "minutes": 120,
-        "alpha": 0.1,
+        "alpha": 0.2,
         "enabled": true
       }
     ]
