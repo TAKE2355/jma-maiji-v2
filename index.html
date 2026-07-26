@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>NIMBUS — Aviation Weather Dispatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0e1012;--card:#17191c;--card2:#1f2226;--accent:#d0d3d6;--danger:#e82127;
@@ -222,7 +225,7 @@ input:focus,select:focus{border-color:var(--accent);}
               fill="#ffd21e" stroke="none"/>
       </svg>
     </div>
-    <h2 style="font-size:31px;margin-bottom:4px;letter-spacing:.16em;font-weight:700;">NIMBUS</h2>
+    <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);">NIMBUS</h2>
     <div style="font-size:12px;letter-spacing:.22em;color:var(--sub);margin-bottom:16px;">AVIATION WEATHER DISPATCH</div>
     <p class="send-desc">Send the weather chart PDF to all active recipients.<br>Takes approximately 2-3 minutes.</p>
     <button class="btn btn-primary" onclick="triggerWorkflow()" id="send-btn">SEND NOW</button>
