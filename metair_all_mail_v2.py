@@ -161,8 +161,14 @@ def get_mono_font(size=30):
 
 AWC_API = "https://aviationweather.gov/api/data/metar"
 
+_METAR_CACHE = {}
+
 def fetch_metar_text(row):
-    """METAR/TAFをAWC公式APIから取得（認証不要）"""
+    """METAR/TAFをAWC公式APIから取得（認証不要・結果はキャッシュ）"""
+    _ck = (str(row.get("ids","")).strip().upper(), int(row.get("hours",3) or 3),
+           bool(row.get("metar", True)), bool(row.get("taf", True)))
+    if _ck in _METAR_CACHE:
+        return _METAR_CACHE[_ck]
     ids = (row.get("ids") or "").strip()
     if not ids:
         return []
@@ -185,69 +191,75 @@ def fetch_metar_text(row):
         if not want_metar:
             lines = [ln for ln in lines if not ln.startswith("METAR ")]
         print(f"    METAR OK [{ids}] {len(lines)}行")
+        _METAR_CACHE[_ck] = lines
         return lines
     except Exception as e:
         print(f"    METARエラー [{ids}]: {e}")
         return [f"{ids}: 取得エラー"]
 
 def build_metar_page(page_cfg, page_num, total_pages, dpi):
-    """METAR/TAFテキストページを生成"""
+    """METAR/TAFを1ページに全て収める（幅はA4のまま、縦を内容に応じて伸ばす／黒地・白文字）"""
     orient = page_cfg.get("orientation", "portrait")
     if orient == "landscape":
-        pw = int(297 / 25.4 * dpi); ph = int(210 / 25.4 * dpi)
+        pw = int(297 / 25.4 * dpi); base_h = int(210 / 25.4 * dpi)
         a4_pt = (img2pdf.mm_to_pt(297), img2pdf.mm_to_pt(210))
     else:
-        pw = int(210 / 25.4 * dpi); ph = int(297 / 25.4 * dpi)
+        pw = int(210 / 25.4 * dpi); base_h = int(297 / 25.4 * dpi)
         a4_pt = (img2pdf.mm_to_pt(210), img2pdf.mm_to_pt(297))
 
-    page_img = Image.new("RGB", (pw, ph), (255, 255, 255))
-    draw     = ImageDraw.Draw(page_img)
-
-    rows  = page_cfg.get("metar_rows", []) or []
+    rows   = page_cfg.get("metar_rows", []) or []
     blocks = []
     for row in rows:
         lines = fetch_metar_text(row)
         if lines:
             blocks.append(((row.get("ids") or "").upper(), lines))
 
-    # 収まるフォントサイズを自動決定
-    total_lines = sum(len(b[1]) + 1 for b in blocks) or 1
-    avail_h = ph - 2*PAGE_MARGIN - int(round(STAMP_SIZE*dpi/72)) - 20
-    fs = max(8, min(int(round(9*dpi/72)), int(avail_h / max(total_lines, 1) / 1.35)))
-    font  = get_mono_font(fs)
-    bfont = get_mono_font(fs)
-    lh    = int(fs * 1.35)
-    max_w = pw - 2*PAGE_MARGIN
+    probe = Image.new("RGB", (8, 8))
+    pdraw = ImageDraw.Draw(probe)
+    max_w = pw - 2*PAGE_MARGIN - 8
+    top0  = PAGE_MARGIN + int(round(STAMP_SIZE*dpi/72)) + 16
 
-    def _w(txt, fnt):
-        try:    return draw.textlength(txt, font=fnt)
-        except Exception: return len(txt) * fs * 0.6
+    fs = max(8, int(round(9 * dpi / 72)))
+    while True:
+        font = get_mono_font(fs)
+        def _w(t):
+            try:    return pdraw.textlength(t, font=font)
+            except Exception: return len(t) * fs * 0.6
+        lh = int(fs * 1.35)
+        wrapped = []
+        for ids, lines in blocks:
+            out = []
+            for ln in lines:
+                s = ln
+                while _w(s) > max_w and len(s) > 6:
+                    cut = max(6, int(len(s) * max_w / max(_w(s), 1)))
+                    out.append(s[:cut]); s = "   " + s[cut:]
+                out.append(s)
+            wrapped.append((ids, out))
+        total_h = top0 + PAGE_MARGIN + sum((len(o) + 1) * lh + int(lh * 0.5) for _, o in wrapped)
+        if total_h <= base_h * 4 or fs <= 8:
+            break
+        fs = max(8, int(fs * 0.85))
 
-    y = PAGE_MARGIN + int(round(STAMP_SIZE*dpi/72)) + 14
-    for ids, lines in blocks:
-        if y > ph - PAGE_MARGIN - lh: break
-        draw.rectangle([PAGE_MARGIN, y-2, pw-PAGE_MARGIN, y+lh-2], fill=(238,238,238))
-        draw.text((PAGE_MARGIN+4, y), ids, fill=(0,0,120), font=bfont)
+    ph = max(base_h, total_h)
+    page_img = Image.new("RGB", (pw, ph), (0, 0, 0))
+    draw     = ImageDraw.Draw(page_img)
+
+    y = top0
+    for ids, out in wrapped:
+        draw.rectangle([PAGE_MARGIN, y-2, pw-PAGE_MARGIN, y+lh-2], fill=(48, 48, 52))
+        draw.text((PAGE_MARGIN+6, y), ids, fill=(255, 210, 30), font=font)
         y += lh
-        for ln in lines:
-            if y > ph - PAGE_MARGIN - lh: break
-            # 長い行は折り返し
-            while _w(ln, font) > max_w and len(ln) > 4:
-                cut = int(len(ln) * max_w / _w(ln, font))
-                draw.text((PAGE_MARGIN+4, y), ln[:cut], fill=(20,20,20), font=font)
-                ln = "   " + ln[cut:]
-                y += lh
-                if y > ph - PAGE_MARGIN - lh: break
-            draw.text((PAGE_MARGIN+4, y), ln, fill=(20,20,20), font=font)
+        for ln in out:
+            draw.text((PAGE_MARGIN+6, y), ln, fill=(240, 240, 240), font=font)
             y += lh
-        y += int(lh * 0.4)
+        y += int(lh * 0.5)
 
-    now = datetime.datetime.utcnow()
+    now    = datetime.datetime.utcnow()
     header = f"{now.strftime('%H:%M')} UTC  {now.strftime('%m/%d/%Y')}"
-    s_fs = max(6, int(round(STAMP_SIZE * dpi / 72)))
-    draw.text((int(pw * STAMP_X / 100), PAGE_MARGIN), header, fill=(60,60,60), font=get_font(s_fs))
-    draw.text((pw-PAGE_MARGIN-150, PAGE_MARGIN),
-              f"P.{page_num}/{total_pages}", fill=(130,130,130), font=get_font(30))
+    s_fs   = max(6, int(round(STAMP_SIZE * dpi / 72)))
+    draw.text((int(pw * STAMP_X / 100), PAGE_MARGIN), header, fill=(235,235,235), font=get_font(s_fs))
+    print(f"  METARページ: {pw}x{ph}px fs={fs} blocks={len(wrapped)}")
     return page_img, a4_pt
 
 def fetch_image(url):
