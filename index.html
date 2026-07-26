@@ -66,6 +66,9 @@ input:focus,select:focus{border-color:var(--accent);}
 .cmp-item{display:flex;align-items:center;gap:4px;font-size:15px;color:var(--sub);white-space:nowrap;}
 .cmp-num{width:68px;padding:5px 6px;font-size:16.3px;}
 .cmp-val{font-size:15px;min-width:42px;text-align:left;}
+.metar-handle{font-size:13px;color:var(--sub);min-width:30px;text-align:center;
+  cursor:grab;user-select:none;padding:4px 2px;border-radius:2px;background:var(--card2);}
+.metar-handle:active{cursor:grabbing;}
 .ov-slot{display:flex;align-items:center;gap:5px;font-size:15px;color:var(--sub);white-space:nowrap;flex-shrink:0;}
 .toggle.sm{width:36px;height:22px;}
 .toggle.sm .toggle-slider{border-radius:11px;}
@@ -743,14 +746,29 @@ function renderMetarRows(){
     d.className='row';d.style.cssText='gap:8px;flex-wrap:wrap;';
     const opts=HOURS_OPTS.map(o=>'<option value="'+o.v+'"'+(+row.hours===o.v?' selected':'')+'>'+o.l+'</option>').join('');
     d.innerHTML=
-      '<span style="font-size:13px;color:var(--sub);min-width:26px;">'+(i+1)+'</span>'+
+      '<span class="metar-handle" title="ドラッグで並べ替え">'+(i+1)+'</span>'+
       '<input type="text" value="'+(row.ids||'').replace(/"/g,'&quot;')+'" style="width:190px;text-transform:uppercase;" oninput="setMetarRow('+i+',\'ids\',this.value)">'+
       '<select style="width:120px;" onchange="setMetarRow('+i+',\'hours\',this.value)">'+opts+'</select>'+
       '<div class="ov-slot">METAR<label class="toggle sm"><input type="checkbox"'+(row.metar!==false?' checked':'')+' onchange="setMetarRow('+i+',\'metar\',this.checked)"><span class="toggle-slider"></span></label></div>'+
       '<div class="ov-slot">TAF<label class="toggle sm"><input type="checkbox"'+(row.taf!==false?' checked':'')+' onchange="setMetarRow('+i+',\'taf\',this.checked)"><span class="toggle-slider"></span></label></div>';
     box.appendChild(d);
   });
+  if(typeof Sortable!=='undefined'){
+    if(_metarSortable){_metarSortable.destroy();_metarSortable=null;}
+    _metarSortable=new Sortable(box,{
+      handle:'.metar-handle', animation:180, delay:120, delayOnTouchOnly:true,
+      ghostClass:'page-tab-ghost', chosenClass:'page-tab-chosen',
+      onEnd:(e)=>{
+        if(e.oldIndex===e.newIndex)return;
+        const rs=metarRows();
+        const [it]=rs.splice(e.oldIndex,1);
+        rs.splice(e.newIndex,0,it);   // 挿入：以降の行は1段ずつ繰り下がる
+        renderMetarRows(); markDirty();
+      }
+    });
+  }
 }
+let _metarSortable=null;
 function setMetarRow(i,k,v){
   const rows=metarRows();if(!rows[i])return;
   rows[i][k]=(k==='hours')?+v:(k==='ids')?String(v).toUpperCase():!!v;
