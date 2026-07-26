@@ -398,31 +398,11 @@
           "code": "FBKG",
           "label": "下層悪天予想図・奄美"
         },
-        null,
-        null
-      ]
-    },
-    {
-      "orientation": "landscape",
-      "cols": 2,
-      "rows": 2,
-      "slots": [
         {
-          "type": "metair_csa003",
-          "code": "CSA003_TOPH_7",
-          "label": "レーダー頂高度・最新"
-        },
-        {
-          "type": "metair_csa003",
-          "code": "CSA003_TOPH_7_180",
-          "label": "レーダー頂高度・3.0h前",
+          "type": "metair_csa024a",
+          "code": "RJAA_ALWIN1",
+          "label": "ALWIN・NRT",
           "overlay": false
-        },
-        {
-          "type": "metair_csa003",
-          "code": "CSA003_TOPH_7",
-          "label": "レーダー頂高度・最新",
-          "overlay": true
         },
         null
       ]
