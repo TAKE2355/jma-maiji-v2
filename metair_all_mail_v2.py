@@ -447,15 +447,14 @@ def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h, dpi=300):
         if ws and max(ws) <= max_w:
             fs_t, font_t = size, fnt
             break
-    pad = max(2, fs_t // 6)
-    ty  = y0 + pad
+    pad = max(1, fs_t // 8)
     for i, line in enumerate(lines):
         if not line: continue
         tw = _tw(font_t, line)
-        row_y = ty + i * (fs_t + pad*2)
-        # 読みやすさ確保のため文字の背後だけ白地を敷く
-        draw.rectangle([x0+pad, row_y, x0+pad*3+int(tw), row_y+fs_t+pad*2], fill=(255,255,255))
-        draw.text((x0+pad*2, row_y+pad), line, fill=(0,0,120), font=font_t)
+        row_y = y0 + i * (fs_t + pad)
+        # 左上隅に密着させる（読みやすさ確保のため文字の背後だけ白地）
+        draw.rectangle([x0, row_y, x0+int(tw)+pad*2, row_y+fs_t+pad], fill=(255,255,255))
+        draw.text((x0, row_y), line, fill=(0,0,120), font=font_t)
 def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
     """1ページ分のPIL Imageを生成する。"""
     cols    = page_cfg.get("cols", 2)
