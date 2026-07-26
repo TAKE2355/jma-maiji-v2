@@ -754,7 +754,8 @@ function renderMetarRows(){
       '<input type="text" value="'+(row.ids||'').replace(/"/g,'&quot;')+'" style="width:190px;text-transform:uppercase;" oninput="setMetarRow('+i+',\'ids\',this.value)">'+
       '<select style="width:120px;" onchange="setMetarRow('+i+',\'hours\',this.value)">'+opts+'</select>'+
       '<div class="ov-slot">METAR<label class="toggle sm"><input type="checkbox"'+(row.metar!==false?' checked':'')+' onchange="setMetarRow('+i+',\'metar\',this.checked)"><span class="toggle-slider"></span></label></div>'+
-      '<div class="ov-slot">TAF<label class="toggle sm"><input type="checkbox"'+(row.taf!==false?' checked':'')+' onchange="setMetarRow('+i+',\'taf\',this.checked)"><span class="toggle-slider"></span></label></div>';
+      '<div class="ov-slot">TAF<label class="toggle sm"><input type="checkbox"'+(row.taf!==false?' checked':'')+' onchange="setMetarRow('+i+',\'taf\',this.checked)"><span class="toggle-slider"></span></label></div>'+
+      '<button class="btn" style="background:none;border:none;color:var(--danger);font-size:14px;padding:4px 8px;margin-left:auto;letter-spacing:0;" onclick="delMetarRow('+i+')" title="この行をクリア">削除</button>';
     box.appendChild(d);
   });
   const bulkEl=document.getElementById('metar-bulk');
@@ -785,6 +786,12 @@ function setMetarBulk(on){
     renderMetarRows(); markDirty();
     showToast('1行目の設定を全行に反映しました');
   }
+}
+function delMetarRow(i){
+  const rows=metarRows();if(!rows[i])return;
+  rows.splice(i,1);
+  rows.push({ids:'',hours:3,metar:true,taf:true});
+  renderMetarRows();markDirty();
 }
 function setMetarRow(i,k,v){
   const rows=metarRows();if(!rows[i])return;
