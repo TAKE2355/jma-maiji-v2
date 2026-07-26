@@ -667,15 +667,28 @@
     },
     {
       "orientation": "portrait",
-      "cols": 1,
-      "rows": 1,
+      "cols": 2,
+      "rows": 2,
       "slots": [
         {
           "type": "metair_ashfall",
           "code": "3",
           "label": "降灰予報・桜島",
           "overlay": false
-        }
+        },
+        {
+          "type": "metair_ashfall",
+          "code": "2",
+          "label": "降灰予報・阿蘇山",
+          "overlay": false
+        },
+        {
+          "type": "metair_ashfall",
+          "code": "6",
+          "label": "降灰予報・霧島山",
+          "overlay": false
+        },
+        null
       ]
     }
   ]
