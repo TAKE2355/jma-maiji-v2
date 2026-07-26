@@ -966,50 +966,34 @@ def get_csa024a_image(code, overlay=False):
     return None, None
 
 def probe_vafallr():
-    import re as _re, os as _os
-    print("=== VAFALLR調査v3 ===")
-    user=_os.environ.get("METAIR_USER",""); pw=_os.environ.get("METAIR_PASS","")
-    sess=requests.Session()
-    sess.headers.update({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
-    lu=METAIR_BASE+"/metair/view/login/index.html"
-    def _vs(h):
-        for m in _re.finditer(r'<input[^>]+>', h):
-            if "javax.faces.ViewState" in m.group(0):
-                vm=_re.search(r'value="([^"]+)"',m.group(0))
-                if vm: return vm.group(1)
-        return None
-    rL=sess.get(lu,timeout=15)
-    rP=sess.post(lu,data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":_vs(rL.text)},timeout=15)
-    if "loginForm" in rP.text and "強制ログイン" in rP.text:
-        rP=sess.post(lu,data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":_vs(rP.text)},timeout=15)
-    print("  login:", "NG" if "loginForm" in rP.text else "OK")
-
-    page=METAIR_BASE+"/metair/view/winKyoutsuu/CSA019.html"
-    rC=sess.get(page,params={"editPlace":"RJTD","dataKindCode":"VAFALLR","contentsName":" 降灰予報（定時）"},timeout=20)
-    html=rC.text
-    print("  page:", rC.status_code, len(html))
-    for m in _re.finditer(r'<span id="([^"]+)"[^>]*display:none[^>]*>([^<]*)</span>', html):
-        print(f"  span {m.group(1)} = {m.group(2)[:60]}")
-
-    # CSA019.js の getDBKey / ajax
-    for jsf in ["/metair/js/CSA019.js","/metair/js/kyoutsuuCommon.js","/metair/common/CSAcommon.js"]:
-        rjs=sess.get(METAIR_BASE+jsf,timeout=12)
-        if rjs.status_code!=200: 
-            print(f"  {jsf}: {rjs.status_code}"); continue
-        t=rjs.text
-        print(f"  {jsf}: 200 {len(t)} getDBKey={'getDBKey' in t}")
-        for fn in ["function getDBKey","ajaxUpdate","getSheet","contentsType"]:
-            i=t.find(fn)
-            if i>=0:
-                print(f"    [{fn}] {t[i:i+220].replace(chr(10),' ')[:200]}")
-
-    # ajax: contentsType / sheet を総当り
-    for ct in ["0","1","2"]:
-        for key in ["RJTD,VAFALLR"]:
-            ra=sess.get(METAIR_BASE+"/metair/ajax/CSA019/ajaxUpdate",
-                params={"contentsType":ct,"dbKey":key,"lastDate":""},
-                headers={"X-Requested-With":"XMLHttpRequest"},timeout=15)
-            print(f"  ct={ct} len={len(ra.text)} body={ra.text[:120]!r}")
+    import os as _os, json as _json
+    print("=== VAFALLR調査v4 ===")
+    ra = requests.get(METAIR_BASE+"/metair/ajax/CSA019/ajaxUpdate",
+        params={"contentsType":"2","dbKey":"RJTD,VAFALLR","lastDate":""},
+        headers=METAIR_HEADERS, timeout=20)
+    print("  ajax:", ra.status_code, len(ra.text))
+    try:
+        ds = ra.json().get("dataSet") or []
+    except Exception as e:
+        print("  json err", e); return
+    print("  entries:", len(ds))
+    for e in ds[-4:]:
+        print("   ", e.get("date"), e.get("fname"))
+    if not ds: return
+    latest = max(ds, key=lambda x: x.get("date",""))
+    url = METAIR_BASE + latest["fname"]
+    rr = requests.get(url, headers=METAIR_HEADERS, timeout=30)
+    print("  file:", rr.status_code, len(rr.content), rr.headers.get("Content-Type"))
+    if rr.status_code!=200: return
+    try:
+        import fitz
+        doc = fitz.open(stream=rr.content, filetype="pdf")
+        print("  PDF pages:", doc.page_count)
+        for p in range(min(doc.page_count, 12)):
+            txt = doc[p].get_text().strip().replace(chr(10)," ")
+            print(f"   p{p+1}: {txt[:70]}")
+    except Exception as e:
+        print("  PDF err:", e)
     print("=== 調査終了 ===")
 
 if __name__ == "__main__":
