@@ -406,6 +406,144 @@
         },
         null
       ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 4,
+      "slots": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "mode": "metar",
+      "metar_rows": [
+        {
+          "ids": "RJAA",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "RJCC",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "RJEC",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        },
+        {
+          "ids": "",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        }
+      ]
     }
   ]
 }
