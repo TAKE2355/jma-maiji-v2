@@ -319,7 +319,11 @@ input:focus,select:focus{border-color:var(--accent);}
 
     <!-- METAR/TAF -->
     <div class="card" id="metar-card" style="display:none;">
-      <div class="card-title">METAR / TAF</div>
+      <div class="card-title" style="display:flex;align-items:center;gap:16px;">METAR / TAF
+        <div class="ov-slot" style="letter-spacing:0;text-transform:none;font-weight:400;" title="1行目の設定を全行に反映">一括変更
+          <label class="toggle sm"><input type="checkbox" id="metar-bulk" onchange="setMetarBulk(this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div id="metar-rows"></div>
     </div>
   </div>
@@ -753,6 +757,8 @@ function renderMetarRows(){
       '<div class="ov-slot">TAF<label class="toggle sm"><input type="checkbox"'+(row.taf!==false?' checked':'')+' onchange="setMetarRow('+i+',\'taf\',this.checked)"><span class="toggle-slider"></span></label></div>';
     box.appendChild(d);
   });
+  const bulkEl=document.getElementById('metar-bulk');
+  if(bulkEl)bulkEl.checked=_metarBulk;
   if(typeof Sortable!=='undefined'){
     if(_metarSortable){_metarSortable.destroy();_metarSortable=null;}
     _metarSortable=new Sortable(box,{
@@ -769,9 +775,26 @@ function renderMetarRows(){
   }
 }
 let _metarSortable=null;
+let _metarBulk=false;
+function setMetarBulk(on){
+  _metarBulk=!!on;
+  if(_metarBulk){
+    const rows=metarRows();
+    const src=rows[0]||{};
+    rows.forEach((r,i)=>{ if(i>0){ r.hours=src.hours; r.metar=src.metar; r.taf=src.taf; } });
+    renderMetarRows(); markDirty();
+    showToast('1行目の設定を全行に反映しました');
+  }
+}
 function setMetarRow(i,k,v){
   const rows=metarRows();if(!rows[i])return;
-  rows[i][k]=(k==='hours')?+v:(k==='ids')?String(v).toUpperCase():!!v;
+  const val=(k==='hours')?+v:(k==='ids')?String(v).toUpperCase():!!v;
+  rows[i][k]=val;
+  // 一括変更ON時は1行目の変更を全行へ（IDは除く）
+  if(_metarBulk && i===0 && k!=='ids'){
+    rows.forEach((r,n)=>{ if(n>0) r[k]=val; });
+    renderMetarRows();
+  }
   markDirty();
 }
 function setOrient(o){
