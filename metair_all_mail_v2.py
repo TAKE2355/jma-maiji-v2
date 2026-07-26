@@ -40,7 +40,8 @@ DPI          = _pdf.get("dpi", 150)        # 後方互換用（直接使用は�
 PAGE_MARGIN  = _pdf["page_margin"]
 HEADER_H     = _pdf["header_h"]
 CELL_GAP     = _pdf["cell_gap"]
-LABEL_H      = _pdf["label_h"]
+LABEL_H      = _pdf.get("label_h", 50)   # 旧設定（レイアウトには未使用）
+TITLE_SIZE   = float(_pdf.get("title_size", 7))  # タイトル文字サイズ(pt)
 STAMP_SIZE   = float(_pdf.get("stamp_size", 7))   # スタンプ文字サイズ(pt)
 JPEG_QUALITY = _pdf.get("jpeg_quality", 90)
 MAX_DPI      = _pdf.get("max_dpi", DPI)    # DPI上限
@@ -409,13 +410,14 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
 # ─────────────────────────────────────────────────────────────────────────
 #  PDF生成（ページ単位レイアウト）
 # ─────────────────────────────────────────────────────────────────────────
-def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
+def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h, dpi=300):
+    """画像はマス全体に配置し、タイトルはその上に重ねて描画する。
+    タイトルのサイズは画像の大きさ・位置に影響しない。"""
     draw    = ImageDraw.Draw(page)
     lines   = label.split("\n")[:1]
-    max_w   = box_w - 8
+    max_w   = box_w - 12
 
     def _tw(fnt, txt):
-        """テキスト幅をPillowバージョンに関係なく取得"""
         try:
             return draw.textlength(txt, font=fnt)
         except Exception:
@@ -424,33 +426,35 @@ def _draw_image_in_box(page, im, label, x0, y0, box_w, box_h):
             except Exception:
                 return max_w + 1
 
-    # ピッタリ収まる最大フォントサイズを探す（26から下へ縮小）
-    fs, font_sm = 40, get_font(40)
-    for size in range(40, 5, -1):
+    # ── 画像をマス全体に配置（タイトルの影響を受けない） ──
+    if im is not None:
+        ratio = min(box_w / im.width, box_h / im.height)
+        nw, nh = int(im.width * ratio), int(im.height * ratio)
+        page.paste(im.resize((nw, nh), Image.LANCZOS),
+                   (x0 + (box_w - nw) // 2, y0 + (box_h - nh) // 2))
+    else:
+        draw.text((x0+8, y0+box_h//2-12), "データなし",
+                  fill=(200,200,200), font=get_font(30))
+    draw.rectangle([x0, y0, x0+box_w-1, y0+box_h-1], outline=(210,210,210), width=1)
+
+    # ── タイトルを画像の上に重ねて描画 ──
+    base_fs = max(6, int(round(TITLE_SIZE * dpi / 72)))
+    fs_t, font_t = base_fs, get_font(base_fs)
+    for size in range(base_fs, 5, -1):
         fnt = get_font(size)
         ws = [_tw(fnt, ln) for ln in lines if ln]
         if ws and max(ws) <= max_w:
-            fs, font_sm = size, fnt
+            fs_t, font_t = size, fnt
             break
-
-    # 画像を先に配置（ラベルは後で最前面に描画）
-    img_y = y0 + LABEL_H
-    img_w = box_w
-    img_h = box_h - LABEL_H
-    if im is not None:
-        ratio = min(img_w / im.width, img_h / im.height)
-        nw, nh = int(im.width * ratio), int(im.height * ratio)
-        page.paste(im.resize((nw, nh), Image.LANCZOS),
-                   (x0 + (img_w - nw) // 2, img_y + (img_h - nh) // 2))
-    else:
-        draw.text((x0+8, img_y+img_h//2-12), "データなし",
-                  fill=(200,200,200), font=font_sm)
-    draw.rectangle([x0, y0, x0+box_w-1, y0+box_h-1], outline=(210,210,210), width=1)
-
-    # ラベルを最前面に描画（画像に隠れないよう背景を敷く）
-    draw.rectangle([x0, y0, x0+box_w-1, y0+LABEL_H-1], fill=(255,255,255))
+    pad = max(2, fs_t // 6)
+    ty  = y0 + pad
     for i, line in enumerate(lines):
-        draw.text((x0+4, y0+i*24), line, fill=(0,0,120), font=font_sm)
+        if not line: continue
+        tw = _tw(font_t, line)
+        row_y = ty + i * (fs_t + pad*2)
+        # 読みやすさ確保のため文字の背後だけ白地を敷く
+        draw.rectangle([x0+pad, row_y, x0+pad*3+int(tw), row_y+fs_t+pad*2], fill=(255,255,255))
+        draw.text((x0+pad*2, row_y+pad), line, fill=(0,0,120), font=font_t)
 def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
     """1ページ分のPIL Imageを生成する。"""
     cols    = page_cfg.get("cols", 2)
@@ -484,7 +488,7 @@ def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
         row = idx // cols
         x0  = PAGE_MARGIN + col * (cell_w + CELL_GAP)
         y0  = PAGE_MARGIN + HEADER_H + row * (cell_h + CELL_GAP)
-        _draw_image_in_box(page_img, im, label, x0, y0, cell_w, cell_h)
+        _draw_image_in_box(page_img, im, label, x0, y0, cell_w, cell_h, dpi)
 
     # スタンプ・ページ番号を最前面に描画（画像に隠れないよう背景を敷く）
     if HEADER_H > 0:
