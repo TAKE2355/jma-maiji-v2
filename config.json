@@ -425,241 +425,241 @@
       "metar_rows": [
         {
           "ids": "RJAA",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJCC",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJEC",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJCB",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJEC",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJCH",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJSM",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJSS",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJAA",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJTT",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJGG",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJBB",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJOT",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJOK",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJOM",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJFO",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJFR",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJFF",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJFU",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJFT",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJFM",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RJFK",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "ROAH",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RODN",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RORS",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "ROMY",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "ROIG",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "ZSSS",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "ZSPD",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RCTP",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RCKH",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RPLL",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "RPLC",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "VHHH",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "VMMC",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         },
         {
           "ids": "",
-          "hours": 3,
+          "hours": 1,
           "metar": true,
           "taf": true
         }
