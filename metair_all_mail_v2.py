@@ -966,47 +966,58 @@ def get_csa024a_image(code, overlay=False):
     return None, None
 
 def probe_vafallr():
-    """降灰予報(VAFALLR)の火山別コードを調査"""
+    """降灰予報(VAFALLR)の火山別コードを調査 v2"""
     import re as _re, os as _os
-    print("=== VAFALLR調査 ===")
+    print("=== VAFALLR調査v2 ===")
     user = _os.environ.get("METAIR_USER",""); pw = _os.environ.get("METAIR_PASS","")
     sess = requests.Session()
     sess.headers.update({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
     login_url = METAIR_BASE + "/metair/view/login/index.html"
-    def _vs(html):
-        for m in _re.finditer(r'<input[^>]+>', html):
+    def _vs(h):
+        for m in _re.finditer(r'<input[^>]+>', h):
             if "javax.faces.ViewState" in m.group(0):
-                vm = _re.search(r'value="([^"]+)"', m.group(0))
+                vm=_re.search(r'value="([^"]+)"', m.group(0))
                 if vm: return vm.group(1)
         return None
-    rL = sess.get(login_url, timeout=15); vs1=_vs(rL.text)
-    rP = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":vs1}, timeout=15)
+    rL=sess.get(login_url,timeout=15)
+    rP=sess.post(login_url,data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doLogin":"ログイン","loginForm:forceflg":"false","javax.faces.ViewState":_vs(rL.text)},timeout=15)
     if "loginForm" in rP.text and "強制ログイン" in rP.text:
-        vs2=_vs(rP.text)
-        rP = sess.post(login_url, data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":vs2}, timeout=15)
+        rP=sess.post(login_url,data={"loginForm":"loginForm","loginForm:username":user,"loginForm:password":pw,"loginForm:doforcelogin":"force","loginForm:forceflg":"true","javax.faces.ViewState":_vs(rP.text)},timeout=15)
     print("  login:", "NG" if "loginForm" in rP.text else "OK")
 
-    # 1) ページHTMLからselectのoptionを抽出
-    page = METAIR_BASE + "/metair/view/winKyoutsuu/CSA019.html"
-    rC = sess.get(page, params={"editPlace":"RJTD","dataKindCode":"VAFALLR"}, timeout=20)
-    print("  page:", rC.status_code, len(rC.text))
-    for m in _re.finditer(r'<select[^>]*id="([^"]*)"[^>]*>(.*?)</select>', rC.text, _re.DOTALL):
-        sid = m.group(1)
-        opts = _re.findall(r'<option[^>]*value="([^"]*)"[^>]*>([^<]*)</option>', m.group(2))
-        if opts:
-            safe = [(v, t.strip()) for v,t in opts][:12]
-            print(f"  [select {sid}] {safe}")
+    # ajaxの中身をそのまま確認
+    ra = sess.get(METAIR_BASE+"/metair/ajax/CSA019/ajaxUpdate",
+        params={"contentsType":"0","dbKey":"RJTD,VAFALLR","lastDate":""},
+        headers={"X-Requested-With":"XMLHttpRequest"}, timeout=15)
+    print("  body:", ra.text.replace("<","[").replace(">","]")[:200])
 
-    # 2) AJAXでdbKey候補を試す
-    for key in ["RJTD,VAFALLR","RJTD,VAFALLR,2","RJTD,VAFALLR,3","RJTD,VAFALLR,6"]:
-        try:
-            ra = sess.get(METAIR_BASE+"/metair/ajax/CSA019/ajaxUpdate",
-                params={"contentsType":"0","dbKey":key,"lastDate":""},
-                headers={"X-Requested-With":"XMLHttpRequest"}, timeout=15)
-            txt = ra.text[:180].replace("<","[").replace(">","]")
-            print(f"  ajax[{key}]: {ra.status_code} len={len(ra.text)} {txt[:150]}")
-        except Exception as e:
-            print(f"  ajax[{key}] ERR {e}")
+    # ページを contentsName 付きで取得
+    page = METAIR_BASE + "/metair/view/winKyoutsuu/CSA019.html"
+    rC = sess.get(page, params={"editPlace":"RJTD","dataKindCode":"VAFALLR","contentsName":" 降灰予報（定時）"}, timeout=20)
+    print("  page:", rC.status_code, len(rC.text))
+    html = rC.text
+    if rC.status_code == 200:
+        for m in _re.finditer(r'<select[^>]*id="([^"]*)"[^>]*>(.*?)</select>', html, _re.DOTALL):
+            opts=_re.findall(r'<option[^>]*value="([^"]*)"[^>]*>([^<]*)</option>', m.group(2))
+            if opts: print(f"  [select {m.group(1)}] {[(v,t.strip()) for v,t in opts][:14]}")
+        for kw in ["dbKey","dataKindCode","VAF","volcano","kazan"]:
+            for m in list(_re.finditer(_re.escape(kw), html))[:4]:
+                s=html[max(0,m.start()-80):m.start()+120].replace(chr(10)," ").replace("<","[").replace(">","]")
+                print(f"  [{kw}] {s[:180]}")
+    else:
+        err=_re.sub(r'<[^>]+>'," ",html); print("  err:", " ".join(err.split())[:160])
+
+    # 直接プローブ: 降灰予報の画像パス候補
+    import datetime as _dt
+    now=_dt.datetime.utcnow()
+    for d in ["/pict/VAFALLR/","/pict/VAF/","/pict/VAFALL/"]:
+        for code in ["VAFALLR","VAFALLR2","VAFALLR3"]:
+            t=(now - _dt.timedelta(hours=3)).replace(minute=0,second=0,microsecond=0)
+            u=f"{METAIR_BASE}{d}{code}_RJTD_{t.strftime('%Y%m%d%H%M%S')}.png"
+            try:
+                rr=sess.head(u,timeout=8)
+                if rr.status_code==200: print("  HIT:", d, code)
+            except Exception: pass
     print("=== 調査終了 ===")
 
 if __name__ == "__main__":
