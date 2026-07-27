@@ -975,8 +975,9 @@ function drawPreview(){
   ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
 
   // セル
+  const _ord=(pg&&pg.order)||'row';
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
-    const idx=r*cols+c;
+    const idx=rcToIdx(r,c,cols,rows,_ord);
     const x=margin+c*(cellW+gap);
     const y=margin+headerH+r*(cellH+gap);
     const slot=pg&&pg.slots?pg.slots[idx]:null;
@@ -993,12 +994,6 @@ function drawPreview(){
     ctx.lineWidth=(isDndOver||isSelected)?2:1;
     ctx.strokeRect(x+0.5,y+0.5,cellW-1,cellH-1);
 
-    // 番号
-    const numSize=Math.round(cellH*0.28);
-    ctx.fillStyle=isSelected?'#000000':'#1a1a1a';
-    ctx.font=`bold ${numSize}px sans-serif`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(idx+1, x+cellW/2, y+cellH/2);
 
     // スロット内容（設定済みの場合）
     if(slot&&slot.label){
@@ -1065,7 +1060,7 @@ function updatePreviewImages(){
   const cacheBase=`https://${owner}.github.io/${repoName}/cache`;
   (pg.slots||[]).forEach((slot,idx)=>{
     if(!slot||!slot.code||!slot.type)return;
-    const r=Math.floor(idx/cols),c=idx%cols;
+    const {r,c}=slotRC(idx,cols,rows,(pg&&pg.order)||'row');
     const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
     const cacheUrl=`${cacheBase}/${slot.type}_${slot.code}.png`;
     let urls=[cacheUrl];
@@ -1081,7 +1076,7 @@ function updatePreviewImages(){
   // タイトルを画像より前面に重ねる
   (pg.slots||[]).forEach((slot,idx)=>{
     if(!slot||!slot.label)return;
-    const r=Math.floor(idx/cols),c=idx%cols;
+    const {r,c}=slotRC(idx,cols,rows,(pg&&pg.order)||'row');
     const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
     const t=document.createElement('div');
     t.textContent=slot.label;
@@ -1095,9 +1090,24 @@ function updatePreviewImages(){
     t.appendChild(inner);
     layer.appendChild(t);
   });
+  // スロット番号を最前面に（画像で隠れないように）
+  const total=cols*rows;
+  for(let n=0;n<total;n++){
+    const {r,c}=slotRC(n,cols,rows,(pg&&pg.order)||'row');
+    const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
+    const sel=(n===selectedSlotIdx);
+    const d=document.createElement('div');
+    d.textContent=String(n+1);
+    const sz=Math.max(16,Math.round(cellH*sy*0.22));
+    d.style.cssText='position:absolute;left:'+(x*sx+4)+'px;top:'+(y*sy+4)+'px;'+
+      'min-width:'+sz+'px;height:'+sz+'px;line-height:'+sz+'px;text-align:center;'+
+      'font-size:'+Math.round(sz*0.62)+'px;font-weight:700;pointer-events:none;'+
+      'color:#fff;background:'+(sel?'#e82127':'rgba(20,20,20,.72)')+';border-radius:2px;padding:0 3px;';
+    layer.appendChild(d);
+  }
   // 選択中スロットの枠を最前面に（画像で隠れないように）
   if(selectedSlotIdx>=0&&selectedSlotIdx<(pg.slots||[]).length){
-    const r=Math.floor(selectedSlotIdx/cols),c=selectedSlotIdx%cols;
+    const {r,c}=slotRC(selectedSlotIdx,cols,rows,(pg&&pg.order)||'row');
     const x=margin+c*(cellW+gap),y=margin+headerH+r*(cellH+gap);
     const sel=document.createElement('div');
     sel.style.cssText='position:absolute;left:'+(x*sx)+'px;top:'+(y*sy)+'px;width:'+(cellW*sx)+'px;'+
@@ -1123,11 +1133,12 @@ function handlePreviewClick(event){
   const cellW=Math.floor((W-2*margin-(cols-1)*gap)/cols);
   const cellH=Math.floor((H-2*margin-headerH-(rows-1)*gap)/rows);
 
+  const _ord2=(pg&&pg.order)||'row';
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
     const x=margin+c*(cellW+gap);
     const y=margin+headerH+r*(cellH+gap);
     if(cx>=x&&cx<=x+cellW&&cy>=y&&cy<=y+cellH){
-      const idx=r*cols+c;
+      const idx=rcToIdx(r,c,cols,rows,_ord2);
       selectedSlotIdx=idx;
       drawPreview();
       // 対応スロット行にスクロール
