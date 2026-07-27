@@ -11,7 +11,7 @@
   - workflow_dispatch は全有効受信者に強制送信
 """
 
-import os, io, json, smtplib, datetime, sys, requests
+import os, io, json, smtplib, datetime, sys, requests, math
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -361,6 +361,115 @@ def get_ashfall_latest(idx):
         print(f"    降灰予報エラー[{idx}]: {e}")
         return None, None
 
+# ── 気象庁ナウキャスト（降水＋雷） ─────────────────────────────────────
+JMA_NOWC   = "https://www.jma.go.jp/bosai/jmatile/data/nowc"
+JMA_BASEMAP = "https://www.jma.go.jp/tile/gsi/pale/{z}/{x}/{y}.png"
+
+AIRPORTS = {
+    "RJAA": (35.7647, 140.3864), "RJTT": (35.5533, 139.7811),
+    "RJCC": (42.7752, 141.6923), "RJGG": (34.8584, 136.8054),
+    "RJBB": (34.4347, 135.2441), "RJOO": (34.7855, 135.4382),
+    "RJFF": (33.5859, 130.4506), "RJFK": (31.8034, 130.7194),
+    "ROAH": (26.1958, 127.6459), "RJSS": (38.1397, 140.9170),
+    "RJCH": (41.7700, 140.8219), "RJSN": (37.9558, 139.1211),
+    "RJOA": (34.4361, 132.9194), "RJOM": (33.8272, 132.9358),
+    "RJFT": (32.8373, 130.8552), "RJFU": (32.9169, 129.9136),
+    "RJNK": (36.3946, 136.4075), "RJOT": (34.2142, 134.0155),
+    "RJSK": (37.9558, 139.1211), "RJTF": (35.5522, 139.5286),
+    "RJDT": (34.1333, 129.3306), "RJKA": (28.4306, 129.7125),
+    "RORY": (24.7828, 125.2950), "ROIG": (24.3964, 124.2450),
+    "RJEC": (43.6707, 142.4475), "RJCB": (42.7333, 143.2172),
+    "RJCM": (43.8806, 144.1640), "RJCK": (43.0410, 144.1930),
+    "RJSA": (40.7346, 140.6907), "RJSM": (40.7033, 141.3686),
+}
+
+def _deg2tile(lat, lon, z):
+    n = 2 ** z
+    x = (lon + 180.0) / 360.0 * n
+    yr = math.radians(lat)
+    y = (1.0 - math.log(math.tan(yr) + 1.0/math.cos(yr)) / math.pi) / 2.0 * n
+    return x, y
+
+def _nowc_times(kind):
+    """kind: 'hrpns'(N1) or 'liden'(N3) の最新 basetime/validtime"""
+    tf = "targetTimes_N1.json" if kind == "hrpns" else "targetTimes_N3.json"
+    try:
+        r = requests.get(f"{JMA_NOWC}/{tf}", timeout=15)
+        arr = r.json()
+        for d in arr:
+            if kind in (d.get("elements") or []):
+                return d["basetime"], d["validtime"]
+    except Exception as e:
+        print(f"    ナウキャスト時刻取得エラー[{kind}]: {e}")
+    return None, None
+
+def get_nowcast_image(code):
+    """code形式: ICAO_半径NM[_L]  例 RJAA_200 / RJAA_200_L(雷なし)
+    空港中心・指定半径(NM)の降水＋雷ナウキャスト画像を合成"""
+    try:
+        parts = str(code).split("_")
+        icao = parts[0].upper()
+        radius_nm = float(parts[1]) if len(parts) > 1 else 200.0
+        with_liden = not (len(parts) > 2 and parts[2].upper() == "L")
+        if icao not in AIRPORTS:
+            print(f"    ナウキャスト: 未知の空港 {icao}")
+            return None, None
+        lat, lon = AIRPORTS[icao]
+
+        # 半径NM → 適切なズームを選択（直径が3〜6タイルに収まる範囲）
+        diameter_m = radius_nm * 2 * 1852.0
+        z = 10
+        for zz in range(4, 11):
+            tile_m = 256 * 156543.03392 * math.cos(math.radians(lat)) / (2 ** zz)
+            if diameter_m / tile_m >= 2.2:
+                z = zz
+            else:
+                break
+        tile_m = 256 * 156543.03392 * math.cos(math.radians(lat)) / (2 ** z)
+        span = max(2, min(8, int(math.ceil(diameter_m / tile_m)) + 1))
+
+        cx, cy = _deg2tile(lat, lon, z)
+        x0 = int(math.floor(cx - span / 2.0)); y0 = int(math.floor(cy - span / 2.0))
+        W = H_ = span * 256
+        canvas = Image.new("RGB", (W, H_), (255, 255, 255))
+
+        def _paste_layer(url_fmt, bt=None, vt=None, alpha=None):
+            for dx in range(span):
+                for dy in range(span):
+                    tx, ty = x0 + dx, y0 + dy
+                    if tx < 0 or ty < 0 or tx >= 2**z or ty >= 2**z: continue
+                    u = url_fmt.format(z=z, x=tx, y=ty, bt=bt, vt=vt)
+                    try:
+                        rr = requests.get(u, timeout=15)
+                        if rr.status_code != 200: continue
+                        im = Image.open(io.BytesIO(rr.content)).convert("RGBA")
+                        canvas.paste(im, (dx*256, dy*256), im)
+                    except Exception: pass
+
+        _paste_layer(JMA_BASEMAP)
+        bt, vt = _nowc_times("hrpns")
+        ts = bt
+        if bt:
+            _paste_layer(JMA_NOWC + "/{bt}/none/{vt}/surf/hrpns/{z}/{x}/{y}.png", bt, vt)
+        if with_liden:
+            lbt, lvt = _nowc_times("liden")
+            if lbt:
+                _paste_layer(JMA_NOWC + "/{bt}/none/{vt}/surf/liden/{z}/{x}/{y}.png", lbt, lvt)
+
+        # 指定半径ぴったりに切り出し
+        px_per_m = (2 ** z) * 256 / (156543.03392 * math.cos(math.radians(lat)) * 256) * 256
+        half_px = diameter_m / 2.0 / (156543.03392 * math.cos(math.radians(lat)) / (2 ** z))
+        ccx = (cx - x0) * 256; ccy = (cy - y0) * 256
+        l = max(0, int(ccx - half_px)); t = max(0, int(ccy - half_px))
+        rgt = min(W, int(ccx + half_px)); btm = min(H_, int(ccy + half_px))
+        if rgt - l > 50 and btm - t > 50:
+            canvas = canvas.crop((l, t, rgt, btm))
+        print(f"  ナウキャスト取得: {icao} r={radius_nm:.0f}NM z={z} {canvas.size}")
+        return canvas, ts
+    except Exception as e:
+        print(f"  ナウキャストエラー[{code}]: {e}")
+        return None, None
+
 def pdf_to_image(pdf_bytes):
     try:
         import fitz
@@ -530,6 +639,11 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
                 return [f"https://www3.metair.go.jp/pict/radar/rectp99/RECTP99_RJTD_{dt.strftime('%Y%m%d%H%M')}00.png"]
             im = apply_overlay_layers(im, date_str, _urls)
         lbl = f"{label}\n{date_str}" if date_str else label
+        return im, lbl
+
+    elif chart_type == "jma_nowcast":
+        im, ts = get_nowcast_image(code)
+        lbl = f"{label}\n{ts_to_label(ts)}" if ts else label
         return im, lbl
 
     elif chart_type == "metair_ashfall":
