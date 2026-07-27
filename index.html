@@ -337,6 +337,133 @@ input:focus,select:focus{border-color:var(--accent);}
   10%,30%,50%,70%{color:#fff; text-shadow:0 0 20px rgba(255,255,255,.95),0 0 44px rgba(255,50,50,.8);}
   100%{color:var(--danger); text-shadow:none;}
 }
+
+/* 11. タイプライター */
+.fx11 .nb-l{animation:nbf-type .5s steps(1,end) 1; animation-delay:calc(var(--i)*.13s);}
+@keyframes nbf-type{0%{opacity:0}40%{opacity:0;color:#fff}41%,100%{opacity:1;color:var(--danger)}}
+/* 12. 落下バウンド */
+.fx12 .nb-l{animation:nbf-drop 1.1s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc(var(--i)*.07s);}
+@keyframes nbf-drop{0%{transform:translateY(-46px);opacity:0}55%{transform:translateY(6px);opacity:1}75%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+/* 13. 下から浮上 */
+.fx13 .nb-l{animation:nbf-rise 1s ease-out 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-rise{0%{transform:translateY(24px);opacity:0;filter:blur(3px)}60%{opacity:1;filter:blur(0)}100%{transform:translateY(0);opacity:1}}
+/* 14. スピンイン */
+.fx14 .nb-l{animation:nbf-spin 1.1s cubic-bezier(.22,1,.36,1) 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-spin{0%{transform:rotate(-200deg) scale(.4);opacity:0}70%{opacity:1}100%{transform:rotate(0) scale(1);opacity:1}}
+/* 15. ぼかしパルス */
+.fx15 .nb-l{animation:nbf-blur 1.4s ease-in-out 1;}
+@keyframes nbf-blur{0%,100%{filter:blur(0)}45%{filter:blur(5px);color:#ff8a8a}}
+/* 16. 伸縮 */
+.fx16 .nb-l{animation:nbf-stretch 1s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc(var(--i)*.07s);}
+@keyframes nbf-stretch{0%,100%{transform:scale(1,1)}30%{transform:scale(.6,1.5)}60%{transform:scale(1.35,.75)}}
+/* 17. シェイク */
+.fx17 .nb-l{animation:nbf-shake .8s linear 1; animation-delay:calc(var(--i)*.02s);}
+@keyframes nbf-shake{0%,100%{transform:translate(0)}15%{transform:translate(-5px,2px)}30%{transform:translate(5px,-2px)}45%{transform:translate(-4px,-2px)}60%{transform:translate(4px,2px)}80%{transform:translate(-2px,0)}}
+/* 18. ホップ */
+.fx18 .nb-l{animation:nbf-hop 1.15s ease-in-out 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-hop{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-20px) rotate(-14deg)}70%{transform:translateY(0) rotate(6deg)}}
+/* 19. フェードカスケード */
+.fx19 .nb-l{animation:nbf-cascade 1.2s ease-in-out 1; animation-delay:calc(var(--i)*.12s);}
+@keyframes nbf-cascade{0%,100%{opacity:1}45%{opacity:.08}}
+/* 20. レーザースキャン */
+.fx20 .nb-l{animation:nbf-laser .32s linear 1; animation-delay:calc(var(--i)*.07s);}
+@keyframes nbf-laser{0%,100%{color:var(--danger);text-shadow:none}50%{color:#fff;text-shadow:0 0 6px #fff,0 0 22px rgba(255,255,255,.9),0 0 40px rgba(255,60,60,.8)}}
+/* 21. ハートビート */
+.fx21 .nb-l{animation:nbf-beat 1.3s ease-in-out 1;}
+@keyframes nbf-beat{0%,100%{transform:scale(1)}12%{transform:scale(1.22);text-shadow:0 0 18px rgba(255,60,60,.9)}24%{transform:scale(1)}36%{transform:scale(1.16)}50%{transform:scale(1)}}
+/* 22. スキュー */
+.fx22 .nb-l{animation:nbf-skew 1s ease-in-out 1; animation-delay:calc(var(--i)*.06s);}
+@keyframes nbf-skew{0%,100%{transform:skewX(0)}35%{transform:skewX(-24deg)}70%{transform:skewX(12deg)}}
+/* 23. ゴールドシマー */
+.fx23 .nb-l{animation:nbf-gold 1.6s ease-in-out 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-gold{0%,100%{color:var(--danger);text-shadow:none}40%{color:#ffd76a;text-shadow:0 0 10px rgba(255,215,106,.95),0 0 30px rgba(255,180,40,.7)}60%{color:#fff6d6;text-shadow:0 0 16px rgba(255,235,180,1)}}
+/* 24. アイス */
+.fx24 .nb-l{animation:nbf-ice 1.7s ease-in-out 1; animation-delay:calc(var(--i)*.09s);}
+@keyframes nbf-ice{0%,100%{color:var(--danger);text-shadow:none}45%{color:#dff6ff;text-shadow:0 0 12px rgba(180,235,255,1),0 0 34px rgba(90,190,255,.75)}}
+/* 25. ファイア */
+.fx25 .nb-l{animation:nbf-fire 1.5s ease-in-out 1; animation-delay:calc(var(--i)*.06s);}
+@keyframes nbf-fire{0%,100%{color:var(--danger);text-shadow:none}25%{color:#ff8c1a;text-shadow:0 -4px 12px rgba(255,140,26,.9)}45%{color:#ffe14d;text-shadow:0 -8px 18px rgba(255,225,77,.95)}70%{color:#ff5a1a;text-shadow:0 -5px 14px rgba(255,90,26,.8)}}
+/* 26. エレクトリック */
+.fx26 .nb-l{animation:nbf-elec .9s steps(2,end) 1; animation-delay:calc(var(--i)*.04s);}
+@keyframes nbf-elec{0%,100%{color:var(--danger);text-shadow:none}15%{color:#cfefff;text-shadow:0 0 8px #7fd7ff,0 0 24px #2aa8ff}35%{color:var(--danger);text-shadow:none}55%{color:#fff;text-shadow:0 0 10px #9be3ff,0 0 30px #1f9dff}75%{color:var(--danger)}}
+/* 27. 逆順バウンス（S→N） */
+.fx27 .nb-l{animation:nbf-pop2 .9s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc((5 - var(--i))*.09s);}
+@keyframes nbf-pop2{0%,100%{transform:scale(1)}40%{transform:scale(1.45);color:#fff2f2;text-shadow:0 0 16px rgba(255,60,60,.95)}}
+/* 28. 逆スイープ発光（S→N） */
+.fx28 .nb-l{animation:nbf-glow .34s linear 1; animation-delay:calc((5 - var(--i))*.14s);}
+/* 29. 3D回転 */
+.fx29 .nb-l{animation:nbf-orbit 1.4s ease-in-out 1; animation-delay:calc(var(--i)*.09s);}
+@keyframes nbf-orbit{0%,100%{transform:perspective(400px) rotateX(0) scale(1)}50%{transform:perspective(400px) rotateX(360deg) scale(1.12);color:#fff2f2}}
+/* 30. X軸フリップ */
+.fx30 .nb-l{animation:nbf-flipx 1.1s ease-in-out 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-flipx{0%,100%{transform:perspective(400px) rotateX(0)}50%{transform:perspective(400px) rotateX(180deg);color:#ffb3b3}}
+
+/* 31. 飛散から集合 */
+.fx31 .nb-l{animation:nbf-gather 1.2s cubic-bezier(.22,1,.36,1) 1;}
+.fx31 .nb-l:nth-child(1){--dx:-70px;--dy:-40px}
+.fx31 .nb-l:nth-child(2){--dx:40px;--dy:-60px}
+.fx31 .nb-l:nth-child(3){--dx:-50px;--dy:50px}
+.fx31 .nb-l:nth-child(4){--dx:60px;--dy:40px}
+.fx31 .nb-l:nth-child(5){--dx:-30px;--dy:-70px}
+.fx31 .nb-l:nth-child(6){--dx:70px;--dy:-20px}
+@keyframes nbf-gather{0%{transform:translate(var(--dx),var(--dy)) rotate(90deg) scale(.5);opacity:0}100%{transform:translate(0,0) rotate(0) scale(1);opacity:1}}
+/* 32. 字間を詰める */
+.fx32{animation:nbf-squeeze 1.3s ease-in-out 1;}
+@keyframes nbf-squeeze{0%,100%{letter-spacing:.2em}45%{letter-spacing:-.04em}}
+/* 33. 字間を広げる */
+.fx33{animation:nbf-widen 1.5s ease-in-out 1;}
+@keyframes nbf-widen{0%,100%{letter-spacing:.2em}45%{letter-spacing:.62em}}
+/* 34. ゆっくり点灯・消灯 */
+.fx34 .nb-l{animation:nbf-slowglow 2.6s ease-in-out 1; animation-delay:calc(var(--i)*.05s);}
+@keyframes nbf-slowglow{0%,100%{text-shadow:none;color:var(--danger)}50%{color:#fff0f0;text-shadow:0 0 14px rgba(255,60,60,1),0 0 42px rgba(255,40,40,.8),0 0 80px rgba(255,40,40,.5)}}
+/* 35. ランダム明滅 */
+.fx35 .nb-l{animation:nbf-rand 1.6s steps(1,end) 1; animation-delay:calc(var(--i)*.077s);}
+@keyframes nbf-rand{0%,9%,23%,41%,58%,79%{opacity:1}5%,17%,33%,50%,68%,88%{opacity:.12}100%{opacity:1}}
+/* 36. 色相回転 */
+.fx36{animation:nbf-hue 2s linear 1;}
+@keyframes nbf-hue{0%,100%{filter:hue-rotate(0)}50%{filter:hue-rotate(340deg) saturate(1.6)}}
+/* 37. マトリクス落下 */
+.fx37 .nb-l{animation:nbf-matrix 1.3s ease-out 1; animation-delay:calc(var(--i)*.09s);}
+@keyframes nbf-matrix{0%{transform:translateY(-30px);opacity:0;color:#7CFF9B;text-shadow:0 0 12px rgba(124,255,155,.9)}45%{opacity:1;color:#7CFF9B;text-shadow:0 0 16px rgba(124,255,155,1)}100%{transform:translateY(0);opacity:1;color:var(--danger);text-shadow:none}}
+/* 38. ネオンバズ */
+.fx38 .nb-l{animation:nbf-buzz 1.2s steps(1,end) 1;}
+@keyframes nbf-buzz{0%,100%{opacity:1;color:var(--danger);text-shadow:none}8%,24%,40%,56%{opacity:.5;color:#ff5cf0;text-shadow:0 0 14px rgba(255,92,240,.9)}16%,32%,48%,64%{opacity:1;color:#ffb3f7;text-shadow:0 0 22px rgba(255,92,240,1)}}
+/* 39. 振り子 */
+.fx39 .nb-l{animation:nbf-pend 1.4s ease-in-out 1; animation-delay:calc(var(--i)*.07s); transform-origin:50% 120%;}
+@keyframes nbf-pend{0%,100%{transform:rotate(0)}25%{transform:rotate(-18deg)}55%{transform:rotate(13deg)}80%{transform:rotate(-5deg)}}
+/* 40. ズームブラー */
+.fx40 .nb-l{animation:nbf-zoomblur 1.1s cubic-bezier(.22,1,.36,1) 1;}
+@keyframes nbf-zoomblur{0%{transform:scale(2.4);opacity:0;filter:blur(10px)}60%{opacity:1;filter:blur(0)}100%{transform:scale(1);opacity:1}}
+/* 41. ミラー反転 */
+.fx41 .nb-l{animation:nbf-mirror 1.2s ease-in-out 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-mirror{0%,100%{transform:scaleX(1)}45%{transform:scaleX(-1);color:#ffd0d0}}
+/* 42. 3Dチルト */
+.fx42{animation:nbf-tilt 1.6s ease-in-out 1;}
+@keyframes nbf-tilt{0%,100%{transform:perspective(600px) rotateX(0) rotateY(0)}30%{transform:perspective(600px) rotateX(28deg) rotateY(-16deg)}65%{transform:perspective(600px) rotateX(-18deg) rotateY(12deg)}}
+/* 43. ソナーピング */
+.fx43 .nb-l{animation:nbf-ping 1.4s cubic-bezier(.22,1,.36,1) 1; animation-delay:calc(var(--i)*.06s);}
+@keyframes nbf-ping{0%{transform:scale(1);text-shadow:0 0 0 rgba(255,60,60,.9)}25%{transform:scale(1.12);text-shadow:0 0 10px rgba(255,90,90,1),0 0 0 rgba(255,60,60,.6)}100%{transform:scale(1);text-shadow:0 0 60px rgba(255,60,60,0)}}
+/* 44. スライスワイプ */
+.fx44 .nb-l{animation:nbf-slice 1.1s ease-in-out 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-slice{0%{clip-path:inset(0 0 100% 0)}40%{clip-path:inset(0 0 0 0);color:#fff}70%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(0 0 0 0);color:var(--danger)}}
+/* 45. カラージッター */
+.fx45 .nb-l{animation:nbf-jitter 1s steps(1,end) 1; animation-delay:calc(var(--i)*.03s);}
+@keyframes nbf-jitter{0%,100%{color:var(--danger)}12%{color:#fff}24%{color:#3ee7ff}36%{color:var(--danger)}48%{color:#ffe14d}60%{color:#fff}72%{color:#ff3b8e}84%{color:var(--danger)}}
+/* 46. スローウェーブ */
+.fx46 .nb-l{animation:nbf-slowwave 2.4s ease-in-out 1; animation-delay:calc(var(--i)*.14s);}
+@keyframes nbf-slowwave{0%,100%{transform:translateY(0)}25%{transform:translateY(-9px)}50%{transform:translateY(0)}75%{transform:translateY(6px)}}
+/* 47. 収縮→復元 */
+.fx47 .nb-l{animation:nbf-shrink 1.1s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc(var(--i)*.06s);}
+@keyframes nbf-shrink{0%,100%{transform:scale(1);opacity:1}40%{transform:scale(0) rotate(180deg);opacity:.2}}
+/* 48. スポットライト */
+.fx48 .nb-l{animation:nbf-spot 1.5s ease-in-out 1; animation-delay:calc(var(--i)*.11s);}
+@keyframes nbf-spot{0%,100%{filter:brightness(.45)}40%{filter:brightness(2.6) drop-shadow(0 0 12px rgba(255,80,80,.95))}}
+/* 49. CRT ON/OFF */
+.fx49{animation:nbf-crt 1.2s ease-in-out 1;}
+@keyframes nbf-crt{0%{transform:scaleY(1) scaleX(1);filter:brightness(1)}18%{transform:scaleY(.02) scaleX(1.1);filter:brightness(3)}30%{transform:scaleY(.02) scaleX(.4);filter:brightness(4)}45%{transform:scaleY(.02) scaleX(1);filter:brightness(2)}70%{transform:scaleY(1.08) scaleX(1);filter:brightness(1.6)}100%{transform:scaleY(1) scaleX(1);filter:brightness(1)}}
+/* 50. ダブルスイープ */
+.fx50 .nb-l{animation:nbf-double 1.4s linear 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-double{0%,100%{color:var(--danger);text-shadow:none}12%{color:#fff;text-shadow:0 0 12px rgba(255,60,60,1),0 0 30px rgba(255,45,45,.8)}24%{color:var(--danger);text-shadow:none}48%{color:#fff;text-shadow:0 0 12px rgba(255,60,60,1),0 0 30px rgba(255,45,45,.8)}62%{color:var(--danger);text-shadow:none}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
@@ -1639,7 +1766,7 @@ window.addEventListener('resize',()=>{if(document.getElementById('tab-layout').c
 <script>
 /* NIMBUSロゴ: 30秒ごとに10種の演出からランダムに1つ再生 */
 (function(){
-  var FX=['fx1','fx2','fx3','fx4','fx5','fx6','fx7','fx8','fx9','fx10'];
+  var FX=[]; for(var n=1;n<=50;n++) FX.push('fx'+n);
   function start(){
     var el=document.getElementById('nimbus-logo');
     if(!el) return;
