@@ -11,7 +11,7 @@
   - workflow_dispatch は全有効受信者に強制送信
 """
 
-import os, io, json, smtplib, datetime, sys, requests, math
+import os, io, json, smtplib, datetime, sys, requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -361,137 +361,6 @@ def get_ashfall_latest(idx):
         print(f"    降灰予報エラー[{idx}]: {e}")
         return None, None
 
-# ── 気象庁ナウキャスト（降水＋雷） ─────────────────────────────────────
-JMA_NOWC   = "https://www.jma.go.jp/bosai/jmatile/data/nowc"
-JMA_BASEMAP = "https://www.jma.go.jp/tile/gsi/pale/{z}/{x}/{y}.png"
-
-AIRPORTS = {
-    "RJAA": (35.7647, 140.3864), "RJTT": (35.5533, 139.7811),
-    "RJCC": (42.7752, 141.6923), "RJGG": (34.8584, 136.8054),
-    "RJBB": (34.4347, 135.2441), "RJOO": (34.7855, 135.4382),
-    "RJFF": (33.5859, 130.4506), "RJFK": (31.8034, 130.7194),
-    "ROAH": (26.1958, 127.6459), "RJSS": (38.1397, 140.9170),
-    "RJCH": (41.7700, 140.8219), "RJSN": (37.9558, 139.1211),
-    "RJOA": (34.4361, 132.9194), "RJOM": (33.8272, 132.9358),
-    "RJFT": (32.8373, 130.8552), "RJFU": (32.9169, 129.9136),
-    "RJNK": (36.3946, 136.4075), "RJOT": (34.2142, 134.0155),
-    "RJSK": (37.9558, 139.1211), "RJTF": (35.5522, 139.5286),
-    "RJDT": (34.1333, 129.3306), "RJKA": (28.4306, 129.7125),
-    "RORY": (24.7828, 125.2950), "ROIG": (24.3964, 124.2450),
-    "RJEC": (43.6707, 142.4475), "RJCB": (42.7333, 143.2172),
-    "RJCM": (43.8806, 144.1640), "RJCK": (43.0410, 144.1930),
-    "RJSA": (40.7346, 140.6907), "RJSM": (40.7033, 141.3686),
-    "RCTP": (25.0777, 121.2328), "RCSS": (25.0694, 121.5522),
-}
-
-def _deg2tile(lat, lon, z):
-    n = 2 ** z
-    x = (lon + 180.0) / 360.0 * n
-    yr = math.radians(lat)
-    y = (1.0 - math.log(math.tan(yr) + 1.0/math.cos(yr)) / math.pi) / 2.0 * n
-    return x, y
-
-_TILE_CACHE = {}
-_NOWC_CACHE = {}
-
-def _nowc_times(kind):
-    """kind: 'hrpns'→N1 / 'thns'→N3 の最新 basetime/validtime"""
-    tf = "targetTimes_N1.json" if kind == "hrpns" else "targetTimes_N3.json"
-    try:
-        r = requests.get(f"{JMA_NOWC}/{tf}", timeout=15)
-        arr = [d for d in r.json() if kind in (d.get("elements") or [])]
-        if arr:
-            d = min(arr, key=lambda x: (x["validtime"] != x["basetime"], -int(x["basetime"])))
-            return d["basetime"], d["validtime"]
-    except Exception as e:
-        print(f"    ナウキャスト時刻取得エラー[{kind}]: {e}")
-    return None, None
-
-def _fetch_tile(url):
-    if url in _TILE_CACHE:
-        return _TILE_CACHE[url]
-    im = None
-    try:
-        rr = requests.get(url, timeout=12)
-        if rr.status_code == 200 and "image" in rr.headers.get("Content-Type", ""):
-            im = Image.open(io.BytesIO(rr.content)).convert("RGBA")
-    except Exception:
-        pass
-    _TILE_CACHE[url] = im
-    return im
-
-def get_nowcast_image(code):
-    """code形式: ICAO_半径NM  例 RJAA_200
-    空港中心・指定半径(NM)の降水＋雷ナウキャストを合成（タイル並列取得）"""
-    if code in _NOWC_CACHE:
-        return _NOWC_CACHE[code]
-    try:
-        from concurrent.futures import ThreadPoolExecutor
-        parts = str(code).split("_")
-        icao = parts[0].upper()
-        radius_nm = float(parts[1]) if len(parts) > 1 else 200.0
-        if icao not in AIRPORTS:
-            print(f"    ナウキャスト: 未知の空港 {icao}")
-            return None, None
-        lat, lon = AIRPORTS[icao]
-
-        diameter_m = radius_nm * 2 * 1852.0
-        def _tile_m(zz):
-            return 256 * 156543.03392 * math.cos(math.radians(lat)) / (2 ** zz)
-        z = 4
-        for zz in range(10, 3, -1):
-            if diameter_m / _tile_m(zz) <= 6.0:
-                z = zz
-                break
-        tile_m = _tile_m(z)
-        span = max(2, min(6, int(math.ceil(diameter_m / tile_m)) + 1))
-
-        cx, cy = _deg2tile(lat, lon, z)
-        x0 = int(math.floor(cx - span / 2.0)); y0 = int(math.floor(cy - span / 2.0))
-        W = Hh = span * 256
-        canvas = Image.new("RGB", (W, Hh), (255, 255, 255))
-
-        bt, vt   = _nowc_times("hrpns")
-        tbt, tvt = _nowc_times("thns")
-        ts = bt or tbt
-
-        # 取得すべきURLを列挙（背景→降水→雷の順に重ねる）
-        jobs = []
-        for layer, fmt, l_bt, l_vt in (
-            ("base",  JMA_BASEMAP, None, None),
-            ("rain",  JMA_NOWC + "/{bt}/none/{vt}/surf/hrpns/{z}/{x}/{y}.png", bt, vt),
-            ("thnd",  JMA_NOWC + "/{bt}/none/{vt}/surf/thns/{z}/{x}/{y}.png", tbt, tvt),
-        ):
-            if layer != "base" and not l_bt:
-                continue
-            for dx in range(span):
-                for dy in range(span):
-                    tx, ty = x0 + dx, y0 + dy
-                    if tx < 0 or ty < 0 or tx >= 2**z or ty >= 2**z:
-                        continue
-                    jobs.append((layer, dx, dy, fmt.format(z=z, x=tx, y=ty, bt=l_bt, vt=l_vt)))
-
-        with ThreadPoolExecutor(max_workers=16) as ex:
-            imgs = list(ex.map(lambda t: _fetch_tile(t[3]), jobs))
-
-        order = {"base": 0, "rain": 1, "thnd": 2}
-        for (layer, dx, dy, _u), im in sorted(zip(jobs, imgs), key=lambda p: order[p[0][0]]):
-            if im is not None:
-                canvas.paste(im, (dx*256, dy*256), im)
-
-        half_px = diameter_m / 2.0 / (156543.03392 * math.cos(math.radians(lat)) / (2 ** z))
-        ccx = (cx - x0) * 256; ccy = (cy - y0) * 256
-        l = max(0, int(ccx - half_px)); t = max(0, int(ccy - half_px))
-        rgt = min(W, int(ccx + half_px)); btm = min(Hh, int(ccy + half_px))
-        if rgt - l > 50 and btm - t > 50:
-            canvas = canvas.crop((l, t, rgt, btm))
-        print(f"  ナウキャスト取得: {icao} r={radius_nm:.0f}NM z={z} tiles={len(jobs)} {canvas.size}")
-        _NOWC_CACHE[code] = (canvas, ts)
-        return canvas, ts
-    except Exception as e:
-        print(f"  ナウキャストエラー[{code}]: {e}")
-        return None, None
-
 def pdf_to_image(pdf_bytes):
     try:
         import fitz
@@ -661,11 +530,6 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
                 return [f"https://www3.metair.go.jp/pict/radar/rectp99/RECTP99_RJTD_{dt.strftime('%Y%m%d%H%M')}00.png"]
             im = apply_overlay_layers(im, date_str, _urls)
         lbl = f"{label}\n{date_str}" if date_str else label
-        return im, lbl
-
-    elif chart_type == "jma_nowcast":
-        im, ts = get_nowcast_image(code)
-        lbl = f"{label}  {ts_to_label(ts)}" if ts else label
         return im, lbl
 
     elif chart_type == "metair_ashfall":
