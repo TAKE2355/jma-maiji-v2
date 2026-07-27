@@ -213,51 +213,8 @@ input:focus,select:focus{border-color:var(--accent);}
 <div id="tab-send" class="tab-panel active">
   <div class="send-panel">
     <div class="send-icon">
-      <svg viewBox="0 0 200 200" width="112" height="112" fill="none">
-        <defs>
-          <linearGradient id="nb-beam" x1="1" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#39d353" stop-opacity=".95"/>
-            <stop offset="100%" stop-color="#39d353" stop-opacity=".12"/>
-          </linearGradient>
-          <filter id="nb-blur" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="2.4"/>
-          </filter>
-        </defs>
-
-        <!-- スコープ枠 -->
-        <g stroke="#b9bdc2" fill="none" stroke-width="2.6" opacity=".85">
-          <circle cx="100" cy="100" r="92"/>
-          <circle cx="100" cy="100" r="58"/>
-          <circle cx="100" cy="100" r="26"/>
-          <path d="M8 100h184M100 8v184" stroke-width="2"/>
-        </g>
-
-        <!-- スイープ（左下・扇形ビーム） -->
-        <g filter="url(#nb-blur)">
-          <path d="M100 100 L14 152 A92 92 0 0 0 44 176 Z" fill="url(#nb-beam)"/>
-        </g>
-        <path d="M100 100 L14 152 A92 92 0 0 0 44 176 Z" fill="url(#nb-beam)" opacity=".9"/>
-
-        <!-- 航空機（左上・緑の線画） -->
-        <g transform="translate(52,62) rotate(-24) scale(1.15)" stroke="#7ee787"
-           stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round">
-          <path d="M0 -14 L4 -6 L22 2 L22 7 L4 4 L2 13 L8 18 L8 21 L0 19 L-8 21 L-8 18 L-2 13 L-4 4 L-22 7 L-22 2 L-4 -6 Z"/>
-        </g>
-
-        <!-- 雷雲（上部・輪郭のみ） -->
-        <g transform="translate(112,52) scale(1.02)" stroke="#dfe3e6" stroke-width="4"
-           fill="none" stroke-linejoin="round" stroke-linecap="round">
-          <path d="M-46 8 a19 19 0 0 1 4 -37 a27 27 0 0 1 51 -6 a21 21 0 0 1 20 43 h-72 z"/>
-        </g>
-
-        <!-- 稲妻（右上から中心へ・複数） -->
-        <g filter="url(#nb-blur)" opacity=".55">
-          <path d="M154 44 L96 104 L120 106 L92 132 L112 100 L88 98 L134 44 Z" fill="#ff2d2d"/>
-        </g>
-        <path d="M154 44 L96 104 L120 106 L92 132 L112 100 L88 98 L134 44 Z" fill="#ff2d2d"/>
-        <path d="M182 52 L142 92 L160 94 L138 118 L152 92 L134 90 L168 52 Z" fill="#e8202a" opacity=".95"/>
-        <path d="M196 74 L166 106 L180 108 L162 128 L174 106 L160 104 L186 74 Z" fill="#d41b24" opacity=".9"/>
-      </svg>
+      <img src="assets/top-icon.png" width="132" height="132" alt="NIMBUS"
+           style="display:block;image-rendering:auto;">
     </div>
     <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);">NIMBUS</h2>
     <div style="font-size:12px;letter-spacing:.22em;color:var(--sub);margin-bottom:16px;">AVIATION WEATHER DISPATCH</div>
