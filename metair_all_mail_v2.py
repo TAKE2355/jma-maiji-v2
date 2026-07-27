@@ -1109,5 +1109,35 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
+def probe_nowc2():
+    import math, datetime as _dt
+    print("=== ナウキャスト再調査 ===")
+    now=_dt.datetime.utcnow()
+    print("  現在UTC:", now.strftime("%Y%m%d%H%M%S"))
+    for n in ["N1","N3"]:
+        r=requests.get(f"{JMA_NOWC}/targetTimes_{n}.json",timeout=15)
+        arr=r.json()
+        print(f"  --- {n}: {len(arr)}件 先頭3件 ---")
+        for d in arr[:3]:
+            print(f"    bt={d['basetime']} vt={d['validtime']} els={d.get('elements')}")
+        print(f"    max bt={max(x['basetime'] for x in arr)}")
+    # lidenを含む最初のエントリ
+    r3=requests.get(f"{JMA_NOWC}/targetTimes_N3.json",timeout=15).json()
+    lid=[d for d in r3 if "liden" in (d.get("elements") or [])]
+    print("  liden件数:", len(lid))
+    if lid:
+        d=lid[0]
+        print("  liden採用:", d["basetime"], d["validtime"])
+        lat,lon=AIRPORTS["RJAA"]; z=8
+        cx,cy=_deg2tile(lat,lon,z); x=int(cx); y=int(cy)
+        for name,url in {
+          "liden": f"{JMA_NOWC}/{d['basetime']}/none/{d['validtime']}/surf/liden/{z}/{x}/{y}.png",
+          "hrpns": f"{JMA_NOWC}/{requests.get(JMA_NOWC+'/targetTimes_N1.json',timeout=10).json()[0]['basetime']}/none/{requests.get(JMA_NOWC+'/targetTimes_N1.json',timeout=10).json()[0]['validtime']}/surf/hrpns/{z}/{x}/{y}.png",
+        }.items():
+            rr=requests.get(url,timeout=15)
+            print(f"    [{name}] {rr.status_code} {len(rr.content)}bytes {rr.headers.get('Content-Type')}")
+    print("=== 終了 ===")
+
 if __name__ == "__main__":
+    probe_nowc2()
     main()
