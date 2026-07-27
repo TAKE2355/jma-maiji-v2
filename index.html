@@ -224,7 +224,7 @@ input:focus,select:focus{border-color:var(--accent);}
 
 
 }
-.radar-icon .radar-bolt.flash{animation:radar-bolt-flash .85s linear 1;}
+.radar-icon .radar-bolt.flash{animation:radar-bolt-flash .42s linear 1;}
 @keyframes radar-bolt-flash{
   0%  {opacity:0;   filter:none;}
   8%  {opacity:1;   filter:brightness(2.4) drop-shadow(0 0 6px rgba(255,190,190,1)) drop-shadow(0 0 16px rgba(255,60,60,.95));}
@@ -244,16 +244,18 @@ input:focus,select:focus{border-color:var(--accent);}
 .radar-icon .radar-plane{
   position:absolute; left:0; top:0; z-index:1; pointer-events:none;
   animation:radar-plane-blip 3.2s linear infinite;
-  animation-delay:-0.484s;   /* 3.2s * 305.5/360 - 3.2s */
+  animation-delay:-0.533s;   /* 3.2s * 300/360 - 3.2s → 300degで最大 */
 }
 @keyframes radar-plane-blip{
-  0%  {opacity:1;   filter:brightness(2.2) drop-shadow(0 0 5px rgba(190,255,205,1)) drop-shadow(0 0 13px rgba(110,255,150,.95));}
-  8%  {opacity:.95; filter:brightness(1.7) drop-shadow(0 0 4px rgba(160,255,185,.85)) drop-shadow(0 0 10px rgba(110,255,150,.6));}
-  20% {opacity:.75; filter:brightness(1.3) drop-shadow(0 0 3px rgba(120,255,160,.5));}
-  40% {opacity:.48; filter:brightness(1.1) drop-shadow(0 0 2px rgba(120,255,160,.25));}
-  65% {opacity:.28; filter:brightness(1);}
-  85% {opacity:.16; filter:brightness(1);}
-  100%{opacity:.10; filter:brightness(1);}
+  /* 0% = スイープ300deg（最高輝度） 91.667% = 270deg（最低輝度） */
+  0%      {opacity:1;   filter:brightness(2.2) drop-shadow(0 0 5px rgba(190,255,205,1)) drop-shadow(0 0 13px rgba(110,255,150,.95));}
+  7%      {opacity:.94; filter:brightness(1.75) drop-shadow(0 0 4px rgba(160,255,185,.85)) drop-shadow(0 0 10px rgba(110,255,150,.6));}
+  20%     {opacity:.72; filter:brightness(1.32) drop-shadow(0 0 3px rgba(120,255,160,.5));}
+  40%     {opacity:.46; filter:brightness(1.12) drop-shadow(0 0 2px rgba(120,255,160,.25));}
+  62%     {opacity:.28; filter:brightness(1);}
+  80%     {opacity:.15; filter:brightness(1);}
+  91.667% {opacity:.06; filter:brightness(1);}
+  100%    {opacity:1;   filter:brightness(2.2) drop-shadow(0 0 5px rgba(190,255,205,1)) drop-shadow(0 0 13px rgba(110,255,150,.95));}
 }
 @media (prefers-reduced-motion: reduce){
   .radar-icon .radar-plane{animation:none; opacity:1;}
