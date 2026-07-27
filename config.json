@@ -690,6 +690,23 @@
         },
         null
       ]
+    },
+    {
+      "orientation": "landscape",
+      "cols": 2,
+      "rows": 1,
+      "slots": [
+        {
+          "type": "jma_nowcast",
+          "code": "RJAA_200",
+          "label": "ナウキャスト・成田 200NM"
+        },
+        {
+          "type": "jma_nowcast",
+          "code": "RJCC_300",
+          "label": "ナウキャスト・新千歳 300NM"
+        }
+      ]
     }
   ]
 }
