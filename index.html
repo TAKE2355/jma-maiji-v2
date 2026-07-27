@@ -449,6 +449,10 @@ const CHART_MASTER = {
     {code:'256',label:'香港レーダー・256km'},
   ],
   pagasa_radar:[
+    {code:'MNL',label:'マニラレーダー・マニラ周辺'},
+    {code:'PH',label:'マニラレーダー・フィリピン全域'},
+  ],
+  pagasa_radar:[
     {code:'MNL',label:'マニラレーダー'},
     {code:'PH',label:'マニラレーダー・全域'},
   ],
@@ -479,12 +483,12 @@ const TYPE_LABELS = {
   jikkyou:'実況',
   metair_csa003:'実況',
   metair_csa024a:'実況',
-  cwa_radar:'実況', hko_radar:'実況', pagasa_radar:'実況',
+  cwa_radar:'実況', hko_radar:'実況', pagasa_radar:'実況', pagasa_radar:'実況',
 };
 const UPPER_GROUPS = [
   {id:'sanjuppun',label:'三十分大気解析',keys:['jma_wanlc','jma_wanlf']},
   {id:'kishozujoho',label:'予想・概況',keys:['metair_csa019','metair_fb_akuten','metair_ashfall','imoc_thunder']},
-  {id:'jikkyou',label:'実況',keys:['jikkyou','metair_csa003','metair_csa024a','cwa_radar','hko_radar','pagasa_radar']},
+  {id:'jikkyou',label:'実況',keys:['jikkyou','metair_csa003','metair_csa024a','cwa_radar','hko_radar','pagasa_radar','pagasa_radar']},
 ];
 function getUpperGroupForType(type){return UPPER_GROUPS.find(g=>g.keys.includes(type))||null;}
 function getUpperGroupById(id){return UPPER_GROUPS.find(g=>g.id===id)||null;}
