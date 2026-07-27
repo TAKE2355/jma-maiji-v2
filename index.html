@@ -200,11 +200,12 @@ input:focus,select:focus{border-color:var(--accent);}
   width:89.6%; height:89.6%; border-radius:50%;
   transform:translate(-50%,-50%); z-index:0; pointer-events:none;
   background:conic-gradient(from 0deg,
-    rgba(74,235,102,.80) 0deg,
-    rgba(74,235,102,.45) 12deg,
-    rgba(74,235,102,.15) 30deg,
-    rgba(74,235,102,0)   48deg,
-    rgba(74,235,102,0)   360deg);
+    rgba(74,235,102,0)   0deg,
+    rgba(74,235,102,0)   304deg,
+    rgba(74,235,102,.12) 320deg,
+    rgba(74,235,102,.40) 344deg,
+    rgba(74,235,102,.85) 359deg,
+    rgba(74,235,102,.85) 360deg);
   -webkit-mask:radial-gradient(closest-side,#000 0%,#000 84%,transparent 100%);
           mask:radial-gradient(closest-side,#000 0%,#000 84%,transparent 100%);
   animation:radar-sweep-spin 3.2s linear infinite;
@@ -221,8 +222,9 @@ input:focus,select:focus{border-color:var(--accent);}
 .radar-icon .radar-bolt{
   position:absolute; left:0; top:0; z-index:2; opacity:0; pointer-events:none;
   filter:drop-shadow(0 0 7px rgba(255,80,80,.95));
-  animation:radar-bolt-flash 4s linear infinite;
+
 }
+.radar-icon .radar-bolt.flash{animation:radar-bolt-flash .85s linear 1;}
 @keyframes radar-bolt-flash{
   0%{opacity:0}
   1%{opacity:1}
@@ -234,7 +236,7 @@ input:focus,select:focus{border-color:var(--accent);}
   100%{opacity:0}
 }
 @media (prefers-reduced-motion: reduce){
-  .radar-icon .radar-bolt{animation:none;}
+  .radar-icon .radar-bolt{animation:none !important;}
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -261,7 +263,9 @@ input:focus,select:focus{border-color:var(--accent);}
         <div class="radar-sweep"></div>
         <img src="assets/top-icon-base.png" width="132" height="132" alt="NIMBUS"
              style="display:block;image-rendering:auto;position:relative;z-index:1;">
-        <img src="assets/top-icon-bolt.png" width="132" height="132" alt="" class="radar-bolt">
+        <img src="assets/top-icon-bolt1.png" width="132" height="132" alt="" class="radar-bolt">
+        <img src="assets/top-icon-bolt2.png" width="132" height="132" alt="" class="radar-bolt">
+        <img src="assets/top-icon-bolt3.png" width="132" height="132" alt="" class="radar-bolt">
       </div>
     </div>
     <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);">NIMBUS</h2>
@@ -1504,6 +1508,28 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 
 // ウィンドウリサイズ時にキャンバス再描画
 window.addEventListener('resize',()=>{if(document.getElementById('tab-layout').classList.contains('active'))drawPreview();});
+</script>
+
+<script>
+/* TOPアイコン: 3つの雷をそれぞれランダムなタイミングで光らせる */
+(function(){
+  function start(){
+    var bolts = document.querySelectorAll('.radar-icon .radar-bolt');
+    if(!bolts.length) return;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    bolts.forEach(function(el){
+      function fire(){
+        el.classList.remove('flash');
+        void el.offsetWidth;          /* reflow でアニメを再スタート */
+        el.classList.add('flash');
+        setTimeout(fire, 900 + Math.random()*4600);
+      }
+      setTimeout(fire, Math.random()*3500);
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start);
+  else start();
+})();
 </script>
 </body>
 </html>
