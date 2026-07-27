@@ -433,36 +433,7 @@ const CHART_MASTER = {
     {code:'CSA003_TOPH_7_180',label:'レーダー頂高度・3.0h前'},
   ],
   jma_nowcast:[
-    {code:'RJAA_100',label:'ナウキャスト・成田 100NM'},
-    {code:'RJAA_200',label:'ナウキャスト・成田 200NM'},
-    {code:'RJAA_300',label:'ナウキャスト・成田 300NM'},
-    {code:'RJTT_100',label:'ナウキャスト・羽田 100NM'},
-    {code:'RJTT_200',label:'ナウキャスト・羽田 200NM'},
-    {code:'RJTT_300',label:'ナウキャスト・羽田 300NM'},
-    {code:'RJCC_100',label:'ナウキャスト・新千歳 100NM'},
-    {code:'RJCC_200',label:'ナウキャスト・新千歳 200NM'},
-    {code:'RJCC_300',label:'ナウキャスト・新千歳 300NM'},
-    {code:'RJGG_100',label:'ナウキャスト・中部 100NM'},
-    {code:'RJGG_200',label:'ナウキャスト・中部 200NM'},
-    {code:'RJGG_300',label:'ナウキャスト・中部 300NM'},
-    {code:'RJBB_100',label:'ナウキャスト・関西 100NM'},
-    {code:'RJBB_200',label:'ナウキャスト・関西 200NM'},
-    {code:'RJBB_300',label:'ナウキャスト・関西 300NM'},
-    {code:'RJFF_100',label:'ナウキャスト・福岡 100NM'},
-    {code:'RJFF_200',label:'ナウキャスト・福岡 200NM'},
-    {code:'RJFF_300',label:'ナウキャスト・福岡 300NM'},
-    {code:'RJFK_100',label:'ナウキャスト・鹿児島 100NM'},
-    {code:'RJFK_200',label:'ナウキャスト・鹿児島 200NM'},
-    {code:'RJFK_300',label:'ナウキャスト・鹿児島 300NM'},
-    {code:'ROAH_100',label:'ナウキャスト・那覇 100NM'},
-    {code:'ROAH_200',label:'ナウキャスト・那覇 200NM'},
-    {code:'ROAH_300',label:'ナウキャスト・那覇 300NM'},
-    {code:'RJSS_100',label:'ナウキャスト・仙台 100NM'},
-    {code:'RJSS_200',label:'ナウキャスト・仙台 200NM'},
-    {code:'RJSS_300',label:'ナウキャスト・仙台 300NM'},
-    {code:'RJOA_100',label:'ナウキャスト・広島 100NM'},
-    {code:'RJOA_200',label:'ナウキャスト・広島 200NM'},
-    {code:'RJOA_300',label:'ナウキャスト・広島 300NM'},
+    {code:'RJAA_200',label:'ナウキャスト（降水＋雷）'},
   ],
   metair_ashfall:[
     {code:'2',label:'降灰予報・阿蘇山'},
@@ -485,6 +456,13 @@ const CHART_MASTER = {
     {code:'FBOK',label:'下層悪天予想図・沖縄'},  {code:'FBKG',label:'下層悪天予想図・奄美'},
   ],
 };
+const NOWC_SITES=[
+  {icao:'RJCC',label:'千歳'},{icao:'RJSS',label:'仙台'},{icao:'RJAA',label:'成田'},
+  {icao:'RJGG',label:'中部'},{icao:'RJBB',label:'関西'},{icao:'RJFF',label:'福岡'},
+  {icao:'RJFK',label:'鹿児島'},{icao:'RJKA',label:'奄美'},{icao:'ROAH',label:'那覇'},
+  {icao:'ROIG',label:'石垣'},{icao:'RCTP',label:'台北'},
+];
+const NOWC_RANGES=[100,200,300];
 const TYPE_LABELS = {
   '':'（空き）',
   jma_wanlc:'三十分大気解析',
@@ -1203,6 +1181,33 @@ function renderSlotAssignList(){
     codeEl.onchange=()=>{ onSlotCodeChange(i, codeEl.value); };
     sels.appendChild(codeEl);
 
+    // ナウキャスト専用：地点・範囲セレクト
+    if(slot&&slot.type==='jma_nowcast'){
+      const parts=String(slot.code||'RJAA_200').split('_');
+      const curIcao=parts[0]||'RJAA', curNm=parts[1]||'200';
+      const siteEl=document.createElement('select');
+      siteEl.style.cssText='width:104px;flex:none;';
+      NOWC_SITES.forEach(s=>{
+        const o=document.createElement('option');
+        o.value=s.icao;o.textContent=s.label;
+        if(s.icao===curIcao)o.selected=true;
+        siteEl.appendChild(o);
+      });
+      siteEl.onchange=()=>onNowcChange(i,siteEl.value,null);
+      sels.appendChild(siteEl);
+
+      const nmEl=document.createElement('select');
+      nmEl.style.cssText='width:92px;flex:none;';
+      NOWC_RANGES.forEach(v=>{
+        const o=document.createElement('option');
+        o.value=String(v);o.textContent=v+'NM';
+        if(String(v)===curNm)o.selected=true;
+        nmEl.appendChild(o);
+      });
+      nmEl.onchange=()=>onNowcChange(i,null,nmEl.value);
+      sels.appendChild(nmEl);
+    }
+
     // レイヤートグル
     const ovWrap=document.createElement('div');
     ovWrap.className='ov-slot';
@@ -1260,6 +1265,15 @@ function onSlotOverlayChange(i,on){
   pg.slots[i].overlay=!!on;
   markDirty();
 }
+function onNowcChange(i,icao,nm){
+  const pg=curPage();if(!pg||!pg.slots[i])return;
+  const p=String(pg.slots[i].code||'RJAA_200').split('_');
+  const ic=icao||p[0]||'RJAA', v=nm||p[1]||'200';
+  pg.slots[i].code=ic+'_'+v;
+  const s=NOWC_SITES.find(x=>x.icao===ic);
+  pg.slots[i].label='ナウキャスト・'+(s?s.label:ic)+' '+v+'NM';
+  markDirty();drawPreview();
+}
 function onSlotCodeChange(i, encodedValue){
   const pg=curPage();if(!pg)return;
   if(!encodedValue){pg.slots[i]=null;}
@@ -1268,6 +1282,11 @@ function onSlotCodeChange(i, encodedValue){
     const type=encodedValue.slice(0,sep),code=encodedValue.slice(sep+3);
     const entry=(CHART_MASTER[type]||[]).find(e=>e.code===code);
     pg.slots[i]={type,code,label:entry?entry.label:code,overlay:!!(pg.slots[i]&&pg.slots[i].overlay)};
+    if(type==='jma_nowcast'){
+      const p=String(code).split('_');
+      const s=NOWC_SITES.find(x=>x.icao===p[0]);
+      pg.slots[i].label='ナウキャスト・'+(s?s.label:p[0])+' '+(p[1]||'200')+'NM';
+    }
   }
   markDirty();drawPreview();
   // バッジ更新
