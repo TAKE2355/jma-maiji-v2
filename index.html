@@ -244,10 +244,10 @@ input:focus,select:focus{border-color:var(--accent);}
 .radar-icon .radar-plane{
   position:absolute; left:0; top:0; z-index:1; pointer-events:none;
   animation:radar-plane-blip 3.2s linear infinite;
-  animation-delay:-0.533s;   /* 3.2s * 300/360 - 3.2s → 300degで最大 */
+  animation-delay:-1.067s;   /* 3.2s * 240/360 - 3.2s → 240deg(8時)で最大、210degで最小 */
 }
 @keyframes radar-plane-blip{
-  /* 0% = スイープ300deg（最高輝度） 91.667% = 270deg（最低輝度） */
+  /* 0% = スイープ240deg（最高輝度） 91.667% = 210deg（最低輝度） */
   0%      {opacity:1;   filter:brightness(2.2) drop-shadow(0 0 5px rgba(190,255,205,1)) drop-shadow(0 0 13px rgba(110,255,150,.95));}
   7%      {opacity:.94; filter:brightness(1.75) drop-shadow(0 0 4px rgba(160,255,185,.85)) drop-shadow(0 0 10px rgba(110,255,150,.6));}
   20%     {opacity:.72; filter:brightness(1.32) drop-shadow(0 0 3px rgba(120,255,160,.5));}
@@ -259,6 +259,21 @@ input:focus,select:focus{border-color:var(--accent);}
 }
 @media (prefers-reduced-motion: reduce){
   .radar-icon .radar-plane{animation:none; opacity:1;}
+}
+
+/* NIMBUS: 15秒に1回、N→S へ1秒かけて1文字ずつ光る */
+.nb-l{
+  display:inline-block;
+  animation:nimbus-letter-glow 15s linear infinite;
+}
+@keyframes nimbus-letter-glow{
+  0%   {color:var(--danger); text-shadow:none;}
+  0.7% {color:#fff5f5; text-shadow:0 0 10px rgba(255,70,70,1), 0 0 26px rgba(255,45,45,.85), 0 0 48px rgba(255,45,45,.5);}
+  2%   {color:var(--danger); text-shadow:none;}
+  100% {color:var(--danger); text-shadow:none;}
+}
+@media (prefers-reduced-motion: reduce){
+  .nb-l{animation:none;}
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -286,7 +301,7 @@ input:focus,select:focus{border-color:var(--accent);}
         <img src="assets/top-icon-base.png?v=4" width="132" height="132" alt="NIMBUS"
              style="display:block;image-rendering:auto;position:relative;z-index:1;">
         <svg class="radar-plane" width="132" height="132" viewBox="0 0 192 192" aria-hidden="true">
-          <g transform="translate(45.4 64.4) rotate(300) scale(0.5) translate(-50 -50)">
+          <g transform="translate(48.1 124.5) rotate(300) scale(0.5) translate(-50 -50)">
             <path d="M50 5 C53.4 5 56 9.6 56.4 16.2 L56.4 33.5 L93 56.5 L93 64.5 L56.4 54.5 L56.4 74 L64.5 81.5 L64.5 88.5 L50 84.5 L35.5 88.5 L35.5 81.5 L43.6 74 L43.6 54.5 L7 64.5 L7 56.5 L43.6 33.5 L43.6 16.2 C44 9.6 46.6 5 50 5 Z" fill="#86c27d"/>
           </g>
         </svg>
@@ -295,7 +310,7 @@ input:focus,select:focus{border-color:var(--accent);}
         <img src="assets/top-icon-bolt3.png?v=3" width="132" height="132" alt="" class="radar-bolt">
       </div>
     </div>
-    <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);">NIMBUS</h2>
+    <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);"><span class="nb-l" style="animation-delay:0.00s">N</span><span class="nb-l" style="animation-delay:0.14s">I</span><span class="nb-l" style="animation-delay:0.28s">M</span><span class="nb-l" style="animation-delay:0.42s">B</span><span class="nb-l" style="animation-delay:0.56s">U</span><span class="nb-l" style="animation-delay:0.70s">S</span></h2>
     <div style="font-size:12px;letter-spacing:.22em;color:var(--sub);margin-bottom:16px;">AVIATION WEATHER DISPATCH</div>
     <p class="send-desc">Send the weather chart PDF to all active recipients.<br>Takes approximately 2-3 minutes.</p>
     <button class="btn btn-primary" onclick="triggerWorkflow()" id="send-btn">SEND NOW</button>
