@@ -198,7 +198,7 @@ input:focus,select:focus{border-color:var(--accent);}
 <body>
 
 <nav>
-  <button class="active" onclick="showTab('send',this)">送信</button>
+  <button class="active" onclick="showTab('send',this)">TOP</button>
   <button onclick="showTab('recipients',this)">受信者</button>
   <button onclick="showTab('layout',this)">天気図選択</button>
   <button onclick="showTab('overlay',this)">レイヤー</button>
@@ -213,21 +213,32 @@ input:focus,select:focus{border-color:var(--accent);}
 <div id="tab-send" class="tab-panel active">
   <div class="send-panel">
     <div class="send-icon">
-      <svg viewBox="0 0 70 68" width="82" height="80" fill="none" stroke="currentColor"
+      <svg viewBox="0 0 150 150" width="96" height="96" fill="none" stroke="currentColor"
            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="30" cy="36" r="27" opacity=".2"/>
-        <circle cx="30" cy="36" r="18.5" opacity=".26"/>
-        <circle cx="30" cy="36" r="10" opacity=".24"/>
-        <path d="M3 36h5M52 36h5M30 9v5M30 58v5" opacity=".38"/>
-        <path d="M30 36 L12 47" stroke="#9acd32" opacity=".85" stroke-width="2.1"/>
-        <g transform="translate(20,-9) scale(1.02)">
-          <path d="M21 33a7.5 7.5 0 0 1 .8-14.9A11 11 0 0 1 42 20.8a7.1 7.1 0 0 1 2.2 13.9H21z"
-                fill="var(--card)" stroke="currentColor" stroke-width="1.7"/>
+        <defs>
+          <linearGradient id="nb-sweep" x1="1" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#9acd32" stop-opacity=".75"/>
+            <stop offset="100%" stop-color="#9acd32" stop-opacity="0"/>
+          </linearGradient>
+          <radialGradient id="nb-glow">
+            <stop offset="0%" stop-color="#ffd21e" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#ffd21e" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <g transform="translate(75,75) rotate(-12)">
+          <path d="M0 0 L-66 14 A68 68 0 0 0 -46 50 Z" fill="url(#nb-sweep)" stroke="none"/>
+          <circle r="34" fill="url(#nb-glow)" stroke="none"/>
+          <circle r="66" opacity=".26"/><circle r="45" opacity=".2"/><circle r="24" opacity=".26"/>
+          <path d="M-68 0h12M56 0h12M0 -68v12M0 56v12" opacity=".38"/>
+          <path d="M0 0 L-62 20" stroke="#9acd32" stroke-width="2.6"/>
+          <g transform="translate(8,-48) scale(0.95)">
+            <path d="M-14 20a17 17 0 0 1 2-34 25 25 0 0 1 47 6 16 16 0 0 1 5 31h-54z"
+                  fill="var(--card)" stroke="currentColor" stroke-width="1.9"/>
+          </g>
+          <path d="M34 0l-9 17M48 -4l-9 17M60 -8l-8 15" stroke="#4da3ff" stroke-width="2.5" opacity=".95"/>
+          <path d="M38 -52 L2 -12 L19 -7 L-2 6 L14 -9 L-4 -14 L27 -52 Z" fill="#ffd21e" stroke="none"/>
+          <path d="M22 -24 L35 -15 L26 -13" stroke="#ffd21e" stroke-width="2.6" fill="none"/>
         </g>
-        <path d="M52 28l-3.4 6.8M59 26.5l-3.4 6.8M65 25l-3 6"
-              stroke="#4da3ff" stroke-width="2.3" opacity=".95"/>
-        <path d="M55 10 L40.5 26.5 L49 29.5 L30 36 L42.5 30.5 L34.5 27.5 L48 10 Z"
-              fill="#ffd21e" stroke="none"/>
       </svg>
     </div>
     <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);">NIMBUS</h2>
