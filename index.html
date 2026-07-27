@@ -442,6 +442,12 @@ const CHART_MASTER = {
     {code:'CSA003_TOPH_7_150',label:'レーダー頂高度・2.5h前'},
     {code:'CSA003_TOPH_7_180',label:'レーダー頂高度・3.0h前'},
   ],
+  imoc_thunder:[
+    {code:'0',label:'発雷確率3h'},
+    {code:'1',label:'発雷確率6h'},
+    {code:'2',label:'発雷確率9h'},
+    {code:'3',label:'発雷確率12h'},
+  ],
   metair_ashfall:[
     {code:'2',label:'降灰予報・阿蘇山'},
     {code:'3',label:'降灰予報・桜島'},
@@ -470,13 +476,14 @@ const TYPE_LABELS = {
   metair_csa019:'予想・概況',
   metair_fb_akuten:'予想・概況',
   metair_ashfall:'予想・概況',
+  imoc_thunder:'予想・概況',
   jikkyou:'実況',
   metair_csa003:'実況',
   metair_csa024a:'実況',
 };
 const UPPER_GROUPS = [
   {id:'sanjuppun',label:'三十分大気解析',keys:['jma_wanlc','jma_wanlf']},
-  {id:'kishozujoho',label:'予想・概況',keys:['metair_csa019','metair_fb_akuten','metair_ashfall']},
+  {id:'kishozujoho',label:'予想・概況',keys:['metair_csa019','metair_fb_akuten','metair_ashfall','imoc_thunder']},
   {id:'jikkyou',label:'実況',keys:['jikkyou','metair_csa003','metair_csa024a']},
 ];
 function getUpperGroupForType(type){return UPPER_GROUPS.find(g=>g.keys.includes(type))||null;}
