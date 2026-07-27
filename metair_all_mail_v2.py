@@ -1074,5 +1074,43 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
+def probe_cwa2():
+    import re as _re, datetime as _dt
+    print("=== 台湾レーダー再調査 ===")
+    # 1) 画像のモード・透過確認
+    for c in ["TW_1000","TW_3600"]:
+        u="https://www.cwa.gov.tw"+CWA_RADAR[c]
+        rr=requests.get(u,headers=CWA_HDR,timeout=30)
+        im=Image.open(io.BytesIO(rr.content))
+        print(f"  {c}: mode={im.mode} size={im.size} LastMod={rr.headers.get('Last-Modified')}")
+        if im.mode in ("RGBA","LA","P"):
+            a=im.convert("RGBA").getchannel("A")
+            print(f"    alpha min={a.getextrema()[0]} max={a.getextrema()[1]}")
+    # 2) 過去画像のURLパターン探索
+    now=_dt.datetime.utcnow()+_dt.timedelta(hours=8)  # 台湾時間
+    base=now.replace(minute=(now.minute//10)*10, second=0, microsecond=0)
+    pats=[
+      "/Data/radar/CV1_TW_1000_{ts}.png",
+      "/Data/radar/CV1_TW_1000-{ts}.png",
+      "/Data/radar/CV1_TW_1000.png?T={ts}",
+      "/Data/js/OBS_Radar.js",
+    ]
+    for p in pats[:3]:
+        for back in [0,1,2]:
+            t=base-_dt.timedelta(minutes=10*back)
+            for fmt in ["%Y%m%d%H%M","%Y-%m-%d_%H%M"]:
+                u="https://www.cwa.gov.tw"+p.format(ts=t.strftime(fmt))
+                try:
+                    rr=requests.head(u,headers=CWA_HDR,timeout=8)
+                    if rr.status_code==200:
+                        print(f"  HIT: {p} {t.strftime(fmt)}")
+                except Exception: pass
+    # 3) ページ内のJSを探す
+    rp=requests.get("https://www.cwa.gov.tw/V8/E/W/OBS_Radar.html",headers=CWA_HDR,timeout=20)
+    for m in list(_re.finditer(r'src="([^"]*\.js[^"]*)"', rp.text))[:12]:
+        print("  js:", m.group(1)[:90])
+    print("=== 終了 ===")
+
 if __name__ == "__main__":
+    probe_cwa2()
     main()
