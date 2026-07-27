@@ -644,8 +644,11 @@ def get_pagasa_radar(code, overlay=False):
         print(f"  マニラレーダーエラー[{code}]: {e}")
         return None, None
 
-PAGASA_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+PAGASA_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                            "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
               "X-Requested-With": "XMLHttpRequest",
+              "Accept": "*/*",
+              "Origin": "https://www.pagasa.dost.gov.ph",
               "Referer": "https://www.pagasa.dost.gov.ph/radar"}
 # レーダーモザイク画像の地理範囲 (EPSG:4326) と画素数
 PAGASA_EXT = (115.969111093, 3.80912641587, 129.511990464, 22.322581275)
