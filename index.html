@@ -85,7 +85,9 @@ input:focus,select:focus{border-color:var(--accent);}
 .btn-sm{padding:7px 13px;font-size:17.6px;border-radius:8px;width:auto;
   border:none;cursor:pointer;font-family:var(--font);}
 .btn-add{background:var(--accent);color:white;}
-.btn-del{background:var(--danger);color:white;}
+.btn-del{background:var(--danger);color:#fff;border-color:var(--danger);}
+.btn-danger{background:var(--danger);color:#fff;border:1px solid var(--danger);border-radius:2px;
+  font-family:var(--font);font-weight:600;font-size:13px;letter-spacing:.06em;padding:6px 14px;cursor:pointer;}
 .btn-edit{background:var(--card2);color:var(--text);}
 .btn-success{background:var(--success);color:white;}
 
@@ -284,6 +286,10 @@ input:focus,select:focus{border-color:var(--accent);}
           <label class="toggle sm"><input type="checkbox" id="page-metar" onchange="setPageMode(this.checked)"><span class="toggle-slider"></span></label>
         </div>
         <div id="grid-ctrl" style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+          <div class="ov-slot" style="margin-right:14px;" title="番号を横方向に並べるか縦方向に並べるか">順番
+            <label class="toggle sm"><input type="checkbox" id="order-mode" onchange="setOrderMode(this.checked)"><span class="toggle-slider"></span></label>
+            <span id="order-label" style="font-size:12px;min-width:26px;">横</span>
+          </div>
           <span style="font-size:15px;color:var(--sub);">列</span>
           <div class="stepper">
             <button class="stepper-btn" onclick="adjustGrid('cols',-1)">−</button>
@@ -296,7 +302,7 @@ input:focus,select:focus{border-color:var(--accent);}
             <span class="stepper-val" id="rows-val">4</span>
             <button class="stepper-btn" onclick="adjustGrid('rows',1)">＋</button>
           </div>
-          <button style="background:none;border:none;color:var(--danger);font-size:20px;padding:4px 6px;margin-left:10px;cursor:pointer;flex-shrink:0;" onclick="deletePage()" title="このページを削除">🗑</button>
+          <button class="btn-danger" style="margin-left:12px;flex-shrink:0;" onclick="deletePage()" title="このページを削除">削除</button>
         </div>
       </div>
     </div>
@@ -603,7 +609,7 @@ function renderOvLayers(){
       '<label class="toggle sm"><input type="checkbox" '+(ly.enabled!==false?'checked':'')+' onchange="setOvLayer('+i+',\'enabled\',this.checked)"><span class="toggle-slider"></span></label>'+
       '<label class="cmp-item">過去<input type="number" class="input-sm cmp-num" value="'+(ly.minutes||60)+'" min="5" max="720" step="5" onchange="setOvLayer('+i+',\'minutes\',this.value)">分前</label>'+
       '<label class="cmp-item">濃さ<input type="number" class="input-sm cmp-num" value="'+Math.round((ly.alpha!=null?ly.alpha:0.2)*100)+'" min="5" max="90" step="5" onchange="setOvLayer('+i+',\'alpha\',this.value)">%</label>'+
-      '<button class="btn" style="background:none;color:var(--danger);font-size:16.3px;padding:4px 8px;margin-left:auto;" onclick="delOvLayer('+i+')">削除</button>';
+      '<button class="btn-danger" style="margin-left:auto;" onclick="delOvLayer('+i+')">削除</button>';
     box.appendChild(div);
   });
 }
@@ -712,6 +718,10 @@ function renderPageEditor(){
     const isPortrait=pg.orientation!=='landscape';
     document.getElementById('orient-portrait').classList.toggle('sel',isPortrait);
     document.getElementById('orient-landscape').classList.toggle('sel',!isPortrait);
+    const om=document.getElementById('order-mode');
+    if(om)om.checked = (pg.order==='col');
+    const ol=document.getElementById('order-label');
+    if(ol)ol.textContent = (pg.order==='col') ? '縦' : '横';
     document.getElementById('cols-val').textContent=pg.cols;
     document.getElementById('rows-val').textContent=pg.rows;
   } else {
@@ -765,7 +775,7 @@ function renderMetarRows(){
       '<select style="width:120px;" onchange="setMetarRow('+i+',\'hours\',this.value)">'+opts+'</select>'+
       '<div class="ov-slot">METAR<label class="toggle sm"><input type="checkbox"'+(row.metar!==false?' checked':'')+' onchange="setMetarRow('+i+',\'metar\',this.checked)"><span class="toggle-slider"></span></label></div>'+
       '<div class="ov-slot">TAF<label class="toggle sm"><input type="checkbox"'+(row.taf!==false?' checked':'')+' onchange="setMetarRow('+i+',\'taf\',this.checked)"><span class="toggle-slider"></span></label></div>'+
-      '<button class="btn" style="background:none;border:none;color:var(--danger);font-size:14px;padding:4px 8px;margin-left:auto;letter-spacing:0;" onclick="delMetarRow('+i+')" title="この行をクリア">削除</button>';
+      '<button class="btn-danger" style="margin-left:auto;" onclick="delMetarRow('+i+')" title="この行をクリア">削除</button>';
     box.appendChild(d);
   });
   const bulkEl=document.getElementById('metar-bulk');
@@ -806,6 +816,20 @@ function setMetarRow(i,k,v){
     renderMetarRows();
   }
   markDirty();
+}
+function slotRC(idx,cols,rows,order){
+  return (order==='col')
+    ? {r: idx % rows, c: Math.floor(idx / rows)}
+    : {r: Math.floor(idx / cols), c: idx % cols};
+}
+function rcToIdx(r,c,cols,rows,order){
+  return (order==='col') ? (c*rows + r) : (r*cols + c);
+}
+function setOrderMode(on){
+  const pg=curPage();if(!pg)return;
+  pg.order = on ? 'col' : 'row';
+  const lb=document.getElementById('order-label');if(lb)lb.textContent = on ? '縦' : '横';
+  markDirty();drawPreview();renderSlotAssignList();
 }
 function setOrient(o){
   const pg=curPage();if(!pg)return;
