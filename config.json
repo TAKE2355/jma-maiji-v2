@@ -725,6 +725,37 @@
         }
       ],
       "order": "row"
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 2,
+      "slots": [
+        {
+          "type": "cwa_radar",
+          "code": "TW_1000",
+          "label": "台湾レーダー・台湾域",
+          "overlay": false
+        },
+        {
+          "type": "cwa_radar",
+          "code": "TW_3600",
+          "label": "台湾レーダー・広域",
+          "overlay": false
+        },
+        {
+          "type": "cwa_radar",
+          "code": "TW_1000",
+          "label": "台湾レーダー・台湾域",
+          "overlay": true
+        },
+        {
+          "type": "cwa_radar",
+          "code": "TW_3600",
+          "label": "台湾レーダー・広域",
+          "overlay": true
+        }
+      ]
     }
   ]
 }
