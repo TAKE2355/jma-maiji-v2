@@ -1035,5 +1035,35 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
+def probe_cwa():
+    import re as _re
+    print("=== 台湾CWAレーダー調査 ===")
+    hdr={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+         "Referer":"https://www.cwa.gov.tw/V8/E/W/OBS_Radar.html"}
+    cands=[
+      "/Data/radar/CV1_TW_1000.png",
+      "/Data/radar/CV1_TW_3600.png",
+      "/Data/radar/CV1_TW_1000_.png",
+      "/Data/radar/CV1_3600.png",
+      "/Data/radar/CV1_1000.png",
+    ]
+    for c in cands:
+        u="https://www.cwa.gov.tw"+c
+        try:
+            rr=requests.get(u,headers=hdr,timeout=20)
+            print(f"  {c}: {rr.status_code} {len(rr.content)}bytes {rr.headers.get('Content-Type')}")
+        except Exception as e:
+            print(f"  {c}: ERR {e}")
+    # ページHTMLから画像パスを抽出
+    for tab in ["0","1"]:
+        p=f"https://www.cwa.gov.tw/V8/E/W/OBS_Radar.html?Tab={tab}"
+        rr=requests.get(p,headers=hdr,timeout=20)
+        paths=set(_re.findall(r'[/A-Za-z0-9_\.-]*radar[/A-Za-z0-9_\.-]*\.png', rr.text))
+        print(f"  Tab={tab} status={rr.status_code} 候補({len(paths)}):")
+        for s in sorted(paths)[:12]:
+            print("    ", s[:90])
+    print("=== 終了 ===")
+
 if __name__ == "__main__":
+    probe_cwa()
     main()
