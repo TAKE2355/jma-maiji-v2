@@ -393,6 +393,41 @@ def get_imoc_thunder(time_idx):
         print(f"  発雷確率エラー[{time_idx}]: {e}")
         return None, None
 
+CWA_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+           "Referer": "https://www.cwa.gov.tw/V8/E/W/OBS_Radar.html"}
+CWA_RADAR = {
+    "TW_1000": "/Data/radar/CV1_TW_1000.png",
+    "TW_3600": "/Data/radar/CV1_TW_3600.png",
+    "1000":    "/Data/radar/CV1_1000.png",
+    "3600":    "/Data/radar/CV1_3600.png",
+}
+
+def get_cwa_radar(code):
+    """台湾中央気象署(CWA)の合成レーダー画像を取得"""
+    try:
+        path = CWA_RADAR.get(str(code))
+        if not path:
+            print(f"    台湾レーダー: 未知のコード {code}")
+            return None, None
+        url = "https://www.cwa.gov.tw" + path
+        r = requests.get(url, headers=CWA_HDR, timeout=30)
+        if r.status_code != 200 or "image" not in r.headers.get("Content-Type", ""):
+            print(f"    台湾レーダー: HTTP {r.status_code}")
+            return None, None
+        im = Image.open(io.BytesIO(r.content)).convert("RGB")
+        ts = None
+        lm = r.headers.get("Last-Modified")
+        if lm:
+            try:
+                ts = datetime.datetime.strptime(lm, "%a, %d %b %Y %H:%M:%S %Z").strftime("%Y%m%d%H%M%S")
+            except Exception:
+                ts = None
+        print(f"  台湾レーダー取得: {code} {im.size}")
+        return im, ts
+    except Exception as e:
+        print(f"  台湾レーダーエラー[{code}]: {e}")
+        return None, None
+
 def pdf_to_image(pdf_bytes):
     try:
         import fitz
@@ -567,6 +602,10 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
     elif chart_type == "imoc_thunder":
         im, period = get_imoc_thunder(code)
         return im, (f"{label}  {period}" if period else label)
+
+    elif chart_type == "cwa_radar":
+        im, ts = get_cwa_radar(code)
+        return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
 
     elif chart_type == "metair_ashfall":
         url, ts = get_ashfall_latest(code)
@@ -1035,35 +1074,5 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
-def probe_cwa():
-    import re as _re
-    print("=== 台湾CWAレーダー調査 ===")
-    hdr={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-         "Referer":"https://www.cwa.gov.tw/V8/E/W/OBS_Radar.html"}
-    cands=[
-      "/Data/radar/CV1_TW_1000.png",
-      "/Data/radar/CV1_TW_3600.png",
-      "/Data/radar/CV1_TW_1000_.png",
-      "/Data/radar/CV1_3600.png",
-      "/Data/radar/CV1_1000.png",
-    ]
-    for c in cands:
-        u="https://www.cwa.gov.tw"+c
-        try:
-            rr=requests.get(u,headers=hdr,timeout=20)
-            print(f"  {c}: {rr.status_code} {len(rr.content)}bytes {rr.headers.get('Content-Type')}")
-        except Exception as e:
-            print(f"  {c}: ERR {e}")
-    # ページHTMLから画像パスを抽出
-    for tab in ["0","1"]:
-        p=f"https://www.cwa.gov.tw/V8/E/W/OBS_Radar.html?Tab={tab}"
-        rr=requests.get(p,headers=hdr,timeout=20)
-        paths=set(_re.findall(r'[/A-Za-z0-9_\.-]*radar[/A-Za-z0-9_\.-]*\.png', rr.text))
-        print(f"  Tab={tab} status={rr.status_code} 候補({len(paths)}):")
-        for s in sorted(paths)[:12]:
-            print("    ", s[:90])
-    print("=== 終了 ===")
-
 if __name__ == "__main__":
-    probe_cwa()
     main()
