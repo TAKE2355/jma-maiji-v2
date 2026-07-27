@@ -756,27 +756,27 @@
           "overlay": true
         },
         {
-          "type": "hko_radar",
-          "code": "064",
-          "label": "香港レーダー・64km",
+          "type": "pagasa_radar",
+          "code": "MNL",
+          "label": "マニラレーダー",
           "overlay": false
         },
         {
-          "type": "hko_radar",
-          "code": "128",
-          "label": "香港レーダー・128km",
+          "type": "pagasa_radar",
+          "code": "PH",
+          "label": "マニラレーダー・全域",
           "overlay": false
         },
         {
-          "type": "hko_radar",
-          "code": "256",
-          "label": "香港レーダー・256km",
+          "type": "pagasa_radar",
+          "code": "MNL",
+          "label": "マニラレーダー",
           "overlay": false
         },
         {
-          "type": "hko_radar",
-          "code": "256",
-          "label": "香港レーダー・256km",
+          "type": "pagasa_radar",
+          "code": "PH",
+          "label": "マニラレーダー・全域",
           "overlay": true
         }
       ]
