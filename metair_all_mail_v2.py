@@ -995,44 +995,5 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
-def probe_jma_nowc():
-    """気象庁ナウキャスト(hrpns/liden)のタイル取得可否を確認"""
-    import math, json as _json
-    print("=== JMAナウキャスト調査 ===")
-    BASE = "https://www.jma.go.jp/bosai/jmatile/data/nowc"
-    for n in ["N1","N2","N3"]:
-        try:
-            r = requests.get(f"{BASE}/targetTimes_{n}.json", timeout=15)
-            els = set()
-            if r.status_code==200:
-                for d in r.json(): els.update(d.get("elements",[]))
-            print(f"  targetTimes_{n}: {r.status_code} elements={sorted(els)}")
-            if n=="N1" and r.status_code==200:
-                arr=r.json(); latest=arr[0]
-                bt, vt = latest["basetime"], latest["validtime"]
-        except Exception as e:
-            print(f"  targetTimes_{n}: ERR {e}")
-    # タイル座標計算 (lat36.191092 lon139.987793 zoom5)
-    lat, lon, z = 36.191092, 139.987793, 5
-    n_t = 2 ** z
-    x = int((lon + 180.0) / 360.0 * n_t)
-    yr = math.radians(lat)
-    y = int((1.0 - math.log(math.tan(yr) + 1/math.cos(yr)) / math.pi) / 2.0 * n_t)
-    print(f"  tile z={z} x={x} y={y}  (basetime={bt})")
-    tests = {
-        "hrpns": f"{BASE}/{bt}/none/{vt}/surf/hrpns/{z}/{x}/{y}.png",
-        "liden": f"{BASE}/{bt}/none/{vt}/surf/liden/{z}/{x}/{y}.png",
-        "invalid": f"{BASE}/{bt}/none/{vt}/surf/ZZZZ/{z}/{x}/{y}.png",
-        "basemap": f"https://www.jma.go.jp/tile/gsi/pale/{z}/{x}/{y}.png",
-    }
-    for k,u in tests.items():
-        try:
-            rr = requests.get(u, timeout=15)
-            print(f"  [{k}] {rr.status_code} {len(rr.content)}bytes {rr.headers.get('Content-Type')}")
-        except Exception as e:
-            print(f"  [{k}] ERR {e}")
-    print("=== 調査終了 ===")
-
 if __name__ == "__main__":
-    probe_jma_nowc()
     main()
