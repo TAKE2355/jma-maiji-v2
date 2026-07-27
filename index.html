@@ -198,7 +198,7 @@ input:focus,select:focus{border-color:var(--accent);}
 <nav>
   <button class="active" onclick="showTab('send',this)">送信</button>
   <button onclick="showTab('recipients',this)">受信者</button>
-  <button onclick="showTab('layout',this)">気象図選択</button>
+  <button onclick="showTab('layout',this)">天気図選択</button>
   <button onclick="showTab('overlay',this)">レイヤー</button>
   <button onclick="showTab('settings',this)">設定</button>
   <div style="margin-left:auto;display:flex;align-items:center;padding:0 16px;white-space:nowrap;">
@@ -313,7 +313,11 @@ input:focus,select:focus{border-color:var(--accent);}
 
     <!-- 天気図スロット割り当て -->
     <div class="card" id="chart-card">
-      <div class="card-title">天気図配置</div>
+      <div class="card-title" style="display:flex;align-items:center;gap:16px;">天気図配置
+        <div class="ov-slot" style="letter-spacing:0;text-transform:none;font-weight:400;" title="変更した行と、それより下の行を同じ内容にする">一括変更
+          <label class="toggle sm"><input type="checkbox" id="slot-bulk" onchange="_slotBulk=this.checked"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div id="slot-assign-list"></div>
     </div>
 
@@ -457,17 +461,17 @@ const TYPE_LABELS = {
   '':'（空き）',
   jma_wanlc:'三十分大気解析',
   jma_wanlf:'三十分大気解析',
-  metair_csa019:'気象図情報',
-  metair_fb_akuten:'気象図情報',
-  metair_ashfall:'気象図情報',
-  jikkyou:'実況情報',
-  metair_csa003:'実況情報',
-  metair_csa024a:'実況情報',
+  metair_csa019:'予想・概況',
+  metair_fb_akuten:'予想・概況',
+  metair_ashfall:'予想・概況',
+  jikkyou:'実況',
+  metair_csa003:'実況',
+  metair_csa024a:'実況',
 };
 const UPPER_GROUPS = [
   {id:'sanjuppun',label:'三十分大気解析',keys:['jma_wanlc','jma_wanlf']},
-  {id:'kishozujoho',label:'気象図情報',keys:['metair_csa019','metair_fb_akuten','metair_ashfall']},
-  {id:'jikkyou',label:'実況情報',keys:['jikkyou','metair_csa003','metair_csa024a']},
+  {id:'kishozujoho',label:'予想・概況',keys:['metair_csa019','metair_fb_akuten','metair_ashfall']},
+  {id:'jikkyou',label:'実況',keys:['jikkyou','metair_csa003','metair_csa024a']},
 ];
 function getUpperGroupForType(type){return UPPER_GROUPS.find(g=>g.keys.includes(type))||null;}
 function getUpperGroupById(id){return UPPER_GROUPS.find(g=>g.id===id)||null;}
@@ -785,13 +789,6 @@ let _metarSortable=null;
 let _metarBulk=false;
 function setMetarBulk(on){
   _metarBulk=!!on;
-  if(_metarBulk){
-    const rows=metarRows();
-    const src=rows[0]||{};
-    rows.forEach((r,i)=>{ if(i>0){ r.hours=src.hours; r.metar=src.metar; r.taf=src.taf; } });
-    renderMetarRows(); markDirty();
-    showToast('1行目の設定を全行に反映しました');
-  }
 }
 function delMetarRow(i){
   const rows=metarRows();if(!rows[i])return;
@@ -803,9 +800,9 @@ function setMetarRow(i,k,v){
   const rows=metarRows();if(!rows[i])return;
   const val=(k==='hours')?+v:(k==='ids')?String(v).toUpperCase():!!v;
   rows[i][k]=val;
-  // 一括変更ON時は1行目の変更を全行へ（IDは除く）
-  if(_metarBulk && i===0 && k!=='ids'){
-    rows.forEach((r,n)=>{ if(n>0) r[k]=val; });
+  // 一括変更ON時は、この行より下の行にも反映（IDは除く）
+  if(_metarBulk && k!=='ids'){
+    for(let n=i+1;n<rows.length;n++) rows[n][k]=val;
     renderMetarRows();
   }
   markDirty();
@@ -1222,6 +1219,7 @@ function onSlotGroupChange(i, grp, codeEl){
   if(badge)badge.className='slot-assign-num empty';
 }
 
+let _slotBulk=false;
 function onSlotOverlayChange(i,on){
   const pg=curPage();if(!pg||!pg.slots[i])return;
   pg.slots[i].overlay=!!on;
@@ -1236,10 +1234,15 @@ function onSlotCodeChange(i, encodedValue){
     const entry=(CHART_MASTER[type]||[]).find(e=>e.code===code);
     pg.slots[i]={type,code,label:entry?entry.label:code,overlay:!!(pg.slots[i]&&pg.slots[i].overlay)};
   }
+  // 一括変更ON時は、この行より下の行にも同じ内容を反映
+  if(_slotBulk){
+    const src=pg.slots[i];
+    for(let n=i+1;n<pg.slots.length;n++){
+      pg.slots[n]=src?{type:src.type,code:src.code,label:src.label,
+        overlay:!!(pg.slots[n]&&pg.slots[n].overlay)}:null;
+    }
+  }
   markDirty();drawPreview();
-  // バッジ更新
-  const badge=document.querySelector(`#slot-item-${i} .slot-assign-num`);
-  if(badge)badge.className='slot-assign-num'+(encodedValue?'':' empty');
   renderSlotAssignList();
 }
 
