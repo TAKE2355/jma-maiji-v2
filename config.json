@@ -723,7 +723,8 @@
           "label": "発雷確率12h",
           "overlay": false
         }
-      ]
+      ],
+      "order": "row"
     }
   ]
 }
