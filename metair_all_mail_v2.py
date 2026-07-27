@@ -641,6 +641,130 @@ def get_pagasa_radar(code, overlay=False):
         print(f"  マニラレーダーエラー[{code}]: {e}")
         return None, None
 
+PAGASA_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+              "X-Requested-With": "XMLHttpRequest",
+              "Referer": "https://www.pagasa.dost.gov.ph/radar"}
+# レーダーモザイク画像の地理範囲 (EPSG:4326) と画素数
+PAGASA_EXT = (115.969111093, 3.80912641587, 129.511990464, 22.322581275)
+PAGASA_PX  = (1020, 1393)
+# 表示範囲プリセット: 西, 南, 東, 北, 出力幅, 出力高
+PAGASA_VIEWS = {
+    "PH":  (115.969111093, 3.80912641587, 129.511990464, 22.322581275, 1020, 1393),
+    "MNL": (118.0, 11.6, 124.0, 17.6, 1100, 1100),
+}
+_ARCGIS_CACHE = {}
+_PAGASA_FRAMES = None
+
+def _arcgis_base(w, s, e, n, px, py_):
+    """ArcGIS World_Topo_Map から EPSG:4326 の地図画像を1リクエストで取得"""
+    key = f"{w},{s},{e},{n},{px},{py_}"
+    if key in _ARCGIS_CACHE:
+        return _ARCGIS_CACHE[key].copy()
+    try:
+        prm = {"bbox": f"{w},{s},{e},{n}", "bboxSR": "4326", "imageSR": "4326",
+               "size": f"{px},{py_}", "format": "png", "transparent": "false", "f": "image"}
+        rr = requests.get("https://services.arcgisonline.com/ArcGIS/rest/services/"
+                          "World_Topo_Map/MapServer/export",
+                          params=prm, headers=PAGASA_HDR, timeout=60)
+        if rr.status_code != 200:
+            print(f"    ArcGIS: HTTP {rr.status_code}")
+            return None
+        im = Image.open(io.BytesIO(rr.content)).convert("RGB")
+        _ARCGIS_CACHE[key] = im
+        return im.copy()
+    except Exception as ex:
+        print(f"    ArcGISエラー: {ex}")
+        return None
+
+def _pagasa_frames():
+    """PAGASAのレーダーモザイク時系列を取得 [(フィリピン時刻datetime, url), ...]"""
+    global _PAGASA_FRAMES
+    if _PAGASA_FRAMES is not None:
+        return _PAGASA_FRAMES
+    frames = []
+    try:
+        rr = requests.post("https://www.pagasa.dost.gov.ph/api/HybridTimeline",
+                           headers=PAGASA_HDR, timeout=40)
+        data = rr.json().get("rainfall_estimate", [])
+        for a in data:
+            u = a.get("url", "")
+            m = re.search(r"_(\d{14})", u)
+            if not m:
+                continue
+            try:
+                dt = datetime.datetime.strptime(m.group(1), "%Y%m%d%H%M%S")
+            except Exception:
+                continue
+            frames.append((dt, u))
+        frames.sort()
+    except Exception as ex:
+        print(f"    PAGASA時系列エラー: {ex}")
+    _PAGASA_FRAMES = frames
+    return frames
+
+def _pagasa_compose(url, view):
+    """レーダーオーバーレイを地図に重ねて指定範囲で切り出す"""
+    w, s, e, n, ow, oh = view
+    try:
+        rr = requests.get(url, headers=PAGASA_HDR, timeout=60)
+        if rr.status_code != 200:
+            return None
+        ov = Image.open(io.BytesIO(rr.content)).convert("RGBA")
+    except Exception as ex:
+        print(f"    PAGASA画像エラー: {ex}")
+        return None
+    if ov.size != PAGASA_PX:
+        ov = ov.resize(PAGASA_PX, Image.LANCZOS)
+    W0, S0, E0, N0 = PAGASA_EXT
+    px, pyy = PAGASA_PX
+    x0 = int(round((w - W0) / (E0 - W0) * px))
+    x1 = int(round((e - W0) / (E0 - W0) * px))
+    y0 = int(round((N0 - n) / (N0 - S0) * pyy))
+    y1 = int(round((N0 - s) / (N0 - S0) * pyy))
+    x0, y0 = max(0, x0), max(0, y0)
+    x1, y1 = min(px, x1), min(pyy, y1)
+    ov = ov.crop((x0, y0, x1, y1)).resize((ow, oh), Image.LANCZOS)
+    base = _arcgis_base(w, s, e, n, ow, oh)
+    if base is None:
+        base = Image.new("RGB", (ow, oh), (255, 255, 255))
+    base.paste(ov, (0, 0), ov)
+    return base
+
+def get_pagasa_radar(code, overlay=False):
+    """PAGASA(フィリピン気象庁)のレーダーモザイク。overlay=True で過去画像を重ねる。"""
+    try:
+        view = PAGASA_VIEWS.get(str(code))
+        if not view:
+            print(f"    マニラレーダー: 未知のコード {code}")
+            return None, None
+        frames = _pagasa_frames()
+        if not frames:
+            print("    マニラレーダー: 時系列取得失敗")
+            return None, None
+        by_url = {u: dt for dt, u in frames}
+        base_dt, base_url = frames[-1]
+        im = _pagasa_compose(base_url, view)
+        if im is None:
+            print(f"    マニラレーダー: 取得失敗 {code}")
+            return None, None
+        print(f"  マニラレーダー取得: {code} {im.size} ph{base_dt.strftime('%Y%m%d%H%M')} (frames:{len(frames)})")
+        if overlay:
+            def _u(dt):
+                best, bd = None, None
+                for fd, fu in frames:
+                    diff = abs((fd - dt).total_seconds())
+                    if diff <= 450 and (bd is None or diff < bd):
+                        best, bd = fu, diff
+                return [best] if best else []
+            im = apply_overlay_layers(im, base_dt.strftime("%Y%m%d%H%M%S"), _u,
+                                      headers=PAGASA_HDR,
+                                      fetcher=lambda u: _pagasa_compose(u, view))
+        out_ts = (base_dt - datetime.timedelta(hours=8)).strftime("%Y%m%d%H%M%S")
+        return im, out_ts
+    except Exception as e:
+        print(f"  マニラレーダーエラー[{code}]: {e}")
+        return None, None
+
 def pdf_to_image(pdf_bytes):
     try:
         import fitz
@@ -818,6 +942,9 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         im, period = get_imoc_thunder(code)
         return im, (f"{label}  {period}" if period else label)
 
+    elif chart_type == "pagasa_radar":
+        im, ts = get_pagasa_radar(code, overlay=want_ov)
+        return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
     elif chart_type == "pagasa_radar":
         im, ts = get_pagasa_radar(code, overlay=want_ov)
         return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
