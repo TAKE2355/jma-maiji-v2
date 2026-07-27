@@ -24,7 +24,7 @@
       {
         "minutes": 120,
         "alpha": 0.12,
-        "enabled": true
+        "enabled": false
       }
     ]
   },
