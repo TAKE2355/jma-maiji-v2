@@ -693,6 +693,37 @@
         null
       ],
       "order": "row"
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 2,
+      "slots": [
+        {
+          "type": "imoc_thunder",
+          "code": "0",
+          "label": "発雷確率3h",
+          "overlay": false
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "1",
+          "label": "発雷確率6h",
+          "overlay": false
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "2",
+          "label": "発雷確率9h",
+          "overlay": false
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "3",
+          "label": "発雷確率12h",
+          "overlay": false
+        }
+      ]
     }
   ]
 }
