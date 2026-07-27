@@ -238,6 +238,27 @@ input:focus,select:focus{border-color:var(--accent);}
 @media (prefers-reduced-motion: reduce){
   .radar-icon .radar-bolt{animation:none !important;}
 }
+
+/* TOPアイコン: 飛行機のレーダーブリップ減衰
+   スイープ(3.2s/周)が飛行機の方位305.5degを通過した瞬間に最大輝度、
+   一周かけて減衰し、次の通過直前に最小になる */
+.radar-icon .radar-plane{
+  position:absolute; left:0; top:0; z-index:1; pointer-events:none;
+  filter:drop-shadow(0 0 4px rgba(110,255,150,.85));
+  animation:radar-plane-blip 3.2s linear infinite;
+  animation-delay:-0.484s;   /* 3.2s * 305.5/360 - 3.2s */
+}
+@keyframes radar-plane-blip{
+  0%  {opacity:1;}
+  15% {opacity:.72;}
+  35% {opacity:.45;}
+  60% {opacity:.26;}
+  85% {opacity:.15;}
+  100%{opacity:.10;}
+}
+@media (prefers-reduced-motion: reduce){
+  .radar-icon .radar-plane{animation:none; opacity:1;}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
@@ -263,6 +284,7 @@ input:focus,select:focus{border-color:var(--accent);}
         <div class="radar-sweep"></div>
         <img src="assets/top-icon-base.png" width="132" height="132" alt="NIMBUS"
              style="display:block;image-rendering:auto;position:relative;z-index:1;">
+        <img src="assets/top-icon-plane.png" width="132" height="132" alt="" class="radar-plane">
         <img src="assets/top-icon-bolt1.png" width="132" height="132" alt="" class="radar-bolt">
         <img src="assets/top-icon-bolt2.png" width="132" height="132" alt="" class="radar-bolt">
         <img src="assets/top-icon-bolt3.png" width="132" height="132" alt="" class="radar-bolt">
