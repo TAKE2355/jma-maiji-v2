@@ -192,6 +192,30 @@ input:focus,select:focus{border-color:var(--accent);}
 #recent-runs .row{padding:6px 12px;}
 #recent-runs .row-label{font-size:13px;}
 #recent-runs .row-sub{font-size:11px;margin-top:1px;}
+
+/* TOPアイコン: レーダースイープ回転 */
+.radar-icon{position:relative;width:132px;height:132px;line-height:0;}
+.radar-icon .radar-sweep{
+  position:absolute; left:48.96%; top:51.04%;
+  width:89.6%; height:89.6%; border-radius:50%;
+  transform:translate(-50%,-50%); z-index:0; pointer-events:none;
+  background:conic-gradient(from 0deg,
+    rgba(74,235,102,.80) 0deg,
+    rgba(74,235,102,.45) 12deg,
+    rgba(74,235,102,.15) 30deg,
+    rgba(74,235,102,0)   48deg,
+    rgba(74,235,102,0)   360deg);
+  -webkit-mask:radial-gradient(closest-side,#000 0%,#000 84%,transparent 100%);
+          mask:radial-gradient(closest-side,#000 0%,#000 84%,transparent 100%);
+  animation:radar-sweep-spin 3.2s linear infinite;
+}
+@keyframes radar-sweep-spin{
+  from{transform:translate(-50%,-50%) rotate(0deg);}
+  to  {transform:translate(-50%,-50%) rotate(360deg);}
+}
+@media (prefers-reduced-motion: reduce){
+  .radar-icon .radar-sweep{animation:none;}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
@@ -213,8 +237,11 @@ input:focus,select:focus{border-color:var(--accent);}
 <div id="tab-send" class="tab-panel active">
   <div class="send-panel">
     <div class="send-icon">
-      <img src="assets/top-icon.png" width="132" height="132" alt="NIMBUS"
-           style="display:block;image-rendering:auto;">
+      <div class="radar-icon">
+        <div class="radar-sweep"></div>
+        <img src="assets/top-icon-base.png" width="132" height="132" alt="NIMBUS"
+             style="display:block;image-rendering:auto;position:relative;z-index:1;">
+      </div>
     </div>
     <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);">NIMBUS</h2>
     <div style="font-size:12px;letter-spacing:.22em;color:var(--sub);margin-bottom:16px;">AVIATION WEATHER DISPATCH</div>
