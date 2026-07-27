@@ -696,84 +696,19 @@
       "cols": 3,
       "rows": 5,
       "slots": [
-        {
-          "type": "jma_nowcast",
-          "code": "RJAA_100",
-          "label": "ナウキャスト・成田 100NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJAA_200",
-          "label": "ナウキャスト・成田 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJAA_300",
-          "label": "ナウキャスト・成田 300NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJCC_200",
-          "label": "ナウキャスト・千歳 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJSS_200",
-          "label": "ナウキャスト・仙台 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJGG_200",
-          "label": "ナウキャスト・中部 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJBB_200",
-          "label": "ナウキャスト・関西 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJFF_200",
-          "label": "ナウキャスト・福岡 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJFK_200",
-          "label": "ナウキャスト・鹿児島 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RJKA_200",
-          "label": "ナウキャスト・奄美 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "ROAH_200",
-          "label": "ナウキャスト・那覇 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "ROIG_200",
-          "label": "ナウキャスト・石垣 200NM",
-          "overlay": false
-        },
-        {
-          "type": "jma_nowcast",
-          "code": "RCTP_200",
-          "label": "ナウキャスト・台北 200NM",
-          "overlay": false
-        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
         null,
         null
       ]
