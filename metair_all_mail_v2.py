@@ -1295,5 +1295,30 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
+def probe_pag():
+    import re as _re
+    print("=== PAGASA調査 ===")
+    s = requests.Session()
+    p = s.get("https://www.pagasa.dost.gov.ph/radar", headers=PAGASA_HDR, timeout=30)
+    print("  page HTTP", p.status_code, "len", len(p.text), "cookies", len(s.cookies))
+    m = _re.search(r'name="csrf-token" content="([^"]+)"', p.text)
+    tok = m.group(1) if m else None
+    print("  csrf", "found" if tok else "none")
+    for name, hh in [("plain", dict(PAGASA_HDR)), ("csrf", dict(PAGASA_HDR, **({"X-CSRF-TOKEN": tok} if tok else {})))]:
+        try:
+            rr = s.post("https://www.pagasa.dost.gov.ph/api/HybridTimeline", headers=hh, timeout=30)
+            body = rr.text[:120].replace("\n", " ")
+            body = _re.sub(r'[?&=;]', '_', body)
+            print(f"  POST[{name}] HTTP {rr.status_code} CT {rr.headers.get('Content-Type','')[:40]} body {body}")
+        except Exception as e:
+            print(f"  POST[{name}] ERR {e}")
+    try:
+        rr = s.get("https://www.pagasa.dost.gov.ph/api/HybridTimeline", headers=PAGASA_HDR, timeout=30)
+        print("  GET HTTP", rr.status_code, rr.text[:80].replace("\n"," "))
+    except Exception as e:
+        print("  GET ERR", e)
+    print("=== 終了 ===")
+
 if __name__ == "__main__":
+    probe_pag()
     main()
