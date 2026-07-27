@@ -771,7 +771,7 @@
           "type": "pagasa_radar",
           "code": "MNL",
           "label": "マニラレーダー",
-          "overlay": false
+          "overlay": true
         },
         {
           "type": "pagasa_radar",
