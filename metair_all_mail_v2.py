@@ -11,7 +11,7 @@
   - workflow_dispatch は全有効受信者に強制送信
 """
 
-import os, io, json, smtplib, datetime, sys, requests
+import os, io, re, json, time, smtplib, datetime, sys, requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -694,10 +694,10 @@ def _pagasa_frames():
             rr = requests.post("https://www.pagasa.dost.gov.ph/api/HybridTimeline",
                                headers=PAGASA_HDR, timeout=40)
             ct = (rr.headers.get("Content-Type") or "").split(";")[0]
-            print(f"    PAGASA API try{_try}: {rr.status_code} {ct} len{len(rr.text)}")
             if "json" in ct and rr.text:
                 data = rr.json().get("rainfall_estimate", [])
                 break
+            print(f"    PAGASA API 応答異常: {rr.status_code} {ct} len{len(rr.text)}")
             time.sleep(2)
         for a in data:
             u = a.get("url", "")
