@@ -216,6 +216,26 @@ input:focus,select:focus{border-color:var(--accent);}
 @media (prefers-reduced-motion: reduce){
   .radar-icon .radar-sweep{animation:none;}
 }
+
+/* TOPアイコン: 稲光フラッシュ */
+.radar-icon .radar-bolt{
+  position:absolute; left:0; top:0; z-index:2; opacity:0; pointer-events:none;
+  filter:drop-shadow(0 0 7px rgba(255,80,80,.95));
+  animation:radar-bolt-flash 4s linear infinite;
+}
+@keyframes radar-bolt-flash{
+  0%{opacity:0}
+  1%{opacity:1}
+  2.5%{opacity:.10}
+  4%{opacity:.95}
+  6%{opacity:.15}
+  7.5%{opacity:.75}
+  10%{opacity:0}
+  100%{opacity:0}
+}
+@media (prefers-reduced-motion: reduce){
+  .radar-icon .radar-bolt{animation:none;}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
@@ -241,6 +261,7 @@ input:focus,select:focus{border-color:var(--accent);}
         <div class="radar-sweep"></div>
         <img src="assets/top-icon-base.png" width="132" height="132" alt="NIMBUS"
              style="display:block;image-rendering:auto;position:relative;z-index:1;">
+        <img src="assets/top-icon-bolt.png" width="132" height="132" alt="" class="radar-bolt">
       </div>
     </div>
     <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);">NIMBUS</h2>
