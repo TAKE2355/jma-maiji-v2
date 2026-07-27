@@ -23,8 +23,8 @@
       },
       {
         "minutes": 120,
-        "alpha": 0.2,
-        "enabled": false
+        "alpha": 0.25,
+        "enabled": true
       }
     ]
   },
