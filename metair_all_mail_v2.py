@@ -416,16 +416,16 @@ def get_nowcast_image(code):
             return None, None
         lat, lon = AIRPORTS[icao]
 
-        # 半径NM → 適切なズームを選択（直径が3〜6タイルに収まる範囲）
+        # 半径NM → 最も詳細なズームを選択（直径が6タイル以内に収まる範囲）
         diameter_m = radius_nm * 2 * 1852.0
-        z = 10
-        for zz in range(4, 11):
-            tile_m = 256 * 156543.03392 * math.cos(math.radians(lat)) / (2 ** zz)
-            if diameter_m / tile_m >= 2.2:
+        def _tile_m(zz):
+            return 256 * 156543.03392 * math.cos(math.radians(lat)) / (2 ** zz)
+        z = 4
+        for zz in range(10, 3, -1):
+            if diameter_m / _tile_m(zz) <= 6.0:
                 z = zz
-            else:
                 break
-        tile_m = 256 * 156543.03392 * math.cos(math.radians(lat)) / (2 ** z)
+        tile_m = _tile_m(z)
         span = max(2, min(8, int(math.ceil(diameter_m / tile_m)) + 1))
 
         cx, cy = _deg2tile(lat, lon, z)
@@ -457,7 +457,6 @@ def get_nowcast_image(code):
                 _paste_layer(JMA_NOWC + "/{bt}/none/{vt}/surf/liden/{z}/{x}/{y}.png", lbt, lvt)
 
         # 指定半径ぴったりに切り出し
-        px_per_m = (2 ** z) * 256 / (156543.03392 * math.cos(math.radians(lat)) * 256) * 256
         half_px = diameter_m / 2.0 / (156543.03392 * math.cos(math.radians(lat)) / (2 ** z))
         ccx = (cx - x0) * 256; ccy = (cy - y0) * 256
         l = max(0, int(ccx - half_px)); t = max(0, int(ccy - half_px))
