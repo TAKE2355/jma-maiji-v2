@@ -391,33 +391,50 @@ def _deg2tile(lat, lon, z):
     y = (1.0 - math.log(math.tan(yr) + 1.0/math.cos(yr)) / math.pi) / 2.0 * n
     return x, y
 
+_TILE_CACHE = {}
+_NOWC_CACHE = {}
+
 def _nowc_times(kind):
-    """kind: 'hrpns'(N1) or 'liden'(N3) の最新 basetime/validtime"""
+    """kind: 'hrpns'→N1 / 'thns'→N3 の最新 basetime/validtime"""
     tf = "targetTimes_N1.json" if kind == "hrpns" else "targetTimes_N3.json"
     try:
         r = requests.get(f"{JMA_NOWC}/{tf}", timeout=15)
         arr = [d for d in r.json() if kind in (d.get("elements") or [])]
         if arr:
-            d = max(arr, key=lambda x: (x["basetime"], x["validtime"]))
+            d = min(arr, key=lambda x: (x["validtime"] != x["basetime"], -int(x["basetime"])))
             return d["basetime"], d["validtime"]
     except Exception as e:
         print(f"    ナウキャスト時刻取得エラー[{kind}]: {e}")
     return None, None
 
-def get_nowcast_image(code):
-    """code形式: ICAO_半径NM[_L]  例 RJAA_200 / RJAA_200_L(雷なし)
-    空港中心・指定半径(NM)の降水＋雷ナウキャスト画像を合成"""
+def _fetch_tile(url):
+    if url in _TILE_CACHE:
+        return _TILE_CACHE[url]
+    im = None
     try:
+        rr = requests.get(url, timeout=12)
+        if rr.status_code == 200 and "image" in rr.headers.get("Content-Type", ""):
+            im = Image.open(io.BytesIO(rr.content)).convert("RGBA")
+    except Exception:
+        pass
+    _TILE_CACHE[url] = im
+    return im
+
+def get_nowcast_image(code):
+    """code形式: ICAO_半径NM  例 RJAA_200
+    空港中心・指定半径(NM)の降水＋雷ナウキャストを合成（タイル並列取得）"""
+    if code in _NOWC_CACHE:
+        return _NOWC_CACHE[code]
+    try:
+        from concurrent.futures import ThreadPoolExecutor
         parts = str(code).split("_")
         icao = parts[0].upper()
         radius_nm = float(parts[1]) if len(parts) > 1 else 200.0
-        with_liden = not (len(parts) > 2 and parts[2].upper() == "L")
         if icao not in AIRPORTS:
             print(f"    ナウキャスト: 未知の空港 {icao}")
             return None, None
         lat, lon = AIRPORTS[icao]
 
-        # 半径NM → 最も詳細なズームを選択（直径が6タイル以内に収まる範囲）
         diameter_m = radius_nm * 2 * 1852.0
         def _tile_m(zz):
             return 256 * 156543.03392 * math.cos(math.radians(lat)) / (2 ** zz)
@@ -427,44 +444,49 @@ def get_nowcast_image(code):
                 z = zz
                 break
         tile_m = _tile_m(z)
-        span = max(2, min(8, int(math.ceil(diameter_m / tile_m)) + 1))
+        span = max(2, min(6, int(math.ceil(diameter_m / tile_m)) + 1))
 
         cx, cy = _deg2tile(lat, lon, z)
         x0 = int(math.floor(cx - span / 2.0)); y0 = int(math.floor(cy - span / 2.0))
-        W = H_ = span * 256
-        canvas = Image.new("RGB", (W, H_), (255, 255, 255))
+        W = Hh = span * 256
+        canvas = Image.new("RGB", (W, Hh), (255, 255, 255))
 
-        def _paste_layer(url_fmt, bt=None, vt=None, alpha=None):
+        bt, vt   = _nowc_times("hrpns")
+        tbt, tvt = _nowc_times("thns")
+        ts = bt or tbt
+
+        # 取得すべきURLを列挙（背景→降水→雷の順に重ねる）
+        jobs = []
+        for layer, fmt, l_bt, l_vt in (
+            ("base",  JMA_BASEMAP, None, None),
+            ("rain",  JMA_NOWC + "/{bt}/none/{vt}/surf/hrpns/{z}/{x}/{y}.png", bt, vt),
+            ("thnd",  JMA_NOWC + "/{bt}/none/{vt}/surf/thns/{z}/{x}/{y}.png", tbt, tvt),
+        ):
+            if layer != "base" and not l_bt:
+                continue
             for dx in range(span):
                 for dy in range(span):
                     tx, ty = x0 + dx, y0 + dy
-                    if tx < 0 or ty < 0 or tx >= 2**z or ty >= 2**z: continue
-                    u = url_fmt.format(z=z, x=tx, y=ty, bt=bt, vt=vt)
-                    try:
-                        rr = requests.get(u, timeout=15)
-                        if rr.status_code != 200: continue
-                        im = Image.open(io.BytesIO(rr.content)).convert("RGBA")
-                        canvas.paste(im, (dx*256, dy*256), im)
-                    except Exception: pass
+                    if tx < 0 or ty < 0 or tx >= 2**z or ty >= 2**z:
+                        continue
+                    jobs.append((layer, dx, dy, fmt.format(z=z, x=tx, y=ty, bt=l_bt, vt=l_vt)))
 
-        _paste_layer(JMA_BASEMAP)
-        bt, vt = _nowc_times("hrpns")
-        ts = bt
-        if bt:
-            _paste_layer(JMA_NOWC + "/{bt}/none/{vt}/surf/hrpns/{z}/{x}/{y}.png", bt, vt)
-        if with_liden:
-            lbt, lvt = _nowc_times("liden")
-            if lbt:
-                _paste_layer(JMA_NOWC + "/{bt}/none/{vt}/surf/liden/{z}/{x}/{y}.png", lbt, lvt)
+        with ThreadPoolExecutor(max_workers=16) as ex:
+            imgs = list(ex.map(lambda t: _fetch_tile(t[3]), jobs))
 
-        # 指定半径ぴったりに切り出し
+        order = {"base": 0, "rain": 1, "thnd": 2}
+        for (layer, dx, dy, _u), im in sorted(zip(jobs, imgs), key=lambda p: order[p[0][0]]):
+            if im is not None:
+                canvas.paste(im, (dx*256, dy*256), im)
+
         half_px = diameter_m / 2.0 / (156543.03392 * math.cos(math.radians(lat)) / (2 ** z))
         ccx = (cx - x0) * 256; ccy = (cy - y0) * 256
         l = max(0, int(ccx - half_px)); t = max(0, int(ccy - half_px))
-        rgt = min(W, int(ccx + half_px)); btm = min(H_, int(ccy + half_px))
+        rgt = min(W, int(ccx + half_px)); btm = min(Hh, int(ccy + half_px))
         if rgt - l > 50 and btm - t > 50:
             canvas = canvas.crop((l, t, rgt, btm))
-        print(f"  ナウキャスト取得: {icao} r={radius_nm:.0f}NM z={z} {canvas.size}")
+        print(f"  ナウキャスト取得: {icao} r={radius_nm:.0f}NM z={z} tiles={len(jobs)} {canvas.size}")
+        _NOWC_CACHE[code] = (canvas, ts)
         return canvas, ts
     except Exception as e:
         print(f"  ナウキャストエラー[{code}]: {e}")
@@ -1109,29 +1131,5 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
-def probe_liden():
-    import math
-    print("=== 雷タイル探索 ===")
-    lat,lon=AIRPORTS["RJAA"]
-    r3=requests.get(f"{JMA_NOWC}/targetTimes_N3.json",timeout=15).json()
-    def latest(el):
-        a=[d for d in r3 if el in (d.get("elements") or [])]
-        return max(a,key=lambda x:(x["basetime"],x["validtime"])) if a else None
-    for el in ["liden","thns","thns_nd"]:
-        d=latest(el)
-        if not d: print(f"  {el}: 該当なし"); continue
-        print(f"  {el}: bt={d['basetime']} vt={d['validtime']}")
-        for z in [4,5,6,7,8]:
-            cx,cy=_deg2tile(lat,lon,z); x=int(cx); y=int(cy)
-            for mem in ["none","immed"]:
-                u=f"{JMA_NOWC}/{d['basetime']}/{mem}/{d['validtime']}/surf/{el}/{z}/{x}/{y}.png"
-                try:
-                    rr=requests.get(u,timeout=10)
-                    if rr.status_code==200:
-                        print(f"    OK z={z} mem={mem} {len(rr.content)}bytes")
-                except Exception: pass
-    print("=== 終了 ===")
-
 if __name__ == "__main__":
-    probe_liden()
     main()
