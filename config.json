@@ -478,7 +478,8 @@
           "code": "158",
           "label": "東経125"
         }
-      ]
+      ],
+      "order": "col"
     },
     {
       "orientation": "portrait",
@@ -619,7 +620,8 @@
           "code": "105",
           "label": "FL050"
         }
-      ]
+      ],
+      "order": "row"
     },
     {
       "orientation": "portrait",
@@ -689,7 +691,8 @@
           "overlay": false
         },
         null
-      ]
+      ],
+      "order": "row"
     }
   ]
 }
