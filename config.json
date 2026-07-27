@@ -690,6 +690,48 @@
         },
         null
       ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 3,
+      "rows": 5,
+      "slots": [
+        {
+          "type": "jma_nowcast",
+          "code": "RJAA_100",
+          "label": "ナウキャスト・成田 100NM",
+          "overlay": false
+        },
+        {
+          "type": "jma_nowcast",
+          "code": "RJAA_200",
+          "label": "ナウキャスト・成田 200NM",
+          "overlay": false
+        },
+        {
+          "type": "jma_nowcast",
+          "code": "RJAA_300",
+          "label": "ナウキャスト・成田 300NM",
+          "overlay": false
+        },
+        {
+          "type": "jma_nowcast",
+          "code": "RJCC_200",
+          "label": "ナウキャスト・千歳 200NM",
+          "overlay": false
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
     }
   ]
 }
