@@ -1001,25 +1001,20 @@ def get_csa024a_image(code, overlay=False):
 
 def probe_imoc():
     import re as _re
-    print("=== IMOC調査 ===")
+    print("=== IMOC時刻別確認 ===")
     hdr={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
          "Referer":"https://www.imocwx.com/"}
-    for t in [0,1,2,3]:
+    for t in [0,1,2,3,4]:
         u=f"https://www.imocwx.com/guid.php?Type=3&Area=0&Time={t}"
-        try:
-            rr=requests.get(u,headers=hdr,timeout=20)
-            print(f"  Time={t}: {rr.status_code} {len(rr.text)} {rr.headers.get('Content-Type')}")
-            if t==0 and rr.status_code==200:
-                imgs=_re.findall(r'<img[^>]+src="([^"]+)"', rr.text)
-                print("   img数:", len(imgs))
-                for s in imgs[:8]:
-                    print("    src:", s[:110])
-                for kw in ["guid","png","jpg","gif"]:
-                    for m in list(_re.finditer(kw, rr.text))[:3]:
-                        seg=rr.text[max(0,m.start()-90):m.start()+70].replace(chr(10)," ")
-                        print(f"    [{kw}] {seg[:160]}")
-        except Exception as e:
-            print(f"  Time={t}: ERR {e}")
+        rr=requests.get(u,headers=hdr,timeout=20)
+        m=_re.search(r'<img src="(guid/[^"]+)"', rr.text)
+        act=_re.search(r'<li class="active">([^<]*)</li>\s*</ul>', rr.text)
+        act2=_re.findall(r'<li class="active">([^<]*)</li>', rr.text)
+        print(f"  Time={t}: {rr.status_code} img={m.group(1) if m else 'なし'} 期間={act2[-1] if act2 else '?'}")
+        if m:
+            iu="https://www.imocwx.com/"+m.group(1)
+            ri=requests.get(iu,headers=hdr,timeout=20)
+            print(f"    画像: {ri.status_code} {len(ri.content)}bytes {ri.headers.get('Content-Type')}")
     print("=== 終了 ===")
 
 if __name__ == "__main__":
