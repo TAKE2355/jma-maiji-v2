@@ -514,8 +514,11 @@ def get_hko_radar(code, overlay=False):
         print(f"  香港レーダーエラー[{code}]: {e}")
         return None, None
 
-PAGASA_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+PAGASA_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                            "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
               "X-Requested-With": "XMLHttpRequest",
+              "Accept": "*/*",
+              "Origin": "https://www.pagasa.dost.gov.ph",
               "Referer": "https://www.pagasa.dost.gov.ph/radar"}
 PAGASA_BBOX = (115.969111093, 3.80912641587, 129.511990464, 22.322581275)
 PAGASA_AREA = {
@@ -1422,28 +1425,5 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
-def probe_pg():
-    print("=== PG調査2 ===")
-    UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
-    combos=[
-      ("min", {}),
-      ("ua", {"User-Agent":UA}),
-      ("ua_origin", {"User-Agent":UA,"Origin":"https://www.pagasa.dost.gov.ph","Referer":"https://www.pagasa.dost.gov.ph/radar"}),
-      ("ua_sec", {"User-Agent":UA,"Origin":"https://www.pagasa.dost.gov.ph","Referer":"https://www.pagasa.dost.gov.ph/radar",
-                  "Accept":"*/*","Accept-Language":"en-US,en;q=0.9","Sec-Fetch-Site":"same-origin","Sec-Fetch-Mode":"cors","Sec-Fetch-Dest":"empty",
-                  "Content-Length":"0"}),
-    ]
-    for host in ["https://www.pagasa.dost.gov.ph","https://pagasa.dost.gov.ph"]:
-        for name,h in combos:
-            try:
-                rr=requests.post(host+"/api/HybridTimeline",headers=h,timeout=25)
-                ct=(rr.headers.get("Content-Type") or "").split(";")[0]
-                body=(rr.text or "")[:60].replace("\n"," ")
-                print(f"  {host[8:22]} {name}: {rr.status_code} {ct} len{len(rr.text)} :: {body}")
-            except Exception as ex:
-                print(f"  {host[8:22]} {name}: EX {str(ex)[:60]}")
-    print("=== 終了 ===")
-
 if __name__ == "__main__":
-    probe_pg()
     main()
