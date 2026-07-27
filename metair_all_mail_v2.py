@@ -361,6 +361,38 @@ def get_ashfall_latest(idx):
         print(f"    降灰予報エラー[{idx}]: {e}")
         return None, None
 
+IMOC_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.imocwx.com/"}
+
+def get_imoc_thunder(time_idx):
+    """IMOC 発雷確率（GSMガイダンス）を予想時刻インデックスで取得
+    ページから画像URLと対象期間を抽出する"""
+    import re as _re
+    try:
+        t = int(time_idx)
+        url = f"https://www.imocwx.com/guid.php?Type=3&Area=0&Time={t}"
+        r = requests.get(url, headers=IMOC_HDR, timeout=20)
+        if r.status_code != 200:
+            print(f"    発雷確率: ページHTTP {r.status_code}")
+            return None, None
+        m = _re.search(r'<img src="(guid/[^"]+)"', r.text)
+        if not m:
+            print("    発雷確率: 画像URL見つからず")
+            return None, None
+        img_url = "https://www.imocwx.com/" + m.group(1)
+        periods = _re.findall(r'<li class="active">([^<]*)</li>', r.text)
+        period = periods[-1].strip() if periods else ""
+        ri = requests.get(img_url, headers=IMOC_HDR, timeout=25)
+        if ri.status_code != 200 or "image" not in ri.headers.get("Content-Type", ""):
+            print(f"    発雷確率: 画像HTTP {ri.status_code}")
+            return None, None
+        im = Image.open(io.BytesIO(ri.content)).convert("RGB")
+        print(f"  発雷確率取得: Time={t} {period} {im.size}")
+        return im, period
+    except Exception as e:
+        print(f"  発雷確率エラー[{time_idx}]: {e}")
+        return None, None
+
 def pdf_to_image(pdf_bytes):
     try:
         import fitz
@@ -531,6 +563,10 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
             im = apply_overlay_layers(im, date_str, _urls)
         lbl = f"{label}\n{date_str}" if date_str else label
         return im, lbl
+
+    elif chart_type == "imoc_thunder":
+        im, period = get_imoc_thunder(code)
+        return im, (f"{label}  {period}" if period else label)
 
     elif chart_type == "metair_ashfall":
         url, ts = get_ashfall_latest(code)
@@ -999,24 +1035,5 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
-def probe_imoc():
-    import re as _re
-    print("=== IMOC時刻別確認 ===")
-    hdr={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-         "Referer":"https://www.imocwx.com/"}
-    for t in [0,1,2,3,4]:
-        u=f"https://www.imocwx.com/guid.php?Type=3&Area=0&Time={t}"
-        rr=requests.get(u,headers=hdr,timeout=20)
-        m=_re.search(r'<img src="(guid/[^"]+)"', rr.text)
-        act=_re.search(r'<li class="active">([^<]*)</li>\s*</ul>', rr.text)
-        act2=_re.findall(r'<li class="active">([^<]*)</li>', rr.text)
-        print(f"  Time={t}: {rr.status_code} img={m.group(1) if m else 'なし'} 期間={act2[-1] if act2 else '?'}")
-        if m:
-            iu="https://www.imocwx.com/"+m.group(1)
-            ri=requests.get(iu,headers=hdr,timeout=20)
-            print(f"    画像: {ri.status_code} {len(ri.content)}bytes {ri.headers.get('Content-Type')}")
-    print("=== 終了 ===")
-
 if __name__ == "__main__":
-    probe_imoc()
     main()
