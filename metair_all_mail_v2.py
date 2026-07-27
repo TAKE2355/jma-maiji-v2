@@ -689,9 +689,16 @@ def _pagasa_frames():
         return _PAGASA_FRAMES
     frames = []
     try:
-        rr = requests.post("https://www.pagasa.dost.gov.ph/api/HybridTimeline",
-                           headers=PAGASA_HDR, timeout=40)
-        data = rr.json().get("rainfall_estimate", [])
+        data = []
+        for _try in range(3):
+            rr = requests.post("https://www.pagasa.dost.gov.ph/api/HybridTimeline",
+                               headers=PAGASA_HDR, timeout=40)
+            ct = (rr.headers.get("Content-Type") or "").split(";")[0]
+            print(f"    PAGASA API try{_try}: {rr.status_code} {ct} len{len(rr.text)}")
+            if "json" in ct and rr.text:
+                data = rr.json().get("rainfall_estimate", [])
+                break
+            time.sleep(2)
         for a in data:
             u = a.get("url", "")
             m = re.search(r"_(\d{14})", u)
