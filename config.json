@@ -690,28 +690,6 @@
         },
         null
       ]
-    },
-    {
-      "orientation": "portrait",
-      "cols": 3,
-      "rows": 5,
-      "slots": [
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
-      ]
     }
   ]
 }
