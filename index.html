@@ -470,7 +470,7 @@ const CHART_MASTER = {
   ],
 };
 const TYPE_LABELS = {
-  '':'（空き）',
+  '':'（BLANK）',
   jma_wanlc:'三十分大気解析',
   jma_wanlf:'三十分大気解析',
   metair_csa019:'予想・概況',
@@ -1190,7 +1190,7 @@ function renderSlotAssignList(){
     // 種別セレクト（上位グループ）
     const typeEl=document.createElement('select');
     typeEl.style.flex='0 0 auto';typeEl.style.minWidth='130px';
-    const emptyGrpO=document.createElement('option');emptyGrpO.value='';emptyGrpO.textContent='（空き）';
+    const emptyGrpO=document.createElement('option');emptyGrpO.value='';emptyGrpO.textContent='（BLANK）';
     if(!slot||!slot.type)emptyGrpO.selected=true;
     typeEl.appendChild(emptyGrpO);
     UPPER_GROUPS.forEach(g=>{
@@ -1255,10 +1255,14 @@ function onSlotGroupChange(i, grp, codeEl){
   const pg=curPage();if(!pg)return;
   populateCodeSelect(codeEl, grp?grp.id:'', '', '');
   pg.slots[i]=grp?{type:grp.keys[0],code:'',label:''}:null;
-  markDirty();drawPreview();
-  // バッジ更新
-  const badge=document.querySelector(`#slot-item-${i} .slot-assign-num`);
-  if(badge)badge.className='slot-assign-num empty';
+  // 一括変更ON時は、この行より下の行にも同じ種別を反映
+  if(_slotBulk){
+    for(let n=i+1;n<pg.slots.length;n++){
+      pg.slots[n]=grp?{type:grp.keys[0],code:'',label:'',
+        overlay:!!(pg.slots[n]&&pg.slots[n].overlay)}:null;
+    }
+  }
+  markDirty();drawPreview();renderSlotAssignList();
 }
 
 let _slotBulk=false;
