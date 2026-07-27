@@ -733,25 +733,25 @@
       "slots": [
         {
           "type": "cwa_radar",
-          "code": "TW_1000",
+          "code": "TW",
           "label": "台湾レーダー・台湾域",
           "overlay": false
         },
         {
           "type": "cwa_radar",
-          "code": "TW_3600",
+          "code": "WIDE",
           "label": "台湾レーダー・広域",
           "overlay": false
         },
         {
           "type": "cwa_radar",
-          "code": "TW_1000",
+          "code": "TW",
           "label": "台湾レーダー・台湾域",
           "overlay": true
         },
         {
           "type": "cwa_radar",
-          "code": "TW_3600",
+          "code": "WIDE",
           "label": "台湾レーダー・広域",
           "overlay": true
         }
