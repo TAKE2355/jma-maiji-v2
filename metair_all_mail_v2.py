@@ -719,8 +719,16 @@ def _pagasa_compose(url, view):
     """レーダーオーバーレイを地図に重ねて指定範囲で切り出す"""
     w, s, e, n, ow, oh = view
     try:
-        rr = requests.get(url, headers=PAGASA_HDR, timeout=60)
+        # api.meteopilipinas.gov.ph は中間CA証明書を配信しないため
+        # この公開画像の取得に限り証明書検証を無効化する
+        try:
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        except Exception:
+            pass
+        rr = requests.get(url, headers=PAGASA_HDR, timeout=60, verify=False)
         if rr.status_code != 200:
+            print(f"    PAGASA画像: HTTP {rr.status_code}")
             return None
         ov = Image.open(io.BytesIO(rr.content)).convert("RGBA")
     except Exception as ex:
