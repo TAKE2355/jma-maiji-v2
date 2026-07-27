@@ -213,31 +213,38 @@ input:focus,select:focus{border-color:var(--accent);}
 <div id="tab-send" class="tab-panel active">
   <div class="send-panel">
     <div class="send-icon">
-      <svg viewBox="0 0 150 150" width="96" height="96" fill="none" stroke="currentColor"
+      <svg viewBox="0 0 150 150" width="98" height="98" fill="none" stroke="currentColor"
            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <defs>
-          <linearGradient id="nb-sweep" x1="1" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#9acd32" stop-opacity=".75"/>
-            <stop offset="100%" stop-color="#9acd32" stop-opacity="0"/>
+          <linearGradient id="nb-sweep" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#9acd32" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#9acd32" stop-opacity=".6"/>
           </linearGradient>
           <radialGradient id="nb-glow">
-            <stop offset="0%" stop-color="#ffd21e" stop-opacity=".55"/>
+            <stop offset="0%" stop-color="#ffd21e" stop-opacity=".6"/>
             <stop offset="100%" stop-color="#ffd21e" stop-opacity="0"/>
           </radialGradient>
         </defs>
-        <g transform="translate(75,75) rotate(-12)">
-          <path d="M0 0 L-66 14 A68 68 0 0 0 -46 50 Z" fill="url(#nb-sweep)" stroke="none"/>
-          <circle r="34" fill="url(#nb-glow)" stroke="none"/>
-          <circle r="66" opacity=".26"/><circle r="45" opacity=".2"/><circle r="24" opacity=".26"/>
-          <path d="M-68 0h12M56 0h12M0 -68v12M0 56v12" opacity=".38"/>
-          <path d="M0 0 L-62 20" stroke="#9acd32" stroke-width="2.6"/>
-          <g transform="translate(8,-48) scale(0.95)">
+        <g transform="translate(75,75)">
+          <path d="M0 0 L-62 26 A67 67 0 0 0 -30 58 Z" fill="url(#nb-sweep)" stroke="none"/>
+          <circle r="30" fill="url(#nb-glow)" stroke="none"/>
+          <circle r="66" opacity=".22"/><circle r="45" opacity=".26"/><circle r="24" opacity=".24"/>
+          <path d="M-68 0h12M56 0h12M0 -68v12M0 56v12" opacity=".4"/>
+          <path d="M0 0 L-58 32" stroke="#9acd32" stroke-width="2.4" opacity=".9"/>
+          <g transform="translate(6,-46) scale(0.92)">
             <path d="M-14 20a17 17 0 0 1 2-34 25 25 0 0 1 47 6 16 16 0 0 1 5 31h-54z"
                   fill="var(--card)" stroke="currentColor" stroke-width="1.9"/>
           </g>
-          <path d="M34 0l-9 17M48 -4l-9 17M60 -8l-8 15" stroke="#4da3ff" stroke-width="2.5" opacity=".95"/>
-          <path d="M38 -52 L2 -12 L19 -7 L-2 6 L14 -9 L-4 -14 L27 -52 Z" fill="#ffd21e" stroke="none"/>
-          <path d="M22 -24 L35 -15 L26 -13" stroke="#ffd21e" stroke-width="2.6" fill="none"/>
+          <path d="M18 -6l-11 20M32 -3l-11 20M46 -6l-11 20M58 -10l-10 18"
+                stroke="#4da3ff" stroke-width="3" opacity=".95"/>
+          <path d="M25 -1l-8 15M39 2l-8 15M52 -2l-8 15"
+                stroke="#4da3ff" stroke-width="2.2" opacity=".7"/>
+          <path d="M34 -48 L4 -12 L18 -8 L0 2 L14 -10 L-1 -14 L24 -48 Z"
+                fill="#ffd21e" stroke="none"/>
+          <path d="M20 -22 L34 -13 L25 -11" stroke="#ffd21e" stroke-width="3" fill="none"/>
+          <path d="M12 -32 L26 -26" stroke="#ffd21e" stroke-width="2.6" fill="none" opacity=".9"/>
+          <path d="M44 -44 L30 -24 L40 -21 L28 -10"
+                stroke="#ffd21e" stroke-width="3.4" fill="none" opacity=".95"/>
         </g>
       </svg>
     </div>
