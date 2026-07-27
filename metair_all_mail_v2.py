@@ -627,8 +627,12 @@ def build_one_page(page_cfg, slot_images, page_num, total_pages, dpi):
             break
         if not label:
             continue
-        col = idx % cols
-        row = idx // cols
+        if page_cfg.get("order") == "col":
+            row = idx % rows
+            col = idx // rows
+        else:
+            col = idx % cols
+            row = idx // cols
         x0  = PAGE_MARGIN + col * (cell_w + CELL_GAP)
         y0  = PAGE_MARGIN + row * (cell_h + CELL_GAP)
         _draw_image_in_box(page_img, im, label, x0, y0, cell_w, cell_h, dpi)
