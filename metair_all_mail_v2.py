@@ -461,6 +461,59 @@ def get_cwa_radar(code, overlay=False):
         print(f"  台湾レーダーエラー[{code}]: {e}")
         return None, None
 
+HKO_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+           "Referer": "https://www.hko.gov.hk/tc/wxinfo/radars/radar.htm"}
+HKO_RADAR = {
+    "064": ("rad_064_png", "2d064nradar"),
+    "128": ("rad_128_png", "2d128nradar"),
+    "256": ("rad_256_png", "2d256nradar"),
+}
+
+def _hko_get(url):
+    """香港天文台(HKO)から画像を取得"""
+    try:
+        r = requests.get(url, headers=HKO_HDR, timeout=30)
+        if r.status_code == 200 and "image" in r.headers.get("Content-Type", ""):
+            return Image.open(io.BytesIO(r.content)).convert("RGB")
+    except Exception as e:
+        print(f"    HKO取得失敗: {e}")
+    return None
+
+def get_hko_radar(code, overlay=False):
+    """香港天文台の気象レーダー画像(64/128/256km)。overlay=True で過去画像を重ねる。"""
+    try:
+        ent = HKO_RADAR.get(str(code))
+        if not ent:
+            print(f"    香港レーダー: 未知のコード {code}")
+            return None, None
+        d, pfx = ent
+        base = "https://www.hko.gov.hk/wxinfo/radars/" + d + "/" + pfx + "_"
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)   # 香港時間
+        now = now.replace(minute=(now.minute // 6) * 6, second=0, microsecond=0)
+        im, ts = None, None
+        for back in range(0, 12):
+            dt = now - datetime.timedelta(minutes=6 * back)
+            cand = dt.strftime("%Y%m%d%H%M")
+            im = _hko_get(base + cand + ".jpg")
+            if im:
+                ts = cand
+                break
+        if im is None:
+            print(f"    香港レーダー: 取得失敗 {code}")
+            return None, None
+        print(f"  香港レーダー取得: {code}km {im.size} hk{ts}")
+        if overlay:
+            def _u(dt):
+                dd = dt.replace(minute=(dt.minute // 6) * 6, second=0, microsecond=0)
+                return [base + dd.strftime("%Y%m%d%H%M") + ".jpg"]
+            im = apply_overlay_layers(im, ts, _u, headers=HKO_HDR, fetcher=_hko_get)
+        out_ts = (datetime.datetime.strptime(ts, "%Y%m%d%H%M")
+                  - datetime.timedelta(hours=8)).strftime("%Y%m%d%H%M%S")
+        return im, out_ts
+    except Exception as e:
+        print(f"  香港レーダーエラー[{code}]: {e}")
+        return None, None
+
 def pdf_to_image(pdf_bytes):
     try:
         import fitz
@@ -638,6 +691,9 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         im, period = get_imoc_thunder(code)
         return im, (f"{label}  {period}" if period else label)
 
+    elif chart_type == "hko_radar":
+        im, ts = get_hko_radar(code, overlay=want_ov)
+        return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
     elif chart_type == "cwa_radar":
         im, ts = get_cwa_radar(code, overlay=want_ov)
         return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
