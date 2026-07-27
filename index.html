@@ -439,6 +439,12 @@ const CHART_MASTER = {
     {code:'3',label:'降灰予報・桜島'},
     {code:'6',label:'降灰予報・霧島山'},
   ],
+  cwa_radar:[
+    {code:'TW_1000',label:'台湾レーダー・台湾域'},
+    {code:'TW_3600',label:'台湾レーダー・広域'},
+    {code:'1000',label:'台湾レーダー・台湾域(地形なし)'},
+    {code:'3600',label:'台湾レーダー・広域(地形なし)'},
+  ],
   metair_csa024a:[
     {code:'RJAA_ALWIN1',label:'ALWIN・NRT'},
     {code:'RJCC_ALWIN1',label:'ALWIN・CTS'},
@@ -466,11 +472,12 @@ const TYPE_LABELS = {
   jikkyou:'実況',
   metair_csa003:'実況',
   metair_csa024a:'実況',
+  cwa_radar:'実況',
 };
 const UPPER_GROUPS = [
   {id:'sanjuppun',label:'三十分大気解析',keys:['jma_wanlc','jma_wanlf']},
   {id:'kishozujoho',label:'予想・概況',keys:['metair_csa019','metair_fb_akuten','metair_ashfall','imoc_thunder']},
-  {id:'jikkyou',label:'実況',keys:['jikkyou','metair_csa003','metair_csa024a']},
+  {id:'jikkyou',label:'実況',keys:['jikkyou','metair_csa003','metair_csa024a','cwa_radar']},
 ];
 function getUpperGroupForType(type){return UPPER_GROUPS.find(g=>g.keys.includes(type))||null;}
 function getUpperGroupById(id){return UPPER_GROUPS.find(g=>g.id===id)||null;}
