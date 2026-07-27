@@ -464,6 +464,17 @@ input:focus,select:focus{border-color:var(--accent);}
 /* 50. ダブルスイープ */
 .fx50 .nb-l{animation:nbf-double 1.4s linear 1; animation-delay:calc(var(--i)*.1s);}
 @keyframes nbf-double{0%,100%{color:var(--danger);text-shadow:none}12%{color:#fff;text-shadow:0 0 12px rgba(255,60,60,1),0 0 30px rgba(255,45,45,.8)}24%{color:var(--danger);text-shadow:none}48%{color:#fff;text-shadow:0 0 12px rgba(255,60,60,1),0 0 30px rgba(255,45,45,.8)}62%{color:var(--danger);text-shadow:none}}
+
+/* NIMBUS の登録商標記号 */
+.nb-r{
+  font-size:.30em;
+  font-weight:700;
+  vertical-align:super;
+  line-height:1;
+  letter-spacing:normal;
+  margin-left:-.10em;
+  opacity:.9;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
@@ -499,7 +510,7 @@ input:focus,select:focus{border-color:var(--accent);}
         <img src="assets/top-icon-bolt3.png?v=3" width="132" height="132" alt="" class="radar-bolt">
       </div>
     </div>
-    <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);" id="nimbus-logo"><span class="nb-l" style="--i:0">N</span><span class="nb-l" style="--i:1">I</span><span class="nb-l" style="--i:2">M</span><span class="nb-l" style="--i:3">B</span><span class="nb-l" style="--i:4">U</span><span class="nb-l" style="--i:5">S</span></h2>
+    <h2 style="font-family:'Orbitron',var(--font);font-size:36px;margin-bottom:6px;letter-spacing:.2em;font-weight:900;color:var(--danger);" id="nimbus-logo"><span class="nb-l" style="--i:0">N</span><span class="nb-l" style="--i:1">I</span><span class="nb-l" style="--i:2">M</span><span class="nb-l" style="--i:3">B</span><span class="nb-l" style="--i:4">U</span><span class="nb-l" style="--i:5">S</span><span class="nb-r">&reg;</span></h2>
     <div style="font-size:18.8px;letter-spacing:.22em;color:var(--sub);margin-bottom:16px;">AVIATION WEATHER DISPATCH</div>
     <p class="send-desc">Send the weather chart PDF to all active recipients.<br>Takes approximately 2-3 minutes.</p>
     <button class="btn btn-primary" onclick="triggerWorkflow()" id="send-btn">SEND NOW</button>
