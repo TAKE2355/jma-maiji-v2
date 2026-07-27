@@ -756,6 +756,39 @@
           "overlay": true
         }
       ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 2,
+      "order": "row",
+      "mode": "chart",
+      "slots": [
+        {
+          "type": "hko_radar",
+          "code": "064",
+          "label": "香港レーダー・64km",
+          "overlay": false
+        },
+        {
+          "type": "hko_radar",
+          "code": "128",
+          "label": "香港レーダー・128km",
+          "overlay": false
+        },
+        {
+          "type": "hko_radar",
+          "code": "256",
+          "label": "香港レーダー・256km",
+          "overlay": false
+        },
+        {
+          "type": "hko_radar",
+          "code": "256",
+          "label": "香港レーダー・256km(L)",
+          "overlay": true
+        }
+      ]
     }
   ]
 }
