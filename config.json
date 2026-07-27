@@ -780,6 +780,34 @@
           "overlay": true
         }
       ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 2,
+      "order": "row",
+      "mode": "chart",
+      "slots": [
+        {
+          "type": "pagasa_radar",
+          "code": "MNL",
+          "label": "マニラレーダー",
+          "overlay": false
+        },
+        {
+          "type": "pagasa_radar",
+          "code": "PH",
+          "label": "マニラレーダー・全域",
+          "overlay": false
+        },
+        {
+          "type": "pagasa_radar",
+          "code": "MNL",
+          "label": "マニラレーダー(L)",
+          "overlay": true
+        },
+        null
+      ]
     }
   ]
 }
