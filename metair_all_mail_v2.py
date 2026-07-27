@@ -313,7 +313,7 @@ def probe_metair_direct(wmo_code):
         for ts in [t.strftime("%Y%m%d%H%M%S"), t.strftime("%Y%m%d%H%M")]:
             url = f"{METAIR_BASE}{dir_path}{wmo_code}_RJTD_{ts}.png"
             try:
-                rr = requests.head(url, headers=METAIR_HEADERS, timeout=6)
+                rr = requests.head(url, headers=_hdr, timeout=6)
                 if rr.status_code == 200:
                     return url, ts
             except Exception: pass
@@ -396,34 +396,67 @@ def get_imoc_thunder(time_idx):
 CWA_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
            "Referer": "https://www.cwa.gov.tw/V8/E/W/OBS_Radar.html"}
 CWA_RADAR = {
-    "TW_1000": "/Data/radar/CV1_TW_1000.png",
-    "TW_3600": "/Data/radar/CV1_TW_3600.png",
-    "1000":    "/Data/radar/CV1_1000.png",
-    "3600":    "/Data/radar/CV1_3600.png",
+    "TW":      "CV1_TW_3600",
+    "WIDE":    "CV1_3600",
+    "TW_1000": "CV1_TW_3600",
+    "TW_3600": "CV1_TW_3600",
+    "1000":    "CV1_3600",
+    "3600":    "CV1_3600",
 }
 
-def get_cwa_radar(code):
-    """台湾中央気象署(CWA)の合成レーダー画像を取得"""
+def _cwa_get(url):
+    """台湾CWAから画像を取得（専用ヘッダ付き）"""
     try:
-        path = CWA_RADAR.get(str(code))
-        if not path:
+        r = requests.get(url, headers=CWA_HDR, timeout=60)
+        if r.status_code == 200 and "image" in r.headers.get("Content-Type", ""):
+            return Image.open(io.BytesIO(r.content)).convert("RGB")
+    except Exception as e:
+        print(f"    CWA取得失敗: {e}")
+    return None
+
+def _cwa_latest_ts():
+    """台湾時間(UTC+8)10分刻みで存在する最新タイムスタンプを返す"""
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+    now = now.replace(minute=(now.minute // 10) * 10, second=0, microsecond=0)
+    for back in range(0, 13):
+        dt = now - datetime.timedelta(minutes=10 * back)
+        ts = dt.strftime("%Y%m%d%H%M")
+        try:
+            rr = requests.head("https://www.cwa.gov.tw/Data/radar/CV1_3600_" + ts + ".png",
+                               headers=CWA_HDR, timeout=8)
+            if rr.status_code == 200:
+                return ts
+        except Exception:
+            pass
+    return None
+
+def get_cwa_radar(code, overlay=False):
+    """台湾中央気象署(CWA)の合成レーダー画像。overlay=True で過去画像を重ねる。"""
+    try:
+        stem = CWA_RADAR.get(str(code))
+        if not stem:
             print(f"    台湾レーダー: 未知のコード {code}")
             return None, None
-        url = "https://www.cwa.gov.tw" + path
-        r = requests.get(url, headers=CWA_HDR, timeout=30)
-        if r.status_code != 200 or "image" not in r.headers.get("Content-Type", ""):
-            print(f"    台湾レーダー: HTTP {r.status_code}")
+        base = "https://www.cwa.gov.tw/Data/radar/"
+        ts = _cwa_latest_ts()
+        im = _cwa_get(base + stem + "_" + ts + ".png") if ts else None
+        if im is None:
+            ts = None
+            im = _cwa_get(base + stem + ".png")
+        if im is None:
+            print(f"    台湾レーダー: 取得失敗 {code}")
             return None, None
-        im = Image.open(io.BytesIO(r.content)).convert("RGB")
-        ts = None
-        lm = r.headers.get("Last-Modified")
-        if lm:
-            try:
-                ts = datetime.datetime.strptime(lm, "%a, %d %b %Y %H:%M:%S %Z").strftime("%Y%m%d%H%M%S")
-            except Exception:
-                ts = None
-        print(f"  台湾レーダー取得: {code} {im.size}")
-        return im, ts
+        print(f"  台湾レーダー取得: {code} {stem} {im.size} tw{ts}")
+        if overlay and ts:
+            def _u(dt):
+                d = dt.replace(minute=(dt.minute // 10) * 10, second=0, microsecond=0)
+                return [base + stem + "_" + d.strftime("%Y%m%d%H%M") + ".png"]
+            im = apply_overlay_layers(im, ts, _u, headers=CWA_HDR, fetcher=_cwa_get)
+        out_ts = None
+        if ts:
+            out_ts = (datetime.datetime.strptime(ts, "%Y%m%d%H%M")
+                      - datetime.timedelta(hours=8)).strftime("%Y%m%d%H%M%S")
+        return im, out_ts
     except Exception as e:
         print(f"  台湾レーダーエラー[{code}]: {e}")
         return None, None
@@ -485,7 +518,7 @@ def get_akuten_latest_ts():
     print("  WARN: 悪天TSプローブ失敗")
     return None
 
-def apply_overlay_layers(base_im, base_ts, url_fn):
+def apply_overlay_layers(base_im, base_ts, url_fn, headers=None, fetcher=None):
     """base_im に OVERLAY_LAYERS を重ねる汎用関数。
     url_fn(dt) は datetime を受け取り候補URLのリストを返す。
     画像欠落時は5分刻みで最大30分さらに遡る。"""
@@ -495,6 +528,8 @@ def apply_overlay_layers(base_im, base_ts, url_fn):
         base_dt = datetime.datetime.strptime(base_ts, fmt)
     except Exception:
         return base_im
+    _hdr = headers or METAIR_HEADERS
+    _get = fetcher or fetch_image
     result = base_im
     for ly in OVERLAY_LAYERS:
         if not ly.get("enabled", True): continue
@@ -513,7 +548,7 @@ def apply_overlay_layers(base_im, base_ts, url_fn):
                 try:
                     rr = requests.head(url, headers=METAIR_HEADERS, timeout=6)
                     if rr.status_code == 200:
-                        old_im = fetch_image(url)
+                        old_im = _get(url)
                         if old_im:
                             print(f"  overlay OK -{minutes+extra}min alpha={alpha}")
                             break
@@ -604,7 +639,7 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         return im, (f"{label}  {period}" if period else label)
 
     elif chart_type == "cwa_radar":
-        im, ts = get_cwa_radar(code)
+        im, ts = get_cwa_radar(code, overlay=want_ov)
         return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
 
     elif chart_type == "metair_ashfall":
@@ -1074,43 +1109,5 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
-def probe_cwa2():
-    import re as _re, datetime as _dt
-    print("=== 台湾レーダー再調査 ===")
-    # 1) 画像のモード・透過確認
-    for c in ["TW_1000","TW_3600"]:
-        u="https://www.cwa.gov.tw"+CWA_RADAR[c]
-        rr=requests.get(u,headers=CWA_HDR,timeout=30)
-        im=Image.open(io.BytesIO(rr.content))
-        print(f"  {c}: mode={im.mode} size={im.size} LastMod={rr.headers.get('Last-Modified')}")
-        if im.mode in ("RGBA","LA","P"):
-            a=im.convert("RGBA").getchannel("A")
-            print(f"    alpha min={a.getextrema()[0]} max={a.getextrema()[1]}")
-    # 2) 過去画像のURLパターン探索
-    now=_dt.datetime.utcnow()+_dt.timedelta(hours=8)  # 台湾時間
-    base=now.replace(minute=(now.minute//10)*10, second=0, microsecond=0)
-    pats=[
-      "/Data/radar/CV1_TW_1000_{ts}.png",
-      "/Data/radar/CV1_TW_1000-{ts}.png",
-      "/Data/radar/CV1_TW_1000.png?T={ts}",
-      "/Data/js/OBS_Radar.js",
-    ]
-    for p in pats[:3]:
-        for back in [0,1,2]:
-            t=base-_dt.timedelta(minutes=10*back)
-            for fmt in ["%Y%m%d%H%M","%Y-%m-%d_%H%M"]:
-                u="https://www.cwa.gov.tw"+p.format(ts=t.strftime(fmt))
-                try:
-                    rr=requests.head(u,headers=CWA_HDR,timeout=8)
-                    if rr.status_code==200:
-                        print(f"  HIT: {p} {t.strftime(fmt)}")
-                except Exception: pass
-    # 3) ページ内のJSを探す
-    rp=requests.get("https://www.cwa.gov.tw/V8/E/W/OBS_Radar.html",headers=CWA_HDR,timeout=20)
-    for m in list(_re.finditer(r'src="([^"]*\.js[^"]*)"', rp.text))[:12]:
-        print("  js:", m.group(1)[:90])
-    print("=== 終了 ===")
-
 if __name__ == "__main__":
-    probe_cwa2()
     main()
