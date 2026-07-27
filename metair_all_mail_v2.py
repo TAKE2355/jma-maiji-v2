@@ -999,5 +999,29 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
+def probe_imoc():
+    import re as _re
+    print("=== IMOC調査 ===")
+    hdr={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+         "Referer":"https://www.imocwx.com/"}
+    for t in [0,1,2,3]:
+        u=f"https://www.imocwx.com/guid.php?Type=3&Area=0&Time={t}"
+        try:
+            rr=requests.get(u,headers=hdr,timeout=20)
+            print(f"  Time={t}: {rr.status_code} {len(rr.text)} {rr.headers.get('Content-Type')}")
+            if t==0 and rr.status_code==200:
+                imgs=_re.findall(r'<img[^>]+src="([^"]+)"', rr.text)
+                print("   img数:", len(imgs))
+                for s in imgs[:8]:
+                    print("    src:", s[:110])
+                for kw in ["guid","png","jpg","gif"]:
+                    for m in list(_re.finditer(kw, rr.text))[:3]:
+                        seg=rr.text[max(0,m.start()-90):m.start()+70].replace(chr(10)," ")
+                        print(f"    [{kw}] {seg[:160]}")
+        except Exception as e:
+            print(f"  Time={t}: ERR {e}")
+    print("=== 終了 ===")
+
 if __name__ == "__main__":
+    probe_imoc()
     main()
