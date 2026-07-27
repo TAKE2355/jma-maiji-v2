@@ -808,6 +808,39 @@
         },
         null
       ]
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
+      "rows": 2,
+      "order": "row",
+      "mode": "chart",
+      "slots": [
+        {
+          "type": "pagasa_radar",
+          "code": "MNL",
+          "label": "マニラレーダー・マニラ周辺",
+          "overlay": false
+        },
+        {
+          "type": "pagasa_radar",
+          "code": "PH",
+          "label": "マニラレーダー・フィリピン全域",
+          "overlay": false
+        },
+        {
+          "type": "pagasa_radar",
+          "code": "MNL",
+          "label": "マニラ周辺(L)",
+          "overlay": true
+        },
+        {
+          "type": "pagasa_radar",
+          "code": "PH",
+          "label": "全域(L)",
+          "overlay": true
+        }
+      ]
     }
   ]
 }
