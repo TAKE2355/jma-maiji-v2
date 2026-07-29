@@ -696,7 +696,12 @@
           "label": "ALWIN・NRT",
           "overlay": false
         },
-        null
+        {
+          "type": "metair_csa024a",
+          "code": "ROAH_ALWIN1",
+          "label": "ALWIN・OKA",
+          "overlay": false
+        }
       ]
     },
     {
