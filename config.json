@@ -436,6 +436,38 @@
     {
       "orientation": "portrait",
       "cols": 2,
+      "rows": 2,
+      "slots": [
+        {
+          "type": "imoc_thunder",
+          "code": "0",
+          "label": "発雷確率3h",
+          "overlay": false
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "1",
+          "label": "発雷確率6h",
+          "overlay": false
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "2",
+          "label": "発雷確率9h",
+          "overlay": false
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "3",
+          "label": "発雷確率12h",
+          "overlay": false
+        }
+      ],
+      "order": "row"
+    },
+    {
+      "orientation": "portrait",
+      "cols": 2,
       "rows": 4,
       "slots": [
         {
@@ -626,38 +658,6 @@
     {
       "orientation": "portrait",
       "cols": 2,
-      "rows": 2,
-      "slots": [
-        {
-          "type": "imoc_thunder",
-          "code": "0",
-          "label": "発雷確率3h",
-          "overlay": false
-        },
-        {
-          "type": "imoc_thunder",
-          "code": "1",
-          "label": "発雷確率6h",
-          "overlay": false
-        },
-        {
-          "type": "imoc_thunder",
-          "code": "2",
-          "label": "発雷確率9h",
-          "overlay": false
-        },
-        {
-          "type": "imoc_thunder",
-          "code": "3",
-          "label": "発雷確率12h",
-          "overlay": false
-        }
-      ],
-      "order": "row"
-    },
-    {
-      "orientation": "portrait",
-      "cols": 2,
       "rows": 4,
       "slots": [
         {
@@ -707,12 +707,24 @@
     {
       "orientation": "portrait",
       "cols": 2,
-      "rows": 2,
+      "rows": 3,
       "slots": [
         {
-          "type": "metair_ashfall",
-          "code": "3",
-          "label": "降灰予報・桜島",
+          "type": "metair_csa024a",
+          "code": "RJGG_ALWIN1",
+          "label": "ALWIN・NGO",
+          "overlay": false
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJCC_ALWIN1",
+          "label": "ALWIN・CTS",
+          "overlay": false
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJBB_ALWIN1",
+          "label": "ALWIN・KIX",
           "overlay": false
         },
         {
@@ -723,11 +735,16 @@
         },
         {
           "type": "metair_ashfall",
+          "code": "3",
+          "label": "降灰予報・桜島",
+          "overlay": false
+        },
+        {
+          "type": "metair_ashfall",
           "code": "6",
           "label": "降灰予報・霧島山",
           "overlay": false
-        },
-        null
+        }
       ],
       "order": "row"
     }
