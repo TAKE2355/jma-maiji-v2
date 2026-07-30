@@ -717,8 +717,8 @@
         },
         {
           "type": "metair_csa024a",
-          "code": "RJCC_ALWIN1",
-          "label": "ALWIN・CTS",
+          "code": "ROAH_ALWIN1",
+          "label": "ALWIN・OKA",
           "overlay": false
         },
         {
