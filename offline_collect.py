@@ -202,6 +202,21 @@ def collect_static(cat, jma_ts, akuten_ts):
             items.append({"file": fn, "label": it.get("label", ""), "caption": label or ""})
     return items
 
+def collect_text(cat):
+    """METAR/TAF などのテキストを取得して manifest に直接埋め込む"""
+    items = []
+    for it in cat.get("items", []):
+        row = {"ids": it.get("ids", ""), "hours": it.get("hours", 3),
+               "metar": it.get("metar", True), "taf": it.get("taf", True)}
+        try:
+            lines = M.fetch_metar_text(row)
+        except Exception as e:
+            lines = ["取得エラー: " + str(e)[:80]]
+        print("    [%s] %s %d行" % ("OK" if lines else "NG", it.get("label", ""), len(lines)))
+        items.append({"label": it.get("label", ""), "ids": it.get("ids", ""),
+                      "text": "\n".join(lines)})
+    return items
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     conf = json.load(open("offline_config.json", encoding="utf-8"))
@@ -223,7 +238,10 @@ def main():
     for cat in cats:
         print("\n=== %s ===" % cat.get("label"))
         entry = {"id": cat["id"], "label": cat.get("label", ""), "mode": cat.get("mode", "static")}
-        if cat.get("mode") == "series":
+        if cat.get("mode") == "text":
+            entry["items"] = collect_text(cat)
+            total += len(entry["items"])
+        elif cat.get("mode") == "series":
             entry["series"] = []
             for s in cat.get("series", []):
                 fr = collect_series(s, jma_ts, akuten_ts)
