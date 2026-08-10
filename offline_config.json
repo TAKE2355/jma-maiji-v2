@@ -94,211 +94,363 @@
     {
       "id": "akuten",
       "label": "悪天",
-      "mode": "static",
-      "items": [
+      "mode": "series",
+      "series": [
         {
-          "type": "metair_fb_akuten",
+          "key": "akuten_FBSN",
+          "label": "下層悪天予想図・東北",
+          "kind": "akuten",
+          "prefix": null,
           "code": "FBSN",
-          "label": "下層悪天予想図・東北"
+          "step": 180,
+          "frames": 4
         },
         {
-          "type": "metair_fb_akuten",
+          "key": "akuten_FBSP",
+          "label": "下層悪天予想図・北海道",
+          "kind": "akuten",
+          "prefix": null,
           "code": "FBSP",
-          "label": "下層悪天予想図・北海道"
+          "step": 180,
+          "frames": 4
         },
         {
-          "type": "metair_fb_akuten",
+          "key": "akuten_FBOS",
+          "label": "下層悪天予想図・西日本",
+          "kind": "akuten",
+          "prefix": null,
           "code": "FBOS",
-          "label": "下層悪天予想図・西日本"
+          "step": 180,
+          "frames": 4
         },
         {
-          "type": "metair_fb_akuten",
+          "key": "akuten_FBTK",
+          "label": "下層悪天予想図・東日本",
+          "kind": "akuten",
+          "prefix": null,
           "code": "FBTK",
-          "label": "下層悪天予想図・東日本"
+          "step": 180,
+          "frames": 4
         },
         {
-          "type": "metair_fb_akuten",
+          "key": "akuten_FBOK",
+          "label": "下層悪天予想図・沖縄",
+          "kind": "akuten",
+          "prefix": null,
           "code": "FBOK",
-          "label": "下層悪天予想図・沖縄"
+          "step": 180,
+          "frames": 4
         },
         {
-          "type": "metair_fb_akuten",
+          "key": "akuten_FBKG",
+          "label": "下層悪天予想図・奄美",
+          "kind": "akuten",
+          "prefix": null,
           "code": "FBKG",
-          "label": "下層悪天予想図・奄美"
+          "step": 180,
+          "frames": 4
         }
       ]
     },
     {
       "id": "xsec",
       "label": "断面図",
-      "mode": "static",
-      "items": [
+      "mode": "series",
+      "series": [
         {
-          "type": "jma_wanlc",
+          "key": "xsec_151",
+          "label": "東経142.5",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "151",
-          "label": "東経142.5"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_152",
+          "label": "東経140",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "152",
-          "label": "東経140"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_153",
+          "label": "東経137.5",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "153",
-          "label": "東経137.5"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_154",
+          "label": "東経135",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "154",
-          "label": "東経135"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_155",
+          "label": "東経132.5",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "155",
-          "label": "東経132.5"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_156",
+          "label": "東経130",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "156",
-          "label": "東経130"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_157",
+          "label": "東経127.5",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "157",
-          "label": "東経127.5"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_158",
+          "label": "東経125",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "158",
-          "label": "東経125"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_199",
+          "label": "航空路断面図",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "199",
-          "label": "航空路断面図"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_101",
+          "label": "福岡-釧路",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "101",
-          "label": "福岡-釧路"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_102",
+          "label": "福岡-紋別",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "102",
-          "label": "福岡-紋別"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_103",
+          "label": "東京-稚内",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "103",
-          "label": "東京-稚内"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_105",
+          "label": "福岡-東京",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "105",
-          "label": "福岡-東京"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_106",
+          "label": "鹿児島-東京",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "106",
-          "label": "鹿児島-東京"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_107",
+          "label": "石垣-東京",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "107",
-          "label": "石垣-東京"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlc",
+          "key": "xsec_108",
+          "label": "与那国-高松",
+          "kind": "jma",
+          "prefix": "WANLC",
           "code": "108",
-          "label": "与那国-高松"
+          "step": 30,
+          "frames": 4
         }
       ]
     },
     {
       "id": "flevel",
       "label": "平面図",
-      "mode": "static",
-      "items": [
+      "mode": "series",
+      "series": [
         {
-          "type": "jma_wanlf",
+          "key": "flevel_139",
+          "label": "FL390",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "139",
-          "label": "FL390"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_137",
+          "label": "FL370",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "137",
-          "label": "FL370"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_135",
+          "label": "FL350",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "135",
-          "label": "FL350"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_133",
+          "label": "FL330",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "133",
-          "label": "FL330"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_131",
+          "label": "FL310",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "131",
-          "label": "FL310"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_129",
+          "label": "FL290",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "129",
-          "label": "FL290"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_127",
+          "label": "FL270",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "127",
-          "label": "FL270"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_125",
+          "label": "FL250",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "125",
-          "label": "FL250"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_123",
+          "label": "FL230",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "123",
-          "label": "FL230"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_121",
+          "label": "FL210",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "121",
-          "label": "FL210"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_119",
+          "label": "FL190",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "119",
-          "label": "FL190"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_117",
+          "label": "FL170",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "117",
-          "label": "FL170"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_115",
+          "label": "FL150",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "115",
-          "label": "FL150"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_111",
+          "label": "FL110",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "111",
-          "label": "FL110"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_109",
+          "label": "FL090",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "109",
-          "label": "FL090"
+          "step": 30,
+          "frames": 4
         },
         {
-          "type": "jma_wanlf",
+          "key": "flevel_105",
+          "label": "FL050",
+          "kind": "jma",
+          "prefix": "WANLF",
           "code": "105",
-          "label": "FL050"
+          "step": 30,
+          "frames": 4
         }
       ]
     },
