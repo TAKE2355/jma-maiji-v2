@@ -36,7 +36,7 @@ main{padding:0 12px 40px;}
 .caption{width:100%;}
 .caption{padding:8px 10px;font-size:13px;color:var(--sub);border-top:1px solid var(--line);
  font-variant-numeric:tabular-nums;}
-.player{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.player{display:flex;align-items:center;gap:10px;margin:2px 0 8px;}
 .player button{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;
  width:44px;height:38px;font-size:15px;font-family:inherit;cursor:pointer;}
 .player button.play{background:var(--danger);border-color:var(--danger);color:#fff;width:56px;font-weight:700;}
@@ -442,7 +442,6 @@ header .prog{width:100%;margin-top:2px;}
 <nav class="cats" id="cats"></nav>
 <div class="subs" id="subs"></div>
 <main>
-  <div class="stage" id="stage"><img id="shot" alt=""><div class="caption" id="cap"></div></div>
   <div class="player" id="player" style="display:none">
     <button class="play" id="p-play">▶</button>
     <button id="p-prev">◀</button>
@@ -456,6 +455,8 @@ header .prog{width:100%;margin-top:2px;}
   </div>
   <div class="empty" id="empty">「最新データ取得」を押すと約250枚の画像を端末に保存します。<br>
   一度取得すれば、以降は機内など通信が無い環境でも表示できます。</div>
+  <div class="stage" id="stage"><img id="shot" alt=""><div class="caption" id="cap"></div></div>
+
 </main>
 <script>
 const BASE='https://raw.githubusercontent.com/TAKE2355/jma-maiji-v2/offline-cache/';
