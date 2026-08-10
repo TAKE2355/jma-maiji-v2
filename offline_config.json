@@ -21,73 +21,106 @@
         },
         {
           "type": "metair_csa019",
-          "code": "QACA95",
-          "label": "SPAS速報天気図"
-        },
-        {
-          "type": "metair_csa019",
           "code": "QACE98",
           "label": "FSAS24アジア太平洋海上悪天24時間予想図"
+        }
+      ]
+    },
+    {
+      "id": "anim_charts",
+      "label": "天気図(動画)",
+      "mode": "series",
+      "series": [
+        {
+          "key": "ch_QACA95",
+          "label": "SPAS速報天気図",
+          "kind": "csa019",
+          "code": "QACA95",
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBMA98",
+          "label": "ABJP国内悪天解析図",
+          "kind": "csa019",
           "code": "QBMA98",
-          "label": "ABJP国内悪天解析図"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBEY10",
+          "label": "FBJP国内悪天予想図",
+          "kind": "csa019",
           "code": "QBEY10",
-          "label": "FBJP国内悪天予想図"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QNSA22",
+          "label": "TSAS1広域雲画像情報(北半球)",
+          "kind": "csa019",
           "code": "QNSA22",
-          "label": "TSAS1広域雲画像情報(北半球)"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QRAI85",
+          "label": "FXJP854",
+          "kind": "csa019",
           "code": "QRAI85",
-          "label": "FXJP854"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBSA95",
+          "label": "UBSA 狭域悪天実況図・白神",
+          "kind": "csa019",
           "code": "QBSA95",
-          "label": "UBSA 狭域悪天実況図・白神"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBCK95",
+          "label": "UBCK 狭域悪天実況図・日高",
+          "kind": "csa019",
           "code": "QBCK95",
-          "label": "UBCK 狭域悪天実況図・日高"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBRA95",
+          "label": "UBGG 狭域悪天実況図・中部",
+          "kind": "csa019",
           "code": "QBRA95",
-          "label": "UBGG 狭域悪天実況図・中部"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBQA95",
+          "label": "UBTT 狭域悪天実況図・関東",
+          "kind": "csa019",
           "code": "QBQA95",
-          "label": "UBTT 狭域悪天実況図・関東"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBFF95",
+          "label": "UBFF 狭域悪天実況図・福岡",
+          "kind": "csa019",
           "code": "QBFF95",
-          "label": "UBFF 狭域悪天実況図・福岡"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBUA95",
+          "label": "UBBB 狭域悪天実況図・関西",
+          "kind": "csa019",
           "code": "QBUA95",
-          "label": "UBBB 狭域悪天実況図・関西"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBIG95",
+          "label": "UBIG 狭域悪天実況図・先島",
+          "kind": "csa019",
           "code": "QBIG95",
-          "label": "UBIG 狭域悪天実況図・先島"
+          "frames": 8
         },
         {
-          "type": "metair_csa019",
+          "key": "ch_QBAH95",
+          "label": "UBAH 狭域悪天実況図・那覇",
+          "kind": "csa019",
           "code": "QBAH95",
-          "label": "UBAH 狭域悪天実況図・那覇"
+          "frames": 8
         }
       ]
     },
