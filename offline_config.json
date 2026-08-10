@@ -1,0 +1,503 @@
+{
+  "auto": {
+    "enabled": false,
+    "note": "trueにすると offline_cache.yml の cron で自動収集"
+  },
+  "categories": [
+    {
+      "id": "surface",
+      "label": "天気図",
+      "mode": "static",
+      "items": [
+        {
+          "type": "metair_csa019",
+          "code": "QYYA86",
+          "label": "全国航空気象解説報・飛行場"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QYYA82",
+          "label": "全国航空気象解説報・国内空域"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QACA95",
+          "label": "SPAS速報天気図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QACE98",
+          "label": "FSAS24アジア太平洋海上悪天24時間予想図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBMA98",
+          "label": "ABJP国内悪天解析図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBEY10",
+          "label": "FBJP国内悪天予想図"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QNSA22",
+          "label": "TSAS1広域雲画像情報(北半球)"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QRAI85",
+          "label": "FXJP854"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBSA95",
+          "label": "UBSA 狭域悪天実況図・白神"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBCK95",
+          "label": "UBCK 狭域悪天実況図・日高"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBRA95",
+          "label": "UBGG 狭域悪天実況図・中部"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBQA95",
+          "label": "UBTT 狭域悪天実況図・関東"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBFF95",
+          "label": "UBFF 狭域悪天実況図・福岡"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBUA95",
+          "label": "UBBB 狭域悪天実況図・関西"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBIG95",
+          "label": "UBIG 狭域悪天実況図・先島"
+        },
+        {
+          "type": "metair_csa019",
+          "code": "QBAH95",
+          "label": "UBAH 狭域悪天実況図・那覇"
+        }
+      ]
+    },
+    {
+      "id": "akuten",
+      "label": "悪天",
+      "mode": "static",
+      "items": [
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBSN",
+          "label": "下層悪天予想図・東北"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBSP",
+          "label": "下層悪天予想図・北海道"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBOS",
+          "label": "下層悪天予想図・西日本"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBTK",
+          "label": "下層悪天予想図・東日本"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBOK",
+          "label": "下層悪天予想図・沖縄"
+        },
+        {
+          "type": "metair_fb_akuten",
+          "code": "FBKG",
+          "label": "下層悪天予想図・奄美"
+        }
+      ]
+    },
+    {
+      "id": "xsec",
+      "label": "断面図",
+      "mode": "static",
+      "items": [
+        {
+          "type": "jma_wanlc",
+          "code": "151",
+          "label": "東経142.5"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "152",
+          "label": "東経140"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "153",
+          "label": "東経137.5"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "154",
+          "label": "東経135"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "155",
+          "label": "東経132.5"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "156",
+          "label": "東経130"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "157",
+          "label": "東経127.5"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "158",
+          "label": "東経125"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "199",
+          "label": "航空路断面図"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "101",
+          "label": "福岡-釧路"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "102",
+          "label": "福岡-紋別"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "103",
+          "label": "東京-稚内"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "105",
+          "label": "福岡-東京"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "106",
+          "label": "鹿児島-東京"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "107",
+          "label": "石垣-東京"
+        },
+        {
+          "type": "jma_wanlc",
+          "code": "108",
+          "label": "与那国-高松"
+        }
+      ]
+    },
+    {
+      "id": "flevel",
+      "label": "平面図",
+      "mode": "static",
+      "items": [
+        {
+          "type": "jma_wanlf",
+          "code": "139",
+          "label": "FL390"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "137",
+          "label": "FL370"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "135",
+          "label": "FL350"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "133",
+          "label": "FL330"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "131",
+          "label": "FL310"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "129",
+          "label": "FL290"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "127",
+          "label": "FL270"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "125",
+          "label": "FL250"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "123",
+          "label": "FL230"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "121",
+          "label": "FL210"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "119",
+          "label": "FL190"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "117",
+          "label": "FL170"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "115",
+          "label": "FL150"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "111",
+          "label": "FL110"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "109",
+          "label": "FL090"
+        },
+        {
+          "type": "jma_wanlf",
+          "code": "105",
+          "label": "FL050"
+        }
+      ]
+    },
+    {
+      "id": "thunder",
+      "label": "発雷確率",
+      "mode": "static",
+      "items": [
+        {
+          "type": "imoc_thunder",
+          "code": "0",
+          "label": "発雷確率3h"
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "1",
+          "label": "発雷確率6h"
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "2",
+          "label": "発雷確率9h"
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "3",
+          "label": "発雷確率12h"
+        }
+      ]
+    },
+    {
+      "id": "ashfall",
+      "label": "降灰予報",
+      "mode": "static",
+      "items": [
+        {
+          "type": "metair_ashfall",
+          "code": "2",
+          "label": "降灰予報・阿蘇山"
+        },
+        {
+          "type": "metair_ashfall",
+          "code": "3",
+          "label": "降灰予報・桜島"
+        },
+        {
+          "type": "metair_ashfall",
+          "code": "6",
+          "label": "降灰予報・霧島山"
+        }
+      ]
+    },
+    {
+      "id": "alwin",
+      "label": "ALWIN",
+      "mode": "static",
+      "items": [
+        {
+          "type": "metair_csa024a",
+          "code": "RJAA_ALWIN1",
+          "label": "ALWIN・NRT"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJCC_ALWIN1",
+          "label": "ALWIN・CTS"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJTT_ALWIN1",
+          "label": "ALWIN・HND"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJGG_ALWIN1",
+          "label": "ALWIN・NGO"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJBB_ALWIN1",
+          "label": "ALWIN・KIX"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJFF_ALWIN1",
+          "label": "ALWIN・FUK"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "RJFK_ALWIN1",
+          "label": "ALWIN・KOJ"
+        },
+        {
+          "type": "metair_csa024a",
+          "code": "ROAH_ALWIN1",
+          "label": "ALWIN・OKA"
+        }
+      ]
+    },
+    {
+      "id": "kumo",
+      "label": "雲頂高度",
+      "mode": "series",
+      "series": [
+        {
+          "key": "kumo",
+          "label": "雲頂高度",
+          "kind": "kumo",
+          "step": 5,
+          "frames": 36
+        }
+      ]
+    },
+    {
+      "id": "echotop",
+      "label": "エコー頂高度",
+      "mode": "series",
+      "series": [
+        {
+          "key": "echotop",
+          "label": "エコー頂高度",
+          "kind": "echotop",
+          "step": 10,
+          "frames": 18
+        }
+      ]
+    },
+    {
+      "id": "cwa",
+      "label": "台湾レーダー",
+      "mode": "series",
+      "series": [
+        {
+          "key": "cwa_tw",
+          "label": "台湾域",
+          "kind": "cwa",
+          "code": "TW",
+          "step": 10,
+          "frames": 18
+        },
+        {
+          "key": "cwa_wide",
+          "label": "広域",
+          "kind": "cwa",
+          "code": "WIDE",
+          "step": 10,
+          "frames": 18
+        }
+      ]
+    },
+    {
+      "id": "hko",
+      "label": "香港レーダー",
+      "mode": "series",
+      "series": [
+        {
+          "key": "hko_064",
+          "label": "64km",
+          "kind": "hko",
+          "code": "064",
+          "step": 6,
+          "frames": 30
+        },
+        {
+          "key": "hko_128",
+          "label": "128km",
+          "kind": "hko",
+          "code": "128",
+          "step": 6,
+          "frames": 30
+        },
+        {
+          "key": "hko_256",
+          "label": "256km",
+          "kind": "hko",
+          "code": "256",
+          "step": 6,
+          "frames": 30
+        }
+      ]
+    },
+    {
+      "id": "pagasa",
+      "label": "マニラレーダー",
+      "mode": "series",
+      "series": [
+        {
+          "key": "pagasa_mnl",
+          "label": "マニラ周辺",
+          "kind": "pagasa",
+          "code": "MNL"
+        },
+        {
+          "key": "pagasa_ph",
+          "label": "フィリピン全域",
+          "kind": "pagasa",
+          "code": "PH"
+        }
+      ]
+    }
+  ]
+}
