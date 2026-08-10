@@ -7,44 +7,80 @@
 <title>NIMBUS OFFLINE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <style>
+
 :root{--bg:#0e1012;--card:#17191c;--line:#2a2e33;--text:#e8eaed;--sub:#8b9096;--danger:#e82127;--ok:#3ddc84;
 --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;}
-header{position:sticky;top:0;z-index:20;background:rgba(14,16,18,.96);backdrop-filter:blur(8px);
- border-bottom:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0));}
-.brand{font-family:'Orbitron',var(--font);font-weight:900;letter-spacing:.16em;font-size:19px;color:var(--danger);}
-.brand small{color:var(--sub);font-size:11px;letter-spacing:.22em;display:block;font-weight:700;}
-.bar{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;}
-.btn{background:var(--danger);color:#fff;border:0;border-radius:7px;padding:10px 16px;font-size:14px;
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;overflow:hidden;}
+header{position:sticky;top:0;z-index:20;background:rgba(14,16,18,.96);border-bottom:1px solid var(--line);
+ padding:5px 8px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
+.btn{background:var(--danger);color:#fff;border:0;border-radius:6px;padding:7px 12px;font-size:12.5px;
  font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.04em;}
 .btn:disabled{opacity:.5;}
-.stamp{font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums;}
+.bar{display:flex;gap:8px;align-items:center;margin-left:auto;}
+.stamp{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;}
 .stamp b{color:var(--text);}
-.prog{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:8px;display:none;}
+.prog{height:3px;background:var(--line);border-radius:2px;overflow:hidden;display:none;width:100%;}
 .prog>i{display:block;height:100%;width:0;background:var(--ok);transition:width .12s;}
-nav.cats{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;border-bottom:1px solid var(--line);
- -webkit-overflow-scrolling:touch;}
-nav.cats button,.subs button{white-space:nowrap;background:var(--card);color:var(--sub);border:1px solid var(--line);
- border-radius:6px;padding:8px 14px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;}
-nav.cats button.active,.subs button.active{background:var(--danger);border-color:var(--danger);color:#fff;}
-.subs{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;}
-main{padding:0 12px 40px;}
-.stage{background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px;
- display:flex;flex-direction:column;align-items:center;}
-.stage img{display:block;max-width:100%;width:auto;height:auto;max-height:60vh;object-fit:contain;margin:0 auto;}
-.caption{width:100%;}
-.caption{padding:8px 10px;font-size:13px;color:var(--sub);border-top:1px solid var(--line);
- font-variant-numeric:tabular-nums;}
-.player{display:flex;align-items:center;gap:10px;margin:2px 0 8px;}
-.player button{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;
- width:44px;height:38px;font-size:15px;font-family:inherit;cursor:pointer;}
-.player button.play{background:var(--danger);border-color:var(--danger);color:#fff;width:56px;font-weight:700;}
-input[type=range]{flex:1;max-width:25%;accent-color:var(--danger);}
-.player{justify-content:flex-start;}
-.empty{color:var(--sub);padding:30px 4px;font-size:14px;line-height:1.7;}
-.spd{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px;
- font-family:inherit;font-size:13px;}
+nav.cats,.subs{display:flex;gap:5px;overflow-x:auto;padding:5px 8px;-webkit-overflow-scrolling:touch;
+ align-items:center;}
+nav.cats{border-bottom:1px solid var(--line);}
+nav.cats button,.subs button.sb{white-space:nowrap;background:var(--card);color:var(--sub);
+ border:1px solid var(--line);border-radius:5px;padding:5px 10px;font-size:12px;font-weight:600;
+ font-family:inherit;cursor:pointer;}
+nav.cats button.active,.subs button.sb.active{background:var(--danger);border-color:var(--danger);color:#fff;}
+
+/* 左端の操作群 */
+.tools{display:flex;gap:5px;align-items:center;flex:0 0 auto;padding-right:6px;
+ border-right:1px solid var(--line);margin-right:3px;}
+.tools button{background:#2f353c;border:1px solid var(--line);color:var(--text);border-radius:5px;
+ width:34px;height:28px;font-size:14px;font-family:inherit;cursor:pointer;}
+.tools button.on{background:var(--danger);border-color:var(--danger);color:#fff;}
+.tools select{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:5px;
+ padding:4px 5px;font-size:11.5px;font-family:inherit;}
+.tools .lbl{color:var(--sub);font-size:11px;}
+
+/* 画像エリア */
+main{padding:4px 6px 6px;}
+#grid{display:grid;gap:4px;}
+.tile{position:relative;background:#000;border:1px solid var(--line);border-radius:6px;overflow:hidden;
+ display:flex;align-items:center;justify-content:center;cursor:zoom-in;}
+#grid.zoom .tile{cursor:zoom-out;}
+.tile img{max-width:100%;max-height:100%;width:auto;height:auto;display:block;}
+.tile .tag{position:absolute;left:0;top:0;background:rgba(0,0,0,.62);color:#ffd76a;font-weight:700;
+ font-size:11px;padding:2px 7px;border-bottom-right-radius:6px;pointer-events:none;}
+.ovl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;
+ padding:5px 7px;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,0));
+ opacity:0;transition:opacity .35s;pointer-events:none;}
+.tile.act .ovl{opacity:1;pointer-events:auto;}
+.ovl button{background:rgba(30,34,39,.9);border:1px solid #3a4048;color:#fff;border-radius:4px;
+ width:28px;height:24px;font-size:11px;font-family:inherit;cursor:pointer;padding:0;}
+.ovl button.p{background:var(--danger);border-color:var(--danger);}
+.ovl .cap{color:#dfe3e7;font-size:10.5px;font-variant-numeric:tabular-nums;margin-left:auto;
+ white-space:nowrap;text-shadow:0 1px 2px #000;}
+
+/* METAR/TAF */
+#textview{display:none;white-space:pre-wrap;word-break:break-word;background:#000;color:#e8eaed;
+ border:1px solid var(--line);border-radius:8px;margin:0;padding:0;overflow:auto;
+ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;}
+.mt-h{background:#26292e;color:#ffd76a;font-weight:800;letter-spacing:.10em;font-size:17px;
+ line-height:1.35;padding:4px 9px;border-top:1px solid #000;position:sticky;top:0;}
+.mt-b{white-space:pre-wrap;word-break:break-word;padding:4px 9px 7px;color:#dfe3e7;}
+.empty{color:var(--sub);padding:24px 6px;font-size:13px;line-height:1.7;}
+
+/* ヘッダのタイトル枠 */
+.hero{display:flex;align-items:center;gap:7px;flex:0 0 auto;}
+.hero .sub{display:none;}
+#nimbus-logo{font-family:'Orbitron',var(--font);font-size:15px;letter-spacing:.09em;font-weight:900;
+ color:var(--danger);margin:0;white-space:nowrap;}
+.radar-icon,.radar-icon img,.radar-icon svg{width:48px !important;height:48px !important;flex:0 0 48px !important;}
+@media (max-width:640px){
+  #nimbus-logo{font-size:13px;}
+  .radar-icon,.radar-icon img,.radar-icon svg{width:40px !important;height:40px !important;flex:0 0 40px !important;}
+  nav.cats button,.subs button.sb{font-size:11px;padding:4px 8px;}
+  .mt-h{font-size:15px;}
+}
+
 /* TOPアイコン: レーダースイープ回転 */
 .radar-icon{position:relative;width:132px;height:132px;line-height:0;}
 .radar-icon .radar-sweep{
@@ -469,11 +505,12 @@ header{padding:5px 8px;gap:8px;}
 
 #btn-collect{background:#2f353c;border:1px solid var(--line);}
 #btn-collect:hover{border-color:#4a4f55;}
+
 </style>
 </head>
 <body>
 <header>
-  <div class="hero">
+<div class="hero">
     <div class="radar-icon">
         <div class="radar-sweep"></div>
         <img src="assets/top-icon-base.png?v=4" width="132" height="132" alt="NIMBUS"
@@ -495,31 +532,22 @@ header{padding:5px 8px;gap:8px;}
     <button class="btn" id="btn-update">最新データ取得</button>
     <div class="stamp" id="stamp">未取得</div>
   </div>
-
+  <div class="bar">
+    <button class="btn" id="btn-update">最新データ取得</button>
+    <div class="stamp" id="stamp">未取得</div>
   </div>
   <div class="prog" id="prog"><i></i></div>
 </header>
 <nav class="cats" id="cats"></nav>
 <div class="subs" id="subs"></div>
 <main>
-  <div class="player" id="player" style="display:none">
-    <button class="play" id="p-play">▶</button>
-    <button id="p-prev">◀</button>
-    <button id="p-next">▶|</button>
-    <input type="range" id="p-range" min="0" max="0" value="0">
-    <select class="spd" id="p-speed">
-      <option value="400">遅い</option>
-      <option value="220" selected>標準</option>
-      <option value="110">速い</option>
-    </select>
-  </div>
-  <div class="empty" id="empty">「最新データ取得」を押すと約250枚の画像を端末に保存します。<br>
-  一度取得すれば、以降は機内など通信が無い環境でも表示できます。</div>
   <pre id="textview"></pre>
-  <div class="stage" id="stage"><img id="shot" alt=""><div class="caption" id="cap"></div></div>
-
+  <div id="grid"></div>
+  <div class="empty" id="empty">「最新データ取得」を押すと画像を端末に保存します。<br>
+  一度取得すれば、通信が無い環境でも表示できます。</div>
 </main>
 <script>
+const $=id=>document.getElementById(id);
 const BASE='https://raw.githubusercontent.com/TAKE2355/jma-maiji-v2/offline-cache/';
 // raw.githubusercontent.com はブランチ名URLだとCDNに数分キャッシュされるため、
 // コミットSHA固定のURLを解決して確実に最新を取得する（キャッシュの保存キーはBASEのまま）
@@ -539,19 +567,10 @@ async function freshBase(){
 }
 
 const CACHE='nimbus-offline-v1';
-let MF=null, catIdx=0, subIdx=0, frames=[], fi=0, timer=null;
+let MF=null;
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw-offline.js');
 
-const $=id=>document.getElementById(id);
-const pad=n=>String(n).padStart(2,'0');
-function tsLabel(ts){
-  if(!ts||ts.length<12) return '';
-  const M=ts.slice(4,6),D=ts.slice(6,8),h=ts.slice(8,10),m=ts.slice(10,12);
-  const utc=new Date(Date.UTC(+ts.slice(0,4),+M-1,+D,+h,+m));
-  const j=new Date(utc.getTime()+9*3600000);
-  return h+':'+m+'Z ('+pad(j.getUTCHours())+':'+pad(j.getUTCMinutes())+'J) '+M+'/'+D;
-}
 
 async function boot(){
   try{
@@ -624,136 +643,174 @@ async function update(){
   finally{ b.disabled=false; setTimeout(()=>{pr.style.display='none';},900); }
 }
 
+
+
+// ══ 表示状態 ══════════════════════════════════════════════════════
+let catIdx=0, zoomIdx=-1, bulkPlaying=false;
+let LAY = {cols:3, rows:2, order:'row'};
+try{ const s=JSON.parse(localStorage.getItem('nimbus_off_layout')||'null'); if(s) LAY=Object.assign(LAY,s); }catch(e){}
+const saveLay=()=>{ try{ localStorage.setItem('nimbus_off_layout',JSON.stringify(LAY)); }catch(e){} };
+
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function tsLabel(ts){
+  if(!ts||ts.length<12) return '';
+  const M=ts.slice(4,6),D=ts.slice(6,8),h=ts.slice(8,10),m=ts.slice(10,12);
+  const j=new Date(Date.UTC(+ts.slice(0,4),+M-1,+D,+h,+m)+9*3600000);
+  return h+':'+m+'Z ('+String(j.getUTCHours()).padStart(2,'0')+':'+String(j.getUTCMinutes()).padStart(2,'0')+'J)';
+}
+
+// サブ項目（静止画 or 連続再生）を統一形式で取り出す
+function subsOf(k){
+  if(!k) return [];
+  if(k.mode==='text') return (k.items||[]).map(o=>({label:o.label,text:o.text,groups:o.groups,kind:'text'}));
+  return [].concat(
+    (k.items||[]).map(o=>({label:o.label,kind:'still',file:o.file,caption:o.caption})),
+    (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()}))
+  );
+}
+
+// ══ 描画 ═════════════════════════════════════════════════════════
 function render(){
   if(!MF) return;
   $('empty').style.display='none';
   $('stamp').innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>';
   $('cats').innerHTML=MF.categories.map((k,i)=>
-    '<button class="'+(i===catIdx?'active':'')+'" onclick="setCat('+i+')">'+k.label+'</button>').join('');
+    '<button class="'+(i===catIdx?'active':'')+'" onclick="setCat('+i+')">'+esc(k.label)+'</button>').join('');
   const k=MF.categories[catIdx]||{};
-  // 静止画(items)と連続再生(series)を1カテゴリに並べる
-  const subs = (k.mode==='text') ? (k.items||[])
-    : [].concat((k.items||[]).map(o=>({label:o.label, __item:o})),
-                (k.series||[]).map(s=>({label:s.label, __series:s})));
-  if(subIdx>=subs.length) subIdx=0;
-  $('subs').style.display = subs.length>1 ? 'flex' : 'none';
-  $('subs').innerHTML=subs.map((s,i)=>
-    '<button class="'+(i===subIdx?'active':'')+'" onclick="setSub('+i+')">'+(s.label||('#'+(i+1)))+'</button>').join('');
-  stop();
+  const subs=subsOf(k);
+
   if(k.mode==='text'){
-    frames=[]; $('player').style.display='none';
-    $('stage').style.display='none'; $('textview').style.display='block';
-    const it=subs[subIdx]||{};
-    const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    if(it.groups && it.groups.length){
-      $('textview').innerHTML=it.groups.map(g=>
-        '<div class="mt-h">'+esc(g.icao)+'</div><div class="mt-b">'+esc(g.text||'—')+'</div>').join('');
-    }else{
-      $('textview').textContent=(it.text||'（データなし）');
-    }
-    $('textview').style.maxHeight='calc(100vh - '+
-      (document.querySelector('header').offsetHeight+$('cats').offsetHeight+$('subs').offsetHeight+40)+'px';
+    $('subs').innerHTML=subs.length>1
+      ? subs.map((s,i)=>'<button class="sb'+(i===0?' active':'')+'">'+esc(s.label)+'</button>').join('') : '';
+    $('subs').style.display=subs.length>1?'flex':'none';
+    $('grid').style.display='none'; $('textview').style.display='block';
+    const it=subs[0]||{};
+    $('textview').innerHTML=(it.groups&&it.groups.length)
+      ? it.groups.map(g=>'<div class="mt-h">'+esc(g.icao)+'</div><div class="mt-b">'+esc(g.text||'—')+'</div>').join('')
+      : esc(it.text||'（データなし）');
+    fitArea();
     return;
   }
-  $('stage').style.display='flex'; $('textview').style.display='none';
-  const sel=subs[subIdx]||{};
-  if(sel.__series){
-    // manifestは新しい順。古い→新しいの順に並べ替え、初期表示は最新(末尾)
-    frames=(sel.__series.frames||[]).slice().reverse();
-    fi=Math.max(0,frames.length-1);
-    $('player').style.display=frames.length>1?'flex':'none';
-    $('p-range').max=Math.max(0,frames.length-1); $('p-range').value=fi;
-    show();
+
+  // 左端ツール + サブタブ
+  $('subs').style.display='flex';
+  $('subs').innerHTML =
+    '<span class="tools">'
+    + '<button id="bulk" title="全画像を一括再生／停止">'+(bulkPlaying?'▶':'⏸')+'</button>'
+    + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY.cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
+    + '<span class="lbl">行</span><select id="ly-r">'+[1,2,3,4].map(n=>'<option'+(n===LAY.rows?' selected':'')+'>'+n+'</option>').join('')+'</select>'
+    + '<button id="ly-o" title="並び順">'+(LAY.order==='row'?'→':'↓')+'</button>'
+    + '</span>'
+    + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('');
+
+  $('bulk').onclick=toggleBulk;
+  $('ly-c').onchange=e=>{LAY.cols=+e.target.value;saveLay();render();};
+  $('ly-r').onchange=e=>{LAY.rows=+e.target.value;saveLay();render();};
+  $('ly-o').onclick=()=>{LAY.order=(LAY.order==='row'?'col':'row');saveLay();render();};
+
+  $('textview').style.display='none'; $('grid').style.display='grid';
+  buildGrid(subs);
+  fitArea();
+}
+
+let TILES=[];
+function buildGrid(subs){
+  TILES.forEach(t=>{ if(t.timer) clearInterval(t.timer); });
+  TILES=[];
+  const g=$('grid');
+  const list = (zoomIdx>=0 && subs[zoomIdx]) ? [subs[zoomIdx]] : subs;
+  const cols = (zoomIdx>=0)?1:LAY.cols;
+  g.style.gridTemplateColumns='repeat('+cols+',minmax(0,1fr))';
+  g.className = (zoomIdx>=0)?'zoom':'';
+  g.innerHTML = list.map((s,i)=>
+    '<div class="tile" data-i="'+i+'">'
+    + '<div class="tag">'+esc(s.label)+'</div>'
+    + '<img alt="">'
+    + (s.kind==='series' && (s.frames||[]).length>1
+       ? '<div class="ovl"><button class="p">▶</button><button class="pv">◀</button>'
+         +'<button class="nx">▶|</button><span class="cap"></span></div>' : '')
+    + '</div>').join('');
+
+  [...g.children].forEach((el,i)=>{
+    const s=list[i];
+    const t={el, s, idx:(s.kind==='series'? Math.max(0,(s.frames||[]).length-1):0), timer:null,
+             img:el.querySelector('img'), cap:el.querySelector('.cap'),
+             play:el.querySelector('.p'), hideT:null};
+    TILES.push(t);
+    show(t);
+    // タイル操作 → オーバーレイを1秒表示
+    ['pointerdown','pointermove','wheel','touchstart','touchmove'].forEach(ev=>
+      el.addEventListener(ev,()=>flash(t),{passive:true}));
+    el.addEventListener('click',e=>{
+      if(e.target.closest('.ovl')) return;
+      setZoom(zoomIdx>=0 ? -1 : (function(){ // グリッド→ズーム
+        const subsAll=subsOf(MF.categories[catIdx]); return subsAll.indexOf(s)>=0?subsAll.indexOf(s):i; })());
+    });
+    if(t.play){
+      t.play.onclick=e=>{e.stopPropagation(); togglePlay(t); flash(t);};
+      el.querySelector('.pv').onclick=e=>{e.stopPropagation(); stop(t); step(t,-1); flash(t);};
+      el.querySelector('.nx').onclick=e=>{e.stopPropagation(); stop(t); step(t,1); flash(t);};
+      if(bulkPlaying) play(t);
+    }
+  });
+}
+
+function show(t){
+  if(t.s.kind==='series'){
+    const f=(t.s.frames||[])[t.idx];
+    if(f){ t.img.src=BASE+f.file;
+           if(t.cap) t.cap.textContent=tsLabel(f.ts)+' ['+(t.idx+1)+'/'+t.s.frames.length+']'; }
   }else{
-    frames=[]; $('player').style.display='none';
-    const it=sel.__item;
-    if(it){ $('shot').src=BASE+it.file; $('cap').textContent=it.caption||it.label||''; }
+    t.img.src=BASE+t.s.file;
   }
 }
-function setCat(i){catIdx=i;subIdx=0;render();fitImage();}
-function setSub(i){subIdx=i;render();fitImage();}
-function show(){
-  const f=frames[fi]; if(!f) return;
-  $('shot').src=BASE+f.file;
-  $('cap').textContent=tsLabel(f.ts)+'   ['+(fi+1)+'/'+frames.length+']';
-  $('p-range').value=fi;
+function flash(t){
+  t.el.classList.add('act');
+  if(t.hideT) clearTimeout(t.hideT);
+  t.hideT=setTimeout(()=>t.el.classList.remove('act'),1000);
 }
-function step(d){ if(!frames.length)return; fi=(fi+d+frames.length)%frames.length; show(); }
-function play(){
-  if(timer){stop();return;}
-  if(!frames.length) return;
-  if(fi>=frames.length-1) fi=0;      // 最新を表示中なら一番過去から開始
-  show();
-  $('p-play').textContent='■';
-  const iv=+$('p-speed').value;
-  timer=setInterval(()=>{
-    fi = (fi>=frames.length-1) ? 0 : fi+1;   // 過去→最新、末尾で先頭へ戻る
-    show();
-  }, iv);
+function step(t,d){
+  const n=(t.s.frames||[]).length; if(!n) return;
+  t.idx=(t.idx+d+n)%n; show(t);
 }
-function stop(){ if(timer){clearInterval(timer);timer=null;} $('p-play').textContent='▶'; }
+function play(t){
+  if(t.timer||t.s.kind!=='series') return;
+  const n=(t.s.frames||[]).length; if(n<2) return;
+  if(t.idx>=n-1) t.idx=0;
+  show(t);
+  if(t.play) t.play.textContent='■';
+  t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },220);
+}
+function stop(t){
+  if(t.timer){clearInterval(t.timer);t.timer=null;}
+  if(t.play) t.play.textContent='▶';
+}
+function togglePlay(t){ t.timer?stop(t):play(t); }
+function toggleBulk(){
+  bulkPlaying=!bulkPlaying;
+  $('bulk').textContent=bulkPlaying?'▶':'⏸';
+  $('bulk').classList.toggle('on',bulkPlaying);
+  TILES.forEach(t=>bulkPlaying?play(t):stop(t));
+}
+function setCat(i){ catIdx=i; zoomIdx=-1; render(); }
+function setZoom(i){ zoomIdx=i; render(); }
+
+// 画面の残り高さにグリッドを収める
+function fitArea(){
+  const hd=document.querySelector('header'), ct=$('cats'), sb=$('subs');
+  const used=(hd?hd.offsetHeight:0)+(ct?ct.offsetHeight:0)
+            +(sb&&getComputedStyle(sb).display!=='none'?sb.offsetHeight:0)+16;
+  const h=Math.max(200, window.innerHeight-used);
+  $('grid').style.height=h+'px';
+  $('textview').style.maxHeight=h+'px';
+  const rows=(zoomIdx>=0)?1:LAY.rows;
+  [...$('grid').children].forEach(el=>{ el.style.height=Math.floor((h-4*(rows-1))/rows)+'px'; });
+}
+window.addEventListener('resize',fitArea);
 
 $('btn-update').onclick=update;
-
-// サーバ側の収集ワークフローを起動して完了まで待つ
-async function runCollection(b){
-  let cfg={};
-  try{ cfg=JSON.parse(localStorage.getItem('metair_v2')||'{}'); }catch(e){}
-  if(!cfg.pat||!cfg.repo) return false;
-  const H={'Authorization':'token '+cfg.pat,'Content-Type':'application/json'};
-  const API='https://api.github.com/repos/'+cfg.repo+'/actions/workflows/offline_cache.yml/runs';
-  try{
-    let prev=0;
-    try{ const p=await (await fetch(API+'?per_page=1',{headers:H})).json();
-         prev=(p.workflow_runs&&p.workflow_runs[0])?p.workflow_runs[0].id:0; }catch(e){}
-    const d=await fetch('https://api.github.com/repos/'+cfg.repo+
-      '/actions/workflows/offline_cache.yml/dispatches',
-      {method:'POST',headers:H,body:JSON.stringify({ref:cfg.branch||'main'})});
-    if(!d.ok) return false;
-    let runId=0;
-    for(let i=0;i<20 && !runId;i++){
-      await new Promise(r=>setTimeout(r,3000));
-      const p=await (await fetch(API+'?per_page=1',{headers:H})).json();
-      const r0=p.workflow_runs&&p.workflow_runs[0];
-      if(r0 && r0.id!==prev) runId=r0.id;
-    }
-    if(!runId) return false;
-    const t0=Date.now();
-    for(let i=0;i<120;i++){
-      await new Promise(r=>setTimeout(r,10000));
-      const p=await (await fetch('https://api.github.com/repos/'+cfg.repo+'/actions/runs/'+runId,{headers:H})).json();
-      const sec=Math.round((Date.now()-t0)/1000);
-      if(b) b.textContent='サーバで収集中 '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
-      if(p.status==='completed') return p.conclusion==='success';
-    }
-  }catch(e){}
-  return false;
-}
-
-// 取得済みデータの経過分数
-function dataAgeMin(ts){
-  if(!ts||ts.length<12) return 9999;
-  const d=Date.UTC(+ts.slice(0,4),+ts.slice(4,6)-1,+ts.slice(6,8),+ts.slice(8,10),+ts.slice(10,12),+(ts.slice(12,14)||0));
-  return (Date.now()-d)/60000;
-}
-
-
-$('p-play').onclick=play;
-$('p-prev').onclick=()=>{stop();step(-1);};
-$('p-next').onclick=()=>{stop();step(1);};
-$('p-range').oninput=e=>{stop();fi=+e.target.value;show();};
-$('p-speed').onchange=()=>{ if(timer){stop();play();} };
-function fitImage(){
-  const hd=document.querySelector('header'), ct=$('cats'), sb=$('subs'), pl=$('player'), cp=$('cap');
-  const used=(hd?hd.offsetHeight:0)+(ct?ct.offsetHeight:0)+(sb?sb.offsetHeight:0)
-            +(pl&&getComputedStyle(pl).display!=='none'?pl.offsetHeight+10:0)
-            +(cp?cp.offsetHeight:0)+34;
-  $('shot').style.maxHeight='calc(100vh - '+used+'px)';
-}
-window.addEventListener('resize',fitImage);
-$('shot').addEventListener('load',fitImage);
 boot();
-setTimeout(fitImage,300);
+setTimeout(fitArea,300);
 </script>
 <script>
 /* TOPアイコン: 3つの雷をそれぞれランダムなタイミングで光らせる */
