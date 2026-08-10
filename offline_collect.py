@@ -87,7 +87,33 @@ def frames_hko(code, step, n):
         out.append((utc, "https://www.hko.gov.hk/wxinfo/radars/" + d + "/" + pfx + "_" + ts + ".jpg", M.HKO_HDR))
     return out
 
-def collect_series(s):
+def frames_jma(prefix, code, step, n, base_ts):
+    """WANLC/WANLF は30分グリッド。base_ts から遡る。"""
+    if not base_ts:
+        return []
+    base = datetime.datetime.strptime(str(base_ts)[:12], "%Y%m%d%H%M")
+    out = []
+    for i in range(n):
+        dt = base - datetime.timedelta(minutes=step * i)
+        b  = dt.strftime("%Y%m%d%H%M")
+        out.append((b + "00", M.JMA_BASE + prefix + code + "_RJTD_" + b + "00.PNG", None))
+    return out
+
+def frames_akuten(code, step, n, base_ts):
+    """悪天予想図は3時間グリッド。"""
+    if not base_ts:
+        return []
+    base = datetime.datetime.strptime(str(base_ts)[:12], "%Y%m%d%H%M")
+    out = []
+    for i in range(n):
+        dt = base - datetime.timedelta(minutes=step * i)
+        b  = dt.strftime("%Y%m%d%H%M")
+        out.append((b + "00",
+                    M.METAIR_BASE + "/pict/akuten/" + code + "/" + code + "03_RJTD_" + b + "00.png",
+                    None))
+    return out
+
+def collect_series(s, jma_ts=None, akuten_ts=None):
     """1シリーズ分のフレームを集めて [{file, ts}] を返す（新しい順）"""
     kind = s.get("kind")
     key  = s.get("key")
@@ -98,6 +124,8 @@ def collect_series(s):
     elif kind == "echotop":specs = frames_echotop(step, n)
     elif kind == "cwa":    specs = frames_cwa(s.get("code"), step, n)
     elif kind == "hko":    specs = frames_hko(s.get("code"), step, n)
+    elif kind == "jma":    specs = frames_jma(s.get("prefix"), s.get("code"), step, n, jma_ts)
+    elif kind == "akuten": specs = frames_akuten(s.get("code"), step, n, akuten_ts)
     elif kind == "pagasa":
         fr = M._pagasa_frames()
         view = M.PAGASA_VIEWS.get(str(s.get("code")))
@@ -149,8 +177,14 @@ def main():
     conf = json.load(open("offline_config.json", encoding="utf-8"))
     cats = conf.get("categories", [])
 
-    need_jma    = any(it.get("type", "").startswith("jma_") for c in cats for it in c.get("items", []))
-    need_akuten = any(it.get("type") == "metair_fb_akuten" for c in cats for it in c.get("items", []))
+    kinds = set()
+    for c in cats:
+        for s in c.get("series", []):
+            kinds.add(s.get("kind"))
+    need_jma    = ("jma" in kinds) or any(it.get("type", "").startswith("jma_")
+                     for c in cats for it in c.get("items", []))
+    need_akuten = ("akuten" in kinds) or any(it.get("type") == "metair_fb_akuten"
+                     for c in cats for it in c.get("items", []))
     jma_ts = M.find_jma_timestamp() if need_jma else None
     akuten_ts = M.get_akuten_latest_ts() if need_akuten else None
 
@@ -162,7 +196,7 @@ def main():
         if cat.get("mode") == "series":
             entry["series"] = []
             for s in cat.get("series", []):
-                fr = collect_series(s)
+                fr = collect_series(s, jma_ts, akuten_ts)
                 total += len(fr)
                 entry["series"].append({"key": s["key"], "label": s.get("label", ""), "frames": fr})
         else:
