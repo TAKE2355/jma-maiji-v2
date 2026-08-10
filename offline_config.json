@@ -103,7 +103,7 @@
           "prefix": null,
           "code": "FBSN",
           "step": 180,
-          "frames": 4
+          "frames": 6
         },
         {
           "key": "akuten_FBSP",
@@ -112,7 +112,7 @@
           "prefix": null,
           "code": "FBSP",
           "step": 180,
-          "frames": 4
+          "frames": 6
         },
         {
           "key": "akuten_FBOS",
@@ -121,7 +121,7 @@
           "prefix": null,
           "code": "FBOS",
           "step": 180,
-          "frames": 4
+          "frames": 6
         },
         {
           "key": "akuten_FBTK",
@@ -130,7 +130,7 @@
           "prefix": null,
           "code": "FBTK",
           "step": 180,
-          "frames": 4
+          "frames": 6
         },
         {
           "key": "akuten_FBOK",
@@ -139,7 +139,7 @@
           "prefix": null,
           "code": "FBOK",
           "step": 180,
-          "frames": 4
+          "frames": 6
         },
         {
           "key": "akuten_FBKG",
@@ -148,7 +148,7 @@
           "prefix": null,
           "code": "FBKG",
           "step": 180,
-          "frames": 4
+          "frames": 6
         }
       ]
     },
@@ -163,8 +163,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "151",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_152",
@@ -172,8 +172,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "152",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_153",
@@ -181,8 +181,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "153",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_154",
@@ -190,8 +190,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "154",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_155",
@@ -199,8 +199,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "155",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_156",
@@ -208,8 +208,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "156",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_157",
@@ -217,8 +217,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "157",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_158",
@@ -226,8 +226,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "158",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_199",
@@ -235,8 +235,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "199",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_101",
@@ -244,8 +244,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "101",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_102",
@@ -253,8 +253,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "102",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_103",
@@ -262,8 +262,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "103",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_105",
@@ -271,8 +271,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "105",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_106",
@@ -280,8 +280,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "106",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_107",
@@ -289,8 +289,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "107",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "xsec_108",
@@ -298,8 +298,8 @@
           "kind": "jma",
           "prefix": "WANLC",
           "code": "108",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         }
       ]
     },
@@ -314,8 +314,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "139",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_137",
@@ -323,8 +323,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "137",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_135",
@@ -332,8 +332,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "135",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_133",
@@ -341,8 +341,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "133",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_131",
@@ -350,8 +350,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "131",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_129",
@@ -359,8 +359,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "129",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_127",
@@ -368,8 +368,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "127",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_125",
@@ -377,8 +377,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "125",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_123",
@@ -386,8 +386,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "123",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_121",
@@ -395,8 +395,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "121",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_119",
@@ -404,8 +404,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "119",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_117",
@@ -413,8 +413,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "117",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_115",
@@ -422,8 +422,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "115",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_111",
@@ -431,8 +431,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "111",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_109",
@@ -440,8 +440,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "109",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         },
         {
           "key": "flevel_105",
@@ -449,8 +449,8 @@
           "kind": "jma",
           "prefix": "WANLF",
           "code": "105",
-          "step": 30,
-          "frames": 4
+          "step": 60,
+          "frames": 6
         }
       ]
     },
