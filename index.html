@@ -475,6 +475,18 @@ input:focus,select:focus{border-color:var(--accent);}
   margin-left:-.10em;
   opacity:.9;
 }
+
+/* 受信者別 天気図/レイヤー エディタ */
+.rcp-editor-head{margin:26px 0 10px;padding-top:18px;border-top:1px solid var(--line);}
+.rcp-selector{display:flex;flex-wrap:wrap;gap:8px;}
+.rcp-chip{
+  background:var(--card); color:var(--sub); border:1px solid var(--line);
+  border-radius:6px; padding:7px 14px; font-size:15px; font-weight:600;
+  cursor:pointer; font-family:inherit; letter-spacing:.02em;
+}
+.rcp-chip:hover{border-color:#4a4f55;color:var(--text);}
+.rcp-chip.active{background:var(--danger);border-color:var(--danger);color:#fff;}
+.rcp-sec{margin-top:6px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
@@ -483,8 +495,6 @@ input:focus,select:focus{border-color:var(--accent);}
 <nav>
   <button class="active" onclick="showTab('send',this)">TOP</button>
   <button onclick="showTab('recipients',this)">受信者</button>
-  <button onclick="showTab('layout',this)">天気図選択</button>
-  <button onclick="showTab('overlay',this)">レイヤー</button>
   <button onclick="showTab('settings',this)">設定</button>
   <div style="margin-left:auto;display:flex;align-items:center;padding:0 16px;white-space:nowrap;">
     <span id="status-dot"></span><span id="status-text">未接続</span>
@@ -540,10 +550,14 @@ input:focus,select:focus{border-color:var(--accent);}
       <button class="btn btn-sm btn-edit" onclick="cancelRcForm()">キャンセル</button>
     </div>
   </div>
-</div>
 
-<!-- ─── ページ設定 ─── -->
-<div id="tab-layout" class="tab-panel">
+  <!-- ─── 受信者別 天気図/レイヤー ─── -->
+  <div class="rcp-editor-head">
+    <div class="form-label" style="margin-bottom:6px;">天気図・レイヤーを編集する受信者</div>
+    <div id="rcp-selector" class="rcp-selector"></div>
+  </div>
+<!-- ─── 受信者別: 天気図選択 ─── -->
+<div id="sec-layout" class="rcp-sec">
   <p style="font-size:16.3px;color:var(--sub);padding:6px 2px 10px;">
     ページごとにレイアウトと天気図を設定します。プレビューの番号をタップするとスロットにジャンプします。
   </p>
@@ -619,8 +633,8 @@ input:focus,select:focus{border-color:var(--accent);}
   </div>
 </div>
 
-<!-- ─── レイヤー ─── -->
-<div id="tab-overlay" class="tab-panel">
+<!-- ─── 受信者別: レイヤー ─── -->
+<div id="sec-overlay" class="rcp-sec">
   <div class="card">
     <div class="card-title">レイヤー設定</div>
     <div id="ov-layers-wrap">
@@ -630,6 +644,8 @@ input:focus,select:focus{border-color:var(--accent);}
       </div>
     </div>
   </div>
+</div>
+
 </div>
 
 <!-- ─── 設定 ─── -->
@@ -794,6 +810,62 @@ let currentPageIdx = 0;
 let selectedSlotIdx = -1;
 let editingSlots = [];  // 受信者フォーム用
 
+// ══ 受信者別 天気図/レイヤー ═══════════════════════════════════════════
+let curRcp = 0;
+const DEF_OVERLAY = {enabled:true, alpha:0.2, layers:[{minutes:60, alpha:0.2, enabled:true}]};
+
+function normalizeConfig(){
+  if(!config) return;
+  if(!Array.isArray(config.recipients)) config.recipients=[];
+  const gp = Object.getOwnPropertyDescriptor(config,'pages');
+  const go = Object.getOwnPropertyDescriptor(config,'overlay');
+  const oldPages   = (gp && gp.value) ? gp.value : null;   // 旧・共通設定
+  const oldOverlay = (go && go.value) ? go.value : null;
+  // 受信者へ複製（未設定の受信者のみ）
+  config.recipients.forEach(r=>{
+    if(!Array.isArray(r.pages) || !r.pages.length)
+      r.pages = oldPages ? JSON.parse(JSON.stringify(oldPages)) : [];
+    if(!r.overlay)
+      r.overlay = JSON.parse(JSON.stringify(oldOverlay || DEF_OVERLAY));
+  });
+  if(curRcp >= config.recipients.length) curRcp = 0;
+  // 旧・共通キーを除去し、選択中受信者へのビューに差し替え
+  delete config.pages; delete config.overlay;
+  Object.defineProperty(config,'pages',{
+    configurable:true, enumerable:false,
+    get(){ const r=config.recipients[curRcp]; if(!r) return []; if(!Array.isArray(r.pages)) r.pages=[]; return r.pages; },
+    set(v){ const r=config.recipients[curRcp]; if(r) r.pages=v; }
+  });
+  Object.defineProperty(config,'overlay',{
+    configurable:true, enumerable:false,
+    get(){ const r=config.recipients[curRcp]; if(!r) return JSON.parse(JSON.stringify(DEF_OVERLAY));
+           if(!r.overlay) r.overlay=JSON.parse(JSON.stringify(DEF_OVERLAY)); return r.overlay; },
+    set(v){ const r=config.recipients[curRcp]; if(r) r.overlay=v; }
+  });
+}
+
+function renderRcpSelector(){
+  const box=document.getElementById('rcp-selector');
+  if(!box||!config) return;
+  const rs=config.recipients||[];
+  if(!rs.length){ box.innerHTML='<span style="color:var(--sub);font-size:14px;">受信者を追加すると天気図を設定できます</span>'; return; }
+  box.innerHTML = rs.map((r,i)=>
+    '<button class="rcp-chip'+(i===curRcp?' active':'')+'" onclick="selectRcp('+i+')">'
+    + (r.name||r.email||('受信者'+(i+1)))
+    + (r.enabled===false?' <span style="opacity:.55">(無効)</span>':'')
+    + '</button>').join('');
+}
+
+function selectRcp(i){
+  if(!config||!config.recipients[i]) return;
+  curRcp = i;
+  currentPageIdx = 0;
+  selectedSlotIdx = -1;
+  renderRcpSelector();
+  renderOvLayers();
+  renderPageTabs(); renderPageEditor();
+}
+
 // ══ 初期化 ══════════════════════════════════════════════════════════════
 // ── デフォルト設定（GitHub未接続でも動作） ──────────────────────────────
 function initDefaultConfig(){
@@ -805,7 +877,7 @@ function initDefaultConfig(){
     pages:[{orientation:'portrait',cols:2,rows:4,
       slots:[null,null,null,null,null,null,null,null]}]
   };
-  origConfig=JSON.parse(JSON.stringify(config));
+  normalizeConfig();origConfig=JSON.parse(JSON.stringify(config));
   applyToUI();
 }
 window.addEventListener('DOMContentLoaded',()=>{
@@ -865,7 +937,7 @@ async function saveCfg(){
     else{const d=await r.json();showToast('❌ '+d.message);}
   }catch(e){showToast('❌ '+e.message);}
 }
-function revertCfg(){config=JSON.parse(JSON.stringify(origConfig));applyToUI();clearDirty();showToast('元に戻しました');}
+function revertCfg(){config=JSON.parse(JSON.stringify(origConfig));normalizeConfig();applyToUI();clearDirty();showToast('元に戻しました');}
 
 // ══ UI ↔ config ════════════════════════════════════════════════════════
 function collectFromUI(){
@@ -889,11 +961,10 @@ setSl('jpeg',p.jpeg_quality,'%');
   document.getElementById('in-titlefs').value=p.title_size||7;
   setSl('maxdpi',p.max_dpi||300,'');
   document.getElementById('in-maxmb').value=p.max_mail_mb||20;
+  renderRcpSelector();
   renderOvLayers();
   renderRecipients();
-  if(document.getElementById('tab-layout').classList.contains('active')){
-    renderPageTabs();renderPageEditor();
-  }
+  renderPageTabs();renderPageEditor();
 }
 function setSl(n,v,s){const sl=document.getElementById('sl-'+n),vl=document.getElementById('val-'+n);if(sl)sl.value=v;if(vl)vl.textContent=v+s;}
 function updateSl(n,v,s=''){document.getElementById('val-'+n).textContent=v+s;}
@@ -1605,6 +1676,7 @@ function slotBadgesHtml(slots){
 }
 
 function renderRecipients(){
+  normalizeConfig(); renderRcpSelector();
   if(!config)return;
   const list=document.getElementById('recipient-list');list.innerHTML='';
   (config.recipients||[]).forEach((r,i)=>{
@@ -1754,7 +1826,7 @@ let toastT;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);}
 
 // ウィンドウリサイズ時にキャンバス再描画
-window.addEventListener('resize',()=>{if(document.getElementById('tab-layout').classList.contains('active'))drawPreview();});
+window.addEventListener('resize',()=>{if(document.getElementById('tab-recipients').classList.contains('active'))drawPreview();});
 </script>
 
 <script>
