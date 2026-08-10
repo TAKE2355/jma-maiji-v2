@@ -492,7 +492,6 @@ header{padding:5px 8px;gap:8px;}
       <div class="sub">OFFLINE — CACHED WEATHER BRIEFING</div>
     </div>
     <div class="bar">
-    <button class="btn" id="btn-collect" title="サーバ側で気象データを取り直します（数分かかります）">サーバで再収集</button>
     <button class="btn" id="btn-update">最新データ取得</button>
     <div class="stamp" id="stamp">未取得</div>
   </div>
@@ -580,10 +579,21 @@ async function update(){
   b.disabled=true; b.textContent='取得中…'; pr.style.display='block'; bar.style.width='0';
   try{
     const c=await caches.open(CACHE);
-    const SRC=await freshBase();
-    const r=await fetch(SRC+'manifest.json?t='+Date.now(),{cache:'no-store'});
+    let SRC=await freshBase();
+    let r=await fetch(SRC+'manifest.json?t='+Date.now(),{cache:'no-store'});
     if(!r.ok) throw new Error('manifest '+r.status);
-    const mf=await r.json();
+    let mf=await r.json();
+    // サーバ側のデータが40分以上古ければ、先に収集を走らせてから取り込む
+    if(dataAgeMin(mf.generated_utc) > 40){
+      b.textContent='データが古いため再収集…';
+      const ok=await runCollection(b);
+      if(ok){
+        SRC=await freshBase();
+        const r2=await fetch(SRC+'manifest.json?t='+Date.now(),{cache:'no-store'});
+        if(r2.ok) mf=await r2.json();
+      }
+      b.textContent='取得中…';
+    }
     await c.put(BASE+'manifest.json', new Response(JSON.stringify(mf),{headers:{'Content-Type':'application/json'}}));
     const files=[];
     mf.categories.forEach(k=>{
@@ -685,18 +695,13 @@ function stop(){ if(timer){clearInterval(timer);timer=null;} $('p-play').textCon
 
 $('btn-update').onclick=update;
 
-async function recollect(){
-  const b=$('btn-collect'), u=$('btn-update');
+// サーバ側の収集ワークフローを起動して完了まで待つ
+async function runCollection(b){
   let cfg={};
   try{ cfg=JSON.parse(localStorage.getItem('metair_v2')||'{}'); }catch(e){}
-  if(!cfg.pat||!cfg.repo){
-    b.textContent='GitHub未設定';
-    setTimeout(()=>{b.textContent='サーバで再収集';},2500);
-    return;
-  }
+  if(!cfg.pat||!cfg.repo) return false;
   const H={'Authorization':'token '+cfg.pat,'Content-Type':'application/json'};
   const API='https://api.github.com/repos/'+cfg.repo+'/actions/workflows/offline_cache.yml/runs';
-  b.disabled=true; u.disabled=true; b.textContent='収集を開始…';
   try{
     let prev=0;
     try{ const p=await (await fetch(API+'?per_page=1',{headers:H})).json();
@@ -704,7 +709,7 @@ async function recollect(){
     const d=await fetch('https://api.github.com/repos/'+cfg.repo+
       '/actions/workflows/offline_cache.yml/dispatches',
       {method:'POST',headers:H,body:JSON.stringify({ref:cfg.branch||'main'})});
-    if(!d.ok) throw new Error('起動失敗 '+d.status);
+    if(!d.ok) return false;
     let runId=0;
     for(let i=0;i<20 && !runId;i++){
       await new Promise(r=>setTimeout(r,3000));
@@ -712,29 +717,26 @@ async function recollect(){
       const r0=p.workflow_runs&&p.workflow_runs[0];
       if(r0 && r0.id!==prev) runId=r0.id;
     }
-    if(!runId) throw new Error('実行の検出に失敗');
+    if(!runId) return false;
     const t0=Date.now();
     for(let i=0;i<120;i++){
       await new Promise(r=>setTimeout(r,10000));
       const p=await (await fetch('https://api.github.com/repos/'+cfg.repo+'/actions/runs/'+runId,{headers:H})).json();
       const sec=Math.round((Date.now()-t0)/1000);
-      b.textContent='収集中 '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
-      if(p.status==='completed'){
-        if(p.conclusion!=='success') throw new Error('収集失敗');
-        break;
-      }
+      if(b) b.textContent='サーバで収集中 '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+      if(p.status==='completed') return p.conclusion==='success';
     }
-    b.textContent='取り込み中…';
-    await update();                       // サーバ→端末キャッシュ
-    b.textContent='サーバで再収集';
-  }catch(e){
-    b.textContent='失敗（再試行）';
-    setTimeout(()=>{b.textContent='サーバで再収集';},3000);
-  }finally{
-    b.disabled=false; u.disabled=false;
-  }
+  }catch(e){}
+  return false;
 }
-$('btn-collect').onclick=recollect;
+
+// 取得済みデータの経過分数
+function dataAgeMin(ts){
+  if(!ts||ts.length<12) return 9999;
+  const d=Date.UTC(+ts.slice(0,4),+ts.slice(4,6)-1,+ts.slice(6,8),+ts.slice(8,10),+ts.slice(10,12),+(ts.slice(12,14)||0));
+  return (Date.now()-d)/60000;
+}
+
 
 $('p-play').onclick=play;
 $('p-prev').onclick=()=>{stop();step(-1);};
