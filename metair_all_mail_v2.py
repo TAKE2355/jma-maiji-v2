@@ -35,7 +35,7 @@ def load_config():
 CONFIG = load_config()
 
 # ── グローバル設定（ページ共通） ──────────────────────────────────────────
-_pdf         = CONFIG["pdf"]
+_pdf         = (CONFIG.get("pdf") or {})
 DPI          = _pdf.get("dpi", 150)        # 後方互換用（直接使用はしない）
 PAGE_MARGIN  = _pdf["page_margin"]
 HEADER_H     = _pdf["header_h"]
@@ -50,7 +50,7 @@ MIN_DPI      = _pdf.get("min_dpi", 72)       # DPI下限
 MAX_MAIL_MB  = float(_pdf.get("max_mail_mb", 20.0))  # メールサイズ上限(MB)
 
 # ── オーバーレイ ──────────────────────────────────────────────────────────
-_ov             = CONFIG["overlay"]
+_ov             = (CONFIG.get("overlay") or {})
 OVERLAY_ENABLED = _ov.get("enabled", True)
 OVERLAY_ALPHA   = float(_ov.get("alpha", 0.2))
 OVERLAY_LAYERS  = _ov.get("layers") or [{"minutes": 60, "alpha": OVERLAY_ALPHA}]
