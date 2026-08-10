@@ -397,6 +397,18 @@ input[type=range]{flex:1;accent-color:var(--danger);}
 .fx98 .nb-l{animation:nbf-matrix 0.7s ease-out 1;animation-delay:calc((var(--last) - var(--i))*0.09s);filter:hue-rotate(45deg);}
 .fx99 .nb-l{animation:nbf-jitter 1.3s ease-in-out 1;animation-delay:calc(var(--i)*0.11s);filter:saturate(2.2);}
 .fx100 .nb-l{animation:nbf-wave 0.5s cubic-bezier(.22,1,.36,1) 1;animation-delay:calc((var(--last) - var(--i))*0.14s);filter:hue-rotate(150deg);}
+
+/* ヘッダを1行に: アイコン＋タイトル ／ 右に更新ボタンと取得時刻 */
+header{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;}
+header .hero{flex:0 1 auto;margin:0;}
+header .bar{margin-left:auto;margin-bottom:0;}
+header .prog{width:100%;margin-top:2px;}
+@media (max-width:640px){
+  header .bar{margin-left:0;width:100%;}
+  #nimbus-logo{font-size:20px;}
+  .radar-icon{width:84px;height:84px;flex:0 0 84px;}
+  .radar-icon img,.radar-icon svg{width:84px !important;height:84px !important;}
+}
 </style>
 </head>
 <body>
