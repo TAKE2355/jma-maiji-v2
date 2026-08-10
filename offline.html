@@ -737,7 +737,7 @@ function buildGrid(subs){
     + '<div class="tag">'+esc(s.label)+'</div>'
     + '<img alt="">'
     + (s.kind==='series' && (s.frames||[]).length>1
-       ? '<div class="ovl"><button class="fs">&#9198;</button><button class="p">&#9654;</button>'
+       ? '<div class="ovl"><button class="fs">&#9198;</button><button class="p">&#9208;</button>'
          +'<button class="ls">&#9197;</button><span class="cap"></span></div>' : '')
     + '</div>').join('');
 
@@ -788,17 +788,17 @@ function play(t){
   const n=(t.s.frames||[]).length; if(n<2) return;
   if(t.idx>=n-1) t.idx=0;
   show(t);
-  if(t.play) t.play.innerHTML='&#9208;';
+  if(t.play) t.play.innerHTML='&#9654;';
   t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },220);
 }
 function stop(t){
   if(t.timer){clearInterval(t.timer);t.timer=null;}
-  if(t.play) t.play.innerHTML='&#9654;';
+  if(t.play) t.play.innerHTML='&#9208;';
 }
 function togglePlay(t){ t.timer?stop(t):play(t); }
 function toggleBulk(){
   bulkPlaying=!bulkPlaying;
-  $('bulk').innerHTML=bulkPlaying?'&#9208;':'&#9654;';
+  $('bulk').innerHTML=bulkPlaying?'&#9654;':'&#9208;';
   $('bulk').classList.toggle('on',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
