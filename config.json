@@ -427,9 +427,10 @@
           "label": "TSAS1広域雲画像情報(北半球)"
         },
         {
-          "type": "metair_csa019",
-          "code": "QRAI85",
-          "label": "FXJP854"
+          "type": "metair_kumo",
+          "code": "0",
+          "label": "雲頂高度・最新",
+          "overlay": false
         }
       ]
     },
