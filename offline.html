@@ -409,6 +409,22 @@ header .prog{width:100%;margin-top:2px;}
   .radar-icon{width:84px;height:84px;flex:0 0 84px;}
   .radar-icon img,.radar-icon svg{width:84px !important;height:84px !important;}
 }
+
+/* タイトル枠を最小幅に */
+header{padding:6px 10px;gap:8px 10px;}
+header .hero{flex:0 0 auto;width:auto;gap:7px;align-items:center;}
+header .hero>div:last-of-type{width:auto;}
+.radar-icon{width:56px !important;height:56px !important;flex:0 0 56px !important;}
+.radar-icon img,.radar-icon svg{width:56px !important;height:56px !important;}
+#nimbus-logo{font-size:16px !important;letter-spacing:.09em !important;margin:0 !important;white-space:nowrap;}
+.hero .sub{display:none;}
+.stamp{font-size:12px;}
+@media (max-width:640px){
+  #nimbus-logo{font-size:14px !important;}
+  .radar-icon,.radar-icon img,.radar-icon svg{width:46px !important;height:46px !important;flex:0 0 46px !important;}
+  header .bar{margin-left:auto;width:auto;}
+  .btn{padding:8px 12px;font-size:13px;}
+}
 </style>
 </head>
 <body>
