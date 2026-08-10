@@ -143,10 +143,11 @@ function render(){
     '<button class="'+(i===subIdx?'active':'')+'" onclick="setSub('+i+')">'+(s.label||('#'+(i+1)))+'</button>').join('');
   stop();
   if(k.mode==='series'){
-    frames=(subs[subIdx]||{}).frames||[];
-    fi=0;
+    // manifestは新しい順。古い→新しいの順に並べ替え、初期表示は最新(末尾)
+    frames=((subs[subIdx]||{}).frames||[]).slice().reverse();
+    fi=Math.max(0,frames.length-1);
     $('player').style.display=frames.length>1?'flex':'none';
-    $('p-range').max=Math.max(0,frames.length-1); $('p-range').value=0;
+    $('p-range').max=Math.max(0,frames.length-1); $('p-range').value=fi;
     show();
   }else{
     frames=[]; $('player').style.display='none';
@@ -165,9 +166,15 @@ function show(){
 function step(d){ if(!frames.length)return; fi=(fi+d+frames.length)%frames.length; show(); }
 function play(){
   if(timer){stop();return;}
+  if(!frames.length) return;
+  if(fi>=frames.length-1) fi=0;      // 最新を表示中なら一番過去から開始
+  show();
   $('p-play').textContent='■';
   const iv=+$('p-speed').value;
-  timer=setInterval(()=>{ fi=(fi+1)%frames.length; show(); }, iv);
+  timer=setInterval(()=>{
+    fi = (fi>=frames.length-1) ? 0 : fi+1;   // 過去→最新、末尾で先頭へ戻る
+    show();
+  }, iv);
 }
 function stop(){ if(timer){clearInterval(timer);timer=null;} $('p-play').textContent='▶'; }
 
