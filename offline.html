@@ -432,6 +432,12 @@ header .hero>div:last-of-type{width:auto;}
  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.55;
  overflow:auto;}
 #textview b{color:#7fd7ff;font-weight:700;}
+
+/* METAR/TAF 空港ヘッダ */
+#textview{padding:0;}
+.mt-h{background:#26292e;color:#ffd76a;font-weight:700;letter-spacing:.06em;
+ padding:3px 10px;border-top:1px solid #000;position:sticky;top:0;}
+.mt-b{white-space:pre-wrap;word-break:break-word;padding:5px 10px 9px;color:#dfe3e7;}
 </style>
 </head>
 <body>
@@ -564,6 +570,7 @@ function render(){
   const k=MF.categories[catIdx]||{};
   const subs=(k.mode==='series')?(k.series||[]):(k.items||[]);
   if(subIdx>=subs.length) subIdx=0;
+  $('subs').style.display = subs.length>1 ? 'flex' : 'none';
   $('subs').innerHTML=subs.map((s,i)=>
     '<button class="'+(i===subIdx?'active':'')+'" onclick="setSub('+i+')">'+(s.label||('#'+(i+1)))+'</button>').join('');
   stop();
@@ -571,7 +578,13 @@ function render(){
     frames=[]; $('player').style.display='none';
     $('stage').style.display='none'; $('textview').style.display='block';
     const it=subs[subIdx]||{};
-    $('textview').textContent=(it.text||'（データなし）');
+    const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if(it.groups && it.groups.length){
+      $('textview').innerHTML=it.groups.map(g=>
+        '<div class="mt-h">'+esc(g.icao)+'</div><div class="mt-b">'+esc(g.text||'—')+'</div>').join('');
+    }else{
+      $('textview').textContent=(it.text||'（データなし）');
+    }
     $('textview').style.maxHeight='calc(100vh - '+
       (document.querySelector('header').offsetHeight+$('cats').offsetHeight+$('subs').offsetHeight+40)+'px';
     return;
