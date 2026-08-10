@@ -30,8 +30,10 @@ nav.cats button,.subs button{white-space:nowrap;background:var(--card);color:var
 nav.cats button.active,.subs button.active{background:var(--danger);border-color:var(--danger);color:#fff;}
 .subs{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;}
 main{padding:0 12px 40px;}
-.stage{background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px;}
-.stage img{display:block;width:100%;height:auto;}
+.stage{background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px;
+ display:flex;flex-direction:column;align-items:center;}
+.stage img{display:block;max-width:100%;width:auto;height:auto;max-height:60vh;object-fit:contain;margin:0 auto;}
+.caption{width:100%;}
 .caption{padding:8px 10px;font-size:13px;color:var(--sub);border-top:1px solid var(--line);
  font-variant-numeric:tabular-nums;}
 .player{display:flex;align-items:center;gap:10px;margin-top:10px;}
@@ -335,7 +337,9 @@ input[type=range]{flex:1;accent-color:var(--danger);}
 
 
 /* オフライン版ヘッダ用の縮小 */
-.hero{display:flex;align-items:center;gap:12px;}
+.hero{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.hero>div:nth-of-type(1){min-width:0;}
+.bar{display:flex;gap:10px;align-items:center;margin:0 0 0 auto;flex-wrap:wrap;}
 .radar-icon{width:108px;height:108px;flex:0 0 108px;}
 .radar-icon img,.radar-icon svg{width:108px !important;height:108px !important;}
 #nimbus-logo{font-family:'Orbitron',var(--font);font-size:23px;letter-spacing:.18em;font-weight:900;
@@ -416,7 +420,8 @@ input[type=range]{flex:1;accent-color:var(--danger);}
       <div class="sub">OFFLINE — CACHED WEATHER BRIEFING</div>
     </div>
   </div>
-  <div class="bar">
+
+    <div class="bar">
     <button class="btn" id="btn-update">最新データ取得</button>
     <div class="stamp" id="stamp">未取得</div>
   </div>
@@ -538,8 +543,8 @@ function render(){
     if(it){ $('shot').src=BASE+it.file; $('cap').textContent=it.caption||it.label||''; }
   }
 }
-function setCat(i){catIdx=i;subIdx=0;render();}
-function setSub(i){subIdx=i;render();}
+function setCat(i){catIdx=i;subIdx=0;render();fitImage();}
+function setSub(i){subIdx=i;render();fitImage();}
 function show(){
   const f=frames[fi]; if(!f) return;
   $('shot').src=BASE+f.file;
@@ -567,7 +572,17 @@ $('p-prev').onclick=()=>{stop();step(-1);};
 $('p-next').onclick=()=>{stop();step(1);};
 $('p-range').oninput=e=>{stop();fi=+e.target.value;show();};
 $('p-speed').onchange=()=>{ if(timer){stop();play();} };
+function fitImage(){
+  const hd=document.querySelector('header'), ct=$('cats'), sb=$('subs'), pl=$('player'), cp=$('cap');
+  const used=(hd?hd.offsetHeight:0)+(ct?ct.offsetHeight:0)+(sb?sb.offsetHeight:0)
+            +(pl&&getComputedStyle(pl).display!=='none'?pl.offsetHeight+10:0)
+            +(cp?cp.offsetHeight:0)+34;
+  $('shot').style.maxHeight='calc(100vh - '+used+'px)';
+}
+window.addEventListener('resize',fitImage);
+$('shot').addEventListener('load',fitImage);
 boot();
+setTimeout(fitImage,300);
 </script>
 <script>
 /* TOPアイコン: 3つの雷をそれぞれランダムなタイミングで光らせる */
