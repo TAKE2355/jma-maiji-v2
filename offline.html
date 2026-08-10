@@ -36,6 +36,8 @@ nav.cats button.active,.subs button.sb.active{background:var(--danger);border-co
 .tools button{background:#2f353c;border:1px solid var(--line);color:var(--text);border-radius:5px;
  width:34px;height:28px;font-size:14px;font-family:inherit;cursor:pointer;}
 .tools button.on{background:var(--danger);border-color:var(--danger);color:#fff;}
+.tools button.tg{width:auto;min-width:34px;padding:0 8px;font-size:11.5px;font-weight:700;}
+.tools{border-right:0;border-left:1px solid var(--line);margin-left:auto;margin-right:0;padding-left:6px;padding-right:0;}
 .tools select{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:5px;
  padding:4px 5px;font-size:11.5px;font-family:inherit;}
 .tools .lbl{color:var(--sub);font-size:11px;}
@@ -645,9 +647,16 @@ async function update(){
 
 // ══ 表示状態 ══════════════════════════════════════════════════════
 let catIdx=0, zoomIdx=-1, bulkPlaying=false;
-let LAY = {cols:3, rows:2, order:'row'};
-try{ const s=JSON.parse(localStorage.getItem('nimbus_off_layout')||'null'); if(s) LAY=Object.assign(LAY,s); }catch(e){}
-const saveLay=()=>{ try{ localStorage.setItem('nimbus_off_layout',JSON.stringify(LAY)); }catch(e){} };
+// レイアウトは上位タブ(カテゴリ)ごとに保存
+let LAYS={};
+try{ LAYS=JSON.parse(localStorage.getItem('nimbus_off_layouts')||'{}')||{}; }catch(e){}
+function curCatId(){ const k=MF&&MF.categories[catIdx]; return k?(k.id||k.label||('c'+catIdx)):'c0'; }
+function LAY(){
+  const id=curCatId();
+  if(!LAYS[id]) LAYS[id]={cols:3, rows:2, order:'row'};
+  return LAYS[id];
+}
+const saveLay=()=>{ try{ localStorage.setItem('nimbus_off_layouts',JSON.stringify(LAYS)); }catch(e){} };
 
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function tsLabel(ts){
@@ -693,18 +702,21 @@ function render(){
   // 左端ツール + サブタブ
   $('subs').style.display='flex';
   $('subs').innerHTML =
-    '<span class="tools">'
-    + '<button id="bulk" title="全画像を一括再生／停止">'+(bulkPlaying?'▶':'⏸')+'</button>'
-    + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY.cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
-    + '<span class="lbl">行</span><select id="ly-r">'+[1,2,3,4].map(n=>'<option'+(n===LAY.rows?' selected':'')+'>'+n+'</option>').join('')+'</select>'
-    + '<button id="ly-o" title="並び順">'+(LAY.order==='row'?'→':'↓')+'</button>'
-    + '</span>'
-    + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('');
-
+    subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
+    + '<span class="tools">'
+    + '<button id="b-first" title="全画像を最古へ">&#9198;</button>'
+    + '<button id="bulk" title="全画像を再生／停止">'+(bulkPlaying?'&#9654;':'&#9208;')+'</button>'
+    + '<button id="b-last" title="全画像を最新へ">&#9197;</button>'
+    + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
+    + '<span class="lbl">行</span><select id="ly-r">'+[1,2,3,4].map(n=>'<option'+(n===LAY().rows?' selected':'')+'>'+n+'</option>').join('')+'</select>'
+    + '<span class="lbl">順番</span><button id="ly-o" class="tg'+(LAY().order==='col'?' on':'')+'">'+(LAY().order==='row'?'横':'縦')+'</button>'
+    + '</span>';
   $('bulk').onclick=toggleBulk;
-  $('ly-c').onchange=e=>{LAY.cols=+e.target.value;saveLay();render();};
-  $('ly-r').onchange=e=>{LAY.rows=+e.target.value;saveLay();render();};
-  $('ly-o').onclick=()=>{LAY.order=(LAY.order==='row'?'col':'row');saveLay();render();};
+  $('b-first').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});
+  $('b-last').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=Math.max(0,((t.s.frames||[]).length-1)); show(t); flash(t);});
+  $('ly-c').onchange=e=>{LAY().cols=+e.target.value;saveLay();render();};
+  $('ly-r').onchange=e=>{LAY().rows=+e.target.value;saveLay();render();};
+  $('ly-o').onclick=()=>{LAY().order=(LAY().order==='row'?'col':'row');saveLay();render();};
 
   $('textview').style.display='none'; $('grid').style.display='grid';
   buildGrid(subs);
@@ -717,7 +729,7 @@ function buildGrid(subs){
   TILES=[];
   const g=$('grid');
   const list = (zoomIdx>=0 && subs[zoomIdx]) ? [subs[zoomIdx]] : subs;
-  const cols = (zoomIdx>=0)?1:LAY.cols;
+  const cols = (zoomIdx>=0)?1:LAY().cols;
   g.style.gridTemplateColumns='repeat('+cols+',minmax(0,1fr))';
   g.className = (zoomIdx>=0)?'zoom':'';
   g.innerHTML = list.map((s,i)=>
@@ -725,8 +737,8 @@ function buildGrid(subs){
     + '<div class="tag">'+esc(s.label)+'</div>'
     + '<img alt="">'
     + (s.kind==='series' && (s.frames||[]).length>1
-       ? '<div class="ovl"><button class="p">▶</button><button class="pv">◀</button>'
-         +'<button class="nx">▶|</button><span class="cap"></span></div>' : '')
+       ? '<div class="ovl"><button class="fs">&#9198;</button><button class="p">&#9654;</button>'
+         +'<button class="ls">&#9197;</button><span class="cap"></span></div>' : '')
     + '</div>').join('');
 
   [...g.children].forEach((el,i)=>{
@@ -746,8 +758,8 @@ function buildGrid(subs){
     });
     if(t.play){
       t.play.onclick=e=>{e.stopPropagation(); togglePlay(t); flash(t);};
-      el.querySelector('.pv').onclick=e=>{e.stopPropagation(); stop(t); step(t,-1); flash(t);};
-      el.querySelector('.nx').onclick=e=>{e.stopPropagation(); stop(t); step(t,1); flash(t);};
+      el.querySelector('.fs').onclick=e=>{e.stopPropagation(); stop(t); t.idx=0; show(t); flash(t);};
+      el.querySelector('.ls').onclick=e=>{e.stopPropagation(); stop(t); t.idx=Math.max(0,(t.s.frames||[]).length-1); show(t); flash(t);};
       if(bulkPlaying) play(t);
     }
   });
@@ -776,22 +788,22 @@ function play(t){
   const n=(t.s.frames||[]).length; if(n<2) return;
   if(t.idx>=n-1) t.idx=0;
   show(t);
-  if(t.play) t.play.textContent='■';
+  if(t.play) t.play.innerHTML='&#9208;';
   t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },220);
 }
 function stop(t){
   if(t.timer){clearInterval(t.timer);t.timer=null;}
-  if(t.play) t.play.textContent='▶';
+  if(t.play) t.play.innerHTML='&#9654;';
 }
 function togglePlay(t){ t.timer?stop(t):play(t); }
 function toggleBulk(){
   bulkPlaying=!bulkPlaying;
-  $('bulk').textContent=bulkPlaying?'▶':'⏸';
+  $('bulk').innerHTML=bulkPlaying?'&#9208;':'&#9654;';
   $('bulk').classList.toggle('on',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
 function setCat(i){ catIdx=i; zoomIdx=-1; render(); }
-function setZoom(i){ zoomIdx=i; render(); }
+function setZoom(i){ zoomIdx=(zoomIdx===i? -1 : i); render(); }
 
 // 画面の残り高さにグリッドを収める
 function fitArea(){
@@ -801,7 +813,7 @@ function fitArea(){
   const h=Math.max(200, window.innerHeight-used);
   $('grid').style.height=h+'px';
   $('textview').style.maxHeight=h+'px';
-  const rows=(zoomIdx>=0)?1:LAY.rows;
+  const rows=(zoomIdx>=0)?1:LAY().rows;
   [...$('grid').children].forEach(el=>{ el.style.height=Math.floor((h-4*(rows-1))/rows)+'px'; });
 }
 window.addEventListener('resize',fitArea);
