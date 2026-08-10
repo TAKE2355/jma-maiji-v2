@@ -568,7 +568,10 @@ function render(){
   $('cats').innerHTML=MF.categories.map((k,i)=>
     '<button class="'+(i===catIdx?'active':'')+'" onclick="setCat('+i+')">'+k.label+'</button>').join('');
   const k=MF.categories[catIdx]||{};
-  const subs=(k.mode==='series')?(k.series||[]):(k.items||[]);
+  // 静止画(items)と連続再生(series)を1カテゴリに並べる
+  const subs = (k.mode==='text') ? (k.items||[])
+    : [].concat((k.items||[]).map(o=>({label:o.label, __item:o})),
+                (k.series||[]).map(s=>({label:s.label, __series:s})));
   if(subIdx>=subs.length) subIdx=0;
   $('subs').style.display = subs.length>1 ? 'flex' : 'none';
   $('subs').innerHTML=subs.map((s,i)=>
@@ -590,16 +593,17 @@ function render(){
     return;
   }
   $('stage').style.display='flex'; $('textview').style.display='none';
-  if(k.mode==='series'){
+  const sel=subs[subIdx]||{};
+  if(sel.__series){
     // manifestは新しい順。古い→新しいの順に並べ替え、初期表示は最新(末尾)
-    frames=((subs[subIdx]||{}).frames||[]).slice().reverse();
+    frames=(sel.__series.frames||[]).slice().reverse();
     fi=Math.max(0,frames.length-1);
     $('player').style.display=frames.length>1?'flex':'none';
     $('p-range').max=Math.max(0,frames.length-1); $('p-range').value=fi;
     show();
   }else{
     frames=[]; $('player').style.display='none';
-    const it=subs[subIdx];
+    const it=sel.__item;
     if(it){ $('shot').src=BASE+it.file; $('cap').textContent=it.caption||it.label||''; }
   }
 }
