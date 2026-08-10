@@ -33,20 +33,22 @@
           "type": "metair_csa019",
           "code": "QYYA82",
           "label": "全国航空気象解説報・国内空域"
-        },
+        }
+      ],
+      "series": [
         {
           "key": "ch_QACA95",
           "label": "SPAS",
           "kind": "csa019",
           "code": "QACA95",
           "frames": 8
-        }
-      ],
-      "series": [
+        },
         {
-          "type": "metair_csa019",
+          "key": "ch_QACE98",
+          "label": "FSAS24",
+          "kind": "csa019",
           "code": "QACE98",
-          "label": "FSAS24"
+          "frames": 8
         },
         {
           "key": "ch_QBMA98",
