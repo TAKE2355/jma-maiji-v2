@@ -23,8 +23,21 @@ self.addEventListener('fetch', e => {
                     url.pathname.endsWith('sw-offline.js')));
   if (!isAsset) return;
 
+  const isShell = url.origin === self.location.origin &&
+                  (url.pathname.endsWith('offline.html') || url.pathname.endsWith('sw-offline.js'));
+
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
+    // アプリ本体は常に最新を取りに行き、オフライン時だけキャッシュを使う
+    if (isShell) {
+      try {
+        const fresh = await fetch(req, { cache: 'no-store' });
+        if (fresh && fresh.status === 200) { cache.put(req, fresh.clone()); return fresh; }
+      } catch (err) {}
+      const c0 = await cache.match(req, { ignoreSearch: true });
+      if (c0) return c0;
+      return fetch(req);
+    }
     const hit = await cache.match(req, { ignoreSearch: true });
     if (hit) return hit;
     try {
