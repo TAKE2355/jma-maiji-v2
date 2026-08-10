@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1012">
+<title>NIMBUS OFFLINE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0e1012;--card:#17191c;--line:#2a2e33;--text:#e8eaed;--sub:#8b9096;--danger:#e82127;--ok:#3ddc84;
+--font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;}
+header{position:sticky;top:0;z-index:20;background:rgba(14,16,18,.96);backdrop-filter:blur(8px);
+ border-bottom:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0));}
+.brand{font-family:'Orbitron',var(--font);font-weight:900;letter-spacing:.16em;font-size:19px;color:var(--danger);}
+.brand small{color:var(--sub);font-size:11px;letter-spacing:.22em;display:block;font-weight:700;}
+.bar{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+.btn{background:var(--danger);color:#fff;border:0;border-radius:7px;padding:10px 16px;font-size:14px;
+ font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.04em;}
+.btn:disabled{opacity:.5;}
+.stamp{font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums;}
+.stamp b{color:var(--text);}
+.prog{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:8px;display:none;}
+.prog>i{display:block;height:100%;width:0;background:var(--ok);transition:width .12s;}
+nav.cats{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;border-bottom:1px solid var(--line);
+ -webkit-overflow-scrolling:touch;}
+nav.cats button,.subs button{white-space:nowrap;background:var(--card);color:var(--sub);border:1px solid var(--line);
+ border-radius:6px;padding:8px 14px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;}
+nav.cats button.active,.subs button.active{background:var(--danger);border-color:var(--danger);color:#fff;}
+.subs{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;}
+main{padding:0 12px 40px;}
+.stage{background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px;}
+.stage img{display:block;width:100%;height:auto;}
+.caption{padding:8px 10px;font-size:13px;color:var(--sub);border-top:1px solid var(--line);
+ font-variant-numeric:tabular-nums;}
+.player{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.player button{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;
+ width:44px;height:38px;font-size:15px;font-family:inherit;cursor:pointer;}
+.player button.play{background:var(--danger);border-color:var(--danger);color:#fff;width:56px;font-weight:700;}
+input[type=range]{flex:1;accent-color:var(--danger);}
+.empty{color:var(--sub);padding:30px 4px;font-size:14px;line-height:1.7;}
+.spd{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px;
+ font-family:inherit;font-size:13px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">NIMBUS OFFLINE<small>CACHED WEATHER BRIEFING</small></div>
+  <div class="bar">
+    <button class="btn" id="btn-update">最新データ取得</button>
+    <div class="stamp" id="stamp">未取得</div>
+  </div>
+  <div class="prog" id="prog"><i></i></div>
+</header>
+<nav class="cats" id="cats"></nav>
+<div class="subs" id="subs"></div>
+<main>
+  <div class="stage" id="stage"><img id="shot" alt=""><div class="caption" id="cap"></div></div>
+  <div class="player" id="player" style="display:none">
+    <button class="play" id="p-play">▶</button>
+    <button id="p-prev">◀</button>
+    <button id="p-next">▶|</button>
+    <input type="range" id="p-range" min="0" max="0" value="0">
+    <select class="spd" id="p-speed">
+      <option value="400">遅い</option>
+      <option value="220" selected>標準</option>
+      <option value="110">速い</option>
+    </select>
+  </div>
+  <div class="empty" id="empty">「最新データ取得」を押すと約250枚の画像を端末に保存します。<br>
+  一度取得すれば、以降は機内など通信が無い環境でも表示できます。</div>
+</main>
+<script>
+const BASE='https://raw.githubusercontent.com/TAKE2355/jma-maiji-v2/offline-cache/';
+const CACHE='nimbus-offline-v1';
+let MF=null, catIdx=0, subIdx=0, frames=[], fi=0, timer=null;
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw-offline.js');
+
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+function tsLabel(ts){
+  if(!ts||ts.length<12) return '';
+  const M=ts.slice(4,6),D=ts.slice(6,8),h=ts.slice(8,10),m=ts.slice(10,12);
+  const utc=new Date(Date.UTC(+ts.slice(0,4),+M-1,+D,+h,+m));
+  const j=new Date(utc.getTime()+9*3600000);
+  return h+':'+m+'Z ('+pad(j.getHours())+':'+pad(j.getMinutes())+'J) '+M+'/'+D;
+}
+
+async function boot(){
+  try{
+    const c=await caches.open(CACHE);
+    const hit=await c.match(BASE+'manifest.json',{ignoreSearch:true});
+    if(hit){ MF=await hit.json(); render(); }
+  }catch(e){}
+  if(!MF){ try{ const r=await fetch(BASE+'manifest.json',{cache:'no-store'});
+    if(r.ok){ MF=await r.json(); render(); } }catch(e){} }
+}
+
+async function update(){
+  const b=$('btn-update'), pr=$('prog'), bar=pr.firstElementChild;
+  b.disabled=true; b.textContent='取得中…'; pr.style.display='block'; bar.style.width='0';
+  try{
+    const c=await caches.open(CACHE);
+    const r=await fetch(BASE+'manifest.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw new Error('manifest '+r.status);
+    const mf=await r.json();
+    await c.put(BASE+'manifest.json', new Response(JSON.stringify(mf),{headers:{'Content-Type':'application/json'}}));
+    const files=[];
+    mf.categories.forEach(k=>{
+      (k.items||[]).forEach(i=>files.push(i.file));
+      (k.series||[]).forEach(s=>(s.frames||[]).forEach(f=>files.push(f.file)));
+    });
+    let done=0;
+    const q=files.slice();
+    async function worker(){
+      while(q.length){
+        const f=q.shift();
+        try{ const res=await fetch(BASE+f+'?t='+mf.generated_utc,{cache:'no-store'});
+             if(res.ok) await c.put(BASE+f, res.clone()); }catch(e){}
+        done++; bar.style.width=(done/files.length*100).toFixed(1)+'%';
+        b.textContent='取得中 '+done+'/'+files.length;
+      }
+    }
+    await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+    MF=mf; render();
+    b.textContent='最新データ取得';
+  }catch(e){ b.textContent='取得失敗（再試行）'; }
+  finally{ b.disabled=false; setTimeout(()=>{pr.style.display='none';},900); }
+}
+
+function render(){
+  if(!MF) return;
+  $('empty').style.display='none';
+  $('stamp').innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>';
+  $('cats').innerHTML=MF.categories.map((k,i)=>
+    '<button class="'+(i===catIdx?'active':'')+'" onclick="setCat('+i+')">'+k.label+'</button>').join('');
+  const k=MF.categories[catIdx]||{};
+  const subs=(k.mode==='series')?(k.series||[]):(k.items||[]);
+  if(subIdx>=subs.length) subIdx=0;
+  $('subs').innerHTML=subs.map((s,i)=>
+    '<button class="'+(i===subIdx?'active':'')+'" onclick="setSub('+i+')">'+(s.label||('#'+(i+1)))+'</button>').join('');
+  stop();
+  if(k.mode==='series'){
+    frames=(subs[subIdx]||{}).frames||[];
+    fi=0;
+    $('player').style.display=frames.length>1?'flex':'none';
+    $('p-range').max=Math.max(0,frames.length-1); $('p-range').value=0;
+    show();
+  }else{
+    frames=[]; $('player').style.display='none';
+    const it=subs[subIdx];
+    if(it){ $('shot').src=BASE+it.file; $('cap').textContent=it.caption||it.label||''; }
+  }
+}
+function setCat(i){catIdx=i;subIdx=0;render();}
+function setSub(i){subIdx=i;render();}
+function show(){
+  const f=frames[fi]; if(!f) return;
+  $('shot').src=BASE+f.file;
+  $('cap').textContent=tsLabel(f.ts)+'   ['+(fi+1)+'/'+frames.length+']';
+  $('p-range').value=fi;
+}
+function step(d){ if(!frames.length)return; fi=(fi+d+frames.length)%frames.length; show(); }
+function play(){
+  if(timer){stop();return;}
+  $('p-play').textContent='■';
+  const iv=+$('p-speed').value;
+  timer=setInterval(()=>{ fi=(fi+1)%frames.length; show(); }, iv);
+}
+function stop(){ if(timer){clearInterval(timer);timer=null;} $('p-play').textContent='▶'; }
+
+$('btn-update').onclick=update;
+$('p-play').onclick=play;
+$('p-prev').onclick=()=>{stop();step(-1);};
+$('p-next').onclick=()=>{stop();step(1);};
+$('p-range').oninput=e=>{stop();fi=+e.target.value;show();};
+$('p-speed').onchange=()=>{ if(timer){stop();play();} };
+boot();
+</script>
+</body>
+</html>
