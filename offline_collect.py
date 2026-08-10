@@ -5,7 +5,7 @@ NIMBUS OFFLINE 画像コレクタ
   offline_config.json を読み、静止画像と連続再生用フレームを out/ に集めて
   manifest.json を書き出す。out/ は孤立ブランチ offline-cache に強制上書きされる。
 """
-import os, io, json, datetime, concurrent.futures as _cf
+import os, io, json, time, datetime, concurrent.futures as _cf
 import requests
 from PIL import Image
 
@@ -203,27 +203,28 @@ def collect_static(cat, jma_ts, akuten_ts):
     return items
 
 def collect_text(cat):
-    """METAR/TAFを空港ごとに取得し、ヘッダ付きのグループにまとめる"""
+    """METAR/TAFを空港ごとに順番に取得（AWCは同時接続に弱く502を返すため直列＋リトライ）"""
     items = []
     for it in cat.get("items", []):
         icaos = [s.strip().upper() for s in str(it.get("ids", "")).split(",") if s.strip()]
-        groups = []
-
-        def one(icao):
+        groups, ok = [], 0
+        for icao in icaos:
             row = {"ids": icao, "hours": it.get("hours", 3),
                    "metar": it.get("metar", True), "taf": it.get("taf", True)}
-            try:
-                return icao, M.fetch_metar_text(row)
-            except Exception as e:
-                return icao, ["取得エラー: " + str(e)[:60]]
-
-        with _cf.ThreadPoolExecutor(max_workers=6) as ex:
-            for icao, lines in ex.map(one, icaos):
-                groups.append({"icao": icao, "text": "\n".join(lines)})
-        # 入力順に並べ直す
-        order = {c: i for i, c in enumerate(icaos)}
-        groups.sort(key=lambda g: order.get(g["icao"], 999))
-        ok = sum(1 for g in groups if g["text"])
+            lines = []
+            for attempt in range(4):
+                try:
+                    lines = M.fetch_metar_text(row)
+                except Exception:
+                    lines = []
+                bad = (not lines) or any("取得失敗" in l or "取得エラー" in l for l in lines)
+                if not bad:
+                    break
+                time.sleep(1.2 * (attempt + 1))
+            if lines and not any("取得失敗" in l or "取得エラー" in l for l in lines):
+                ok += 1
+            groups.append({"icao": icao, "text": "\n".join(lines)})
+            time.sleep(0.35)
         print("    METAR/TAF %d/%d 空港" % (ok, len(icaos)))
         items.append({"label": it.get("label", ""), "groups": groups})
     return items
