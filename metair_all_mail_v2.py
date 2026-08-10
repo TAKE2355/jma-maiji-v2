@@ -1250,6 +1250,46 @@ def save_preview_cache():
     print(f"  キャッシュ更新: {saved}件追加")
 
 
+def jst_now():
+    """日本標準時 (UTC+9) の現在時刻"""
+    return datetime.datetime.utcnow() + datetime.timedelta(hours=9)
+
+def find_time_slot(rcp, now_jst):
+    """現在時刻(JST)が属する時間帯を返す。日をまたぐ指定(21→5時)にも対応。"""
+    h = now_jst.hour
+    for s in (rcp.get("time_slots") or []):
+        try:
+            st = int(s.get("start", 0)); en = int(s.get("end", 24))
+        except Exception:
+            continue
+        inside = (st <= h < en) if st < en else (h >= st or h < en)
+        if inside:
+            return s
+    return None
+
+def should_send_now(rcp, now_jst):
+    """この受信者に今送るべきか判定する。
+    cron が毎時 02/17/32/47分(=15分刻み)で起動する前提で、
+    JSTの0時を基点とした15分ティックが送信間隔の倍数のときだけ送る。
+    Returns: (bool, 理由)"""
+    slots = rcp.get("time_slots") or []
+    if not slots:
+        return True, "時間帯未設定のため常時送信"
+    s = find_time_slot(rcp, now_jst)
+    if s is None:
+        return False, "時間帯外"
+    try:
+        iv = int(s.get("interval_minutes", 15))
+    except Exception:
+        iv = 15
+    iv   = max(15, iv)
+    tick = (now_jst.hour * 60 + now_jst.minute) // 15
+    step = max(1, iv // 15)
+    label = f"{s.get('start')}-{s.get('end')}時 / {iv}分間隔"
+    if tick % step == 0:
+        return True, label
+    return False, label + " のタイミング外"
+
 def main():
     recipients = CONFIG.get("recipients", [])
     enabled    = [r for r in recipients if r.get("enabled", True)]
@@ -1258,8 +1298,21 @@ def main():
         print("有効な受信者なし - 終了")
         sys.exit(0)
 
-    print("=== 全有効受信者に送信 ===")
-    targets = enabled
+    event   = os.environ.get("GITHUB_EVENT_NAME", "")
+    now_jst = jst_now()
+    print(f"現在 JST {now_jst.strftime('%Y-%m-%d %H:%M')}  (起動: {event or 'local'})")
+
+    if event == "schedule":
+        print("=== 定時起動: 送信時間帯を判定 ===")
+        targets = []
+        for r in enabled:
+            ok, why = should_send_now(r, now_jst)
+            print(f"  {r.get('name','?')}: {'送信' if ok else 'スキップ'}  [{why}]")
+            if ok:
+                targets.append(r)
+    else:
+        print("=== 手動起動: 全有効受信者に送信 ===")
+        targets = enabled
 
     if not targets:
         print("送信対象なし - スキップ")
