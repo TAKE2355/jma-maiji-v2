@@ -20,7 +20,14 @@ def save(im, name):
     if im is None:
         return None
     try:
-        if im.mode != "RGB":
+        # 透過PNG（気象庁の断面図・平面図など）は白地に合成する。
+        # そのまま convert("RGB") すると透明部が黒くなり色が反転して見える。
+        if im.mode in ("RGBA", "LA", "P"):
+            im = im.convert("RGBA")
+            bg = Image.new("RGB", im.size, (255, 255, 255))
+            bg.paste(im, mask=im.split()[-1])
+            im = bg
+        elif im.mode != "RGB":
             im = im.convert("RGB")
         w, h = im.size
         if max(w, h) > MAXW:
