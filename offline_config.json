@@ -75,7 +75,14 @@
           "kind": "csa019",
           "code": "QRAI85",
           "frames": 8
-        },
+        }
+      ]
+    },
+    {
+      "id": "akuten",
+      "label": "悪天",
+      "mode": "series",
+      "series": [
         {
           "key": "ch_QBSA95",
           "label": "UBSA",
@@ -131,14 +138,7 @@
           "kind": "csa019",
           "code": "QBAH95",
           "frames": 8
-        }
-      ]
-    },
-    {
-      "id": "akuten",
-      "label": "悪天",
-      "mode": "series",
-      "series": [
+        },
         {
           "key": "akuten_FBSN",
           "label": "下層悪天予想図・東北",
