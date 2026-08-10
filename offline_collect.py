@@ -120,6 +120,28 @@ def frames_akuten(code, step, n, base_ts):
                     None))
     return out
 
+def frames_csa019(code, n):
+    """CSA019のAJAX一覧(dataSet)から過去n枚を新しい順で返す"""
+    try:
+        r = requests.get(M.AJAX19.format(code=code), headers=M.METAIR_HEADERS, timeout=20)
+        ds = r.json().get("dataSet")
+        if isinstance(ds, str):
+            ds = json.loads(ds)
+        if not ds:
+            return []
+        out = []
+        for e in reversed(ds[-int(n):]):
+            fn = e.get("fname", "")
+            try:
+                ts = fn.split("_RJTD_")[1].replace(".png", "")
+            except Exception:
+                ts = ""
+            out.append((ts, M.METAIR_BASE + fn, None))
+        return out
+    except Exception as ex:
+        print("    CSA019一覧失敗", code, str(ex)[:80])
+        return []
+
 def collect_series(s, jma_ts=None, akuten_ts=None):
     """1シリーズ分のフレームを集めて [{file, ts}] を返す（新しい順）"""
     kind = s.get("kind")
@@ -133,6 +155,7 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
     elif kind == "hko":    specs = frames_hko(s.get("code"), step, n)
     elif kind == "jma":    specs = frames_jma(s.get("prefix"), s.get("code"), step, n, jma_ts)
     elif kind == "akuten": specs = frames_akuten(s.get("code"), step, n, akuten_ts)
+    elif kind == "csa019": specs = frames_csa019(s.get("code"), n)
     elif kind == "pagasa":
         fr = M._pagasa_frames()
         view = M.PAGASA_VIEWS.get(str(s.get("code")))
