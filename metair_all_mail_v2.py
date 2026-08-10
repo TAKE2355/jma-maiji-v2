@@ -656,6 +656,44 @@ def get_pagasa_radar(code, overlay=False):
         print(f"  マニラレーダーエラー[{code}]: {e}")
         return None, None
 
+KUMO_BASE = "https://www3.metair.go.jp/pict/satellite/hf/alt/ENJP64_RJTD_"
+
+def _kumo_url(dt):
+    """雲頂高度情報(ENJP64)のURL。5分刻み。"""
+    d = dt.replace(minute=(dt.minute // 5) * 5, second=0, microsecond=0)
+    return KUMO_BASE + d.strftime("%Y%m%d%H%M00") + ".jpg"
+
+def get_kumo_image(code, overlay=False):
+    """MetAir 雲頂高度情報。code は遡る分数(0=最新, 60=1時間前, 120=2時間前)。"""
+    try:
+        try:
+            offset = int(str(code))
+        except Exception:
+            offset = 0
+        base_dt = datetime.datetime.utcnow() - datetime.timedelta(minutes=offset)
+        im, ts = None, None
+        for back in range(0, 12):
+            dt = base_dt - datetime.timedelta(minutes=5 * back)
+            url = _kumo_url(dt)
+            try:
+                rr = requests.get(url, headers=METAIR_HEADERS, timeout=20)
+                if rr.status_code == 200 and len(rr.content) > 2000:
+                    im = Image.open(io.BytesIO(rr.content)).convert("RGB")
+                    ts = url[-18:-4]
+                    break
+            except Exception:
+                continue
+        if im is None:
+            print(f"    雲頂高度: 取得失敗 offset={offset}min")
+            return None, None
+        print(f"  雲頂高度取得: offset={offset}min {im.size} ts={ts}")
+        if overlay and ts:
+            im = apply_overlay_layers(im, ts, lambda d: [_kumo_url(d)])
+        return im, ts
+    except Exception as e:
+        print(f"  雲頂高度エラー[{code}]: {e}")
+        return None, None
+
 def pdf_to_image(pdf_bytes):
     try:
         import fitz
@@ -833,6 +871,9 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         im, period = get_imoc_thunder(code)
         return im, (f"{label}  {period}" if period else label)
 
+    elif chart_type == "metair_kumo":
+        im, ts = get_kumo_image(code, overlay=want_ov)
+        return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
     elif chart_type == "pagasa_radar":
         im, ts = get_pagasa_radar(code, overlay=want_ov)
         return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
