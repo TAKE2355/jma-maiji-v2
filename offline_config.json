@@ -35,18 +35,18 @@
           "label": "全国航空気象解説報・国内空域"
         },
         {
-          "type": "metair_csa019",
-          "code": "QACE98",
-          "label": "FSAS24"
-        }
-      ],
-      "series": [
-        {
           "key": "ch_QACA95",
           "label": "SPAS",
           "kind": "csa019",
           "code": "QACA95",
           "frames": 8
+        }
+      ],
+      "series": [
+        {
+          "type": "metair_csa019",
+          "code": "QACE98",
+          "label": "FSAS24"
         },
         {
           "key": "ch_QBMA98",
@@ -84,13 +84,6 @@
       "mode": "series",
       "series": [
         {
-          "key": "ch_QBSA95",
-          "label": "UBSA",
-          "kind": "csa019",
-          "code": "QBSA95",
-          "frames": 8
-        },
-        {
           "key": "ch_QBCK95",
           "label": "UBCK",
           "kind": "csa019",
@@ -98,10 +91,10 @@
           "frames": 8
         },
         {
-          "key": "ch_QBRA95",
-          "label": "UBGG",
+          "key": "ch_QBSA95",
+          "label": "UBSA",
           "kind": "csa019",
-          "code": "QBRA95",
+          "code": "QBSA95",
           "frames": 8
         },
         {
@@ -112,10 +105,10 @@
           "frames": 8
         },
         {
-          "key": "ch_QBFF95",
-          "label": "UBFF",
+          "key": "ch_QBRA95",
+          "label": "UBGG",
           "kind": "csa019",
-          "code": "QBFF95",
+          "code": "QBRA95",
           "frames": 8
         },
         {
@@ -126,10 +119,10 @@
           "frames": 8
         },
         {
-          "key": "ch_QBIG95",
-          "label": "UBIG",
+          "key": "ch_QBFF95",
+          "label": "UBFF",
           "kind": "csa019",
-          "code": "QBIG95",
+          "code": "QBFF95",
           "frames": 8
         },
         {
@@ -140,8 +133,15 @@
           "frames": 8
         },
         {
+          "key": "ch_QBIG95",
+          "label": "UBIG",
+          "kind": "csa019",
+          "code": "QBIG95",
+          "frames": 8
+        },
+        {
           "key": "akuten_FBSN",
-          "label": "下層悪天予想図・東北",
+          "label": "下層悪天・東北",
           "kind": "akuten",
           "prefix": null,
           "code": "FBSN",
@@ -150,7 +150,7 @@
         },
         {
           "key": "akuten_FBSP",
-          "label": "下層悪天予想図・北海道",
+          "label": "下層悪天・北海道",
           "kind": "akuten",
           "prefix": null,
           "code": "FBSP",
@@ -159,7 +159,7 @@
         },
         {
           "key": "akuten_FBOS",
-          "label": "下層悪天予想図・西日本",
+          "label": "下層悪天・西日本",
           "kind": "akuten",
           "prefix": null,
           "code": "FBOS",
@@ -168,7 +168,7 @@
         },
         {
           "key": "akuten_FBTK",
-          "label": "下層悪天予想図・東日本",
+          "label": "下層悪天・東日本",
           "kind": "akuten",
           "prefix": null,
           "code": "FBTK",
@@ -177,7 +177,7 @@
         },
         {
           "key": "akuten_FBOK",
-          "label": "下層悪天予想図・沖縄",
+          "label": "下層悪天・沖縄",
           "kind": "akuten",
           "prefix": null,
           "code": "FBOK",
@@ -186,7 +186,7 @@
         },
         {
           "key": "akuten_FBKG",
-          "label": "下層悪天予想図・奄美",
+          "label": "下層悪天・奄美",
           "kind": "akuten",
           "prefix": null,
           "code": "FBKG",
