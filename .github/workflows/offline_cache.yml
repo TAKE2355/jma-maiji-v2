@@ -2,9 +2,9 @@ name: NIMBUS OFFLINE Cache
 
 on:
   workflow_dispatch:
-  # 自動収集したい場合は下の schedule のコメントを外す（分は自由に変更可）
-  # schedule:
-  #   - cron: '5,35 * * * *'
+  schedule:
+    # 30分ごとに自動収集（分は自由に変更可）
+    - cron: '5,35 * * * *'
 
 permissions:
   contents: write
