@@ -1068,10 +1068,39 @@ def build_pdf_auto_dpi(all_page_data):
 # ─────────────────────────────────────────────────────────────────────────
 #  天気図収集（ページ単位）
 # ─────────────────────────────────────────────────────────────────────────
-def collect_charts():
-    """config.pages を走査し、全スロットの画像を取得する。
+_SLOT_CACHE = {}
+
+def fetch_slot_image_cached(slot, jma_ts, akuten_ts):
+    """受信者をまたいで同じスロットを再取得しないようキャッシュする"""
+    if slot is None:
+        return None, ""
+    try:
+        ovsig = ""
+        if slot.get("overlay"):
+            ovsig = json.dumps([OVERLAY_ENABLED, OVERLAY_ALPHA, OVERLAY_LAYERS],
+                               sort_keys=True, ensure_ascii=False)
+        key = (json.dumps(slot, sort_keys=True, ensure_ascii=False), jma_ts, akuten_ts, ovsig)
+    except Exception:
+        return fetch_slot_image(slot, jma_ts, akuten_ts)
+    if key in _SLOT_CACHE:
+        return _SLOT_CACHE[key]
+    v = fetch_slot_image(slot, jma_ts, akuten_ts)
+    _SLOT_CACHE[key] = v
+    return v
+
+def apply_overlay_cfg(ov):
+    """受信者ごとのレイヤー設定をグローバルへ反映"""
+    global OVERLAY_ENABLED, OVERLAY_ALPHA, OVERLAY_LAYERS
+    ov = ov or {}
+    OVERLAY_ENABLED = ov.get("enabled", True)
+    OVERLAY_ALPHA   = float(ov.get("alpha", 0.2))
+    OVERLAY_LAYERS  = ov.get("layers") or [{"minutes": 60, "alpha": OVERLAY_ALPHA}]
+
+def collect_charts(pages_cfg=None):
+    """pages 定義を走査し、全スロットの画像を取得する。
     Returns: [(page_cfg, [(im, label), ...]), ...]"""
-    pages_cfg = CONFIG.get("pages", [])
+    if pages_cfg is None:
+        pages_cfg = CONFIG.get("pages", [])
     if not pages_cfg:
         print("WARN: config.json に pages が定義されていません")
         return []
@@ -1111,7 +1140,7 @@ def collect_charts():
             if slot is None:
                 slot_images.append((None, ""))
                 continue
-            im, label = fetch_slot_image(slot, jma_ts, akuten_ts)
+            im, label = fetch_slot_image_cached(slot, jma_ts, akuten_ts)
             slot_images.append((im, label))
             total_charts += 1
             print(f"  [{s_idx+1}] [{'OK' if im else 'NG'}] {slot.get('label', slot.get('code',''))}")
@@ -1238,21 +1267,30 @@ def main():
 
     print(f"\n送信対象: {[r.get('name','?') for r in targets]}")
 
-    print("\n=== 天気図収集 ===")
-    all_page_data = collect_charts()
-
-    if not all_page_data:
-        print("ページデータなし - 終了")
-        sys.exit(1)
-
-    print(f"\n=== PDF生成 (DPI上限: {MAX_DPI}, サイズ上限: {MAX_MAIL_MB} MB) ===")
-    pdf_bytes, n_pages, used_dpi, size_mb = build_pdf_auto_dpi(all_page_data)
-
-    print("\n=== メール送信 ===")
+    sent = 0
     for r in targets:
-        send_email_to(r, pdf_bytes, n_pages, dpi=used_dpi, size_mb=size_mb)
+        name = r.get("name", "?")
+        pages_cfg = r.get("pages") or CONFIG.get("pages", [])
+        if not pages_cfg:
+            print(f"\n--- {name}: 天気図が未設定のためスキップ ---")
+            continue
+        apply_overlay_cfg(r.get("overlay") or CONFIG.get("overlay"))
 
-    print(f"\n=== 完了: {n_pages}ページ (DPI:{used_dpi} / {size_mb:.1f}MB) → {len(targets)}名に送信 ===")
+        print(f"\n=== 天気図収集: {name} ===")
+        all_page_data = collect_charts(pages_cfg)
+        if not all_page_data:
+            print(f"  {name}: ページデータなし - スキップ")
+            continue
+
+        print(f"\n=== PDF生成: {name} (DPI上限: {MAX_DPI}, サイズ上限: {MAX_MAIL_MB} MB) ===")
+        pdf_bytes, n_pages, used_dpi, size_mb = build_pdf_auto_dpi(all_page_data)
+
+        print(f"\n=== メール送信: {name} ===")
+        send_email_to(r, pdf_bytes, n_pages, dpi=used_dpi, size_mb=size_mb)
+        sent += 1
+        print(f"--- {name}: {n_pages}ページ (DPI:{used_dpi} / {size_mb:.1f}MB) 送信完了 ---")
+
+    print(f"\n=== 完了: {sent}名に送信 ===")
 
     print("\n=== プレビューキャッシュ更新 ===")
     save_preview_cache()
