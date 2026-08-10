@@ -596,8 +596,8 @@
       ]
     },
     {
-      "id": "kumo",
-      "label": "雲頂高度",
+      "id": "nowcast",
+      "label": "ナウキャスト",
       "mode": "series",
       "series": [
         {
@@ -606,31 +606,17 @@
           "kind": "kumo",
           "step": 5,
           "frames": 36
-        }
-      ]
-    },
-    {
-      "id": "echotop",
-      "label": "エコー頂高度",
-      "mode": "series",
-      "series": [
+        },
         {
           "key": "echotop",
           "label": "エコー頂高度",
           "kind": "echotop",
           "step": 10,
           "frames": 18
-        }
-      ]
-    },
-    {
-      "id": "cwa",
-      "label": "台湾レーダー",
-      "mode": "series",
-      "series": [
+        },
         {
           "key": "cwa_tw",
-          "label": "台湾域",
+          "label": "台湾・台湾域",
           "kind": "cwa",
           "code": "TW",
           "step": 10,
@@ -638,22 +624,15 @@
         },
         {
           "key": "cwa_wide",
-          "label": "広域",
+          "label": "台湾・広域",
           "kind": "cwa",
           "code": "WIDE",
           "step": 10,
           "frames": 18
-        }
-      ]
-    },
-    {
-      "id": "hko",
-      "label": "香港レーダー",
-      "mode": "series",
-      "series": [
+        },
         {
           "key": "hko_064",
-          "label": "64km",
+          "label": "香港64km",
           "kind": "hko",
           "code": "064",
           "step": 6,
@@ -661,7 +640,7 @@
         },
         {
           "key": "hko_128",
-          "label": "128km",
+          "label": "香港128km",
           "kind": "hko",
           "code": "128",
           "step": 6,
@@ -669,19 +648,12 @@
         },
         {
           "key": "hko_256",
-          "label": "256km",
+          "label": "香港256km",
           "kind": "hko",
           "code": "256",
           "step": 6,
           "frames": 30
-        }
-      ]
-    },
-    {
-      "id": "pagasa",
-      "label": "マニラレーダー",
-      "mode": "series",
-      "series": [
+        },
         {
           "key": "pagasa_mnl",
           "label": "マニラ周辺",
@@ -690,7 +662,7 @@
         },
         {
           "key": "pagasa_ph",
-          "label": "フィリピン全域",
+          "label": "マニラ全域",
           "kind": "pagasa",
           "code": "PH"
         }
