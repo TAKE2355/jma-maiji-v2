@@ -2,6 +2,9 @@ name: MetAir Weather Mail
 
 on:
   workflow_dispatch:
+  schedule:
+    # 毎時 02/17/32/47分 (UTC) に起動し、受信者ごとの時間帯・間隔はPython側でJST判定
+    - cron: '2,17,32,47 * * * *'
 
 permissions:
   contents: write
