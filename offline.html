@@ -425,6 +425,13 @@ header .hero>div:last-of-type{width:auto;}
   header .bar{margin-left:auto;width:auto;}
   .btn{padding:8px 12px;font-size:13px;}
 }
+
+/* METAR/TAF テキスト表示 */
+#textview{display:none;white-space:pre-wrap;word-break:break-word;background:#000;color:#e8eaed;
+ border:1px solid var(--line);border-radius:10px;margin:6px 0 0;padding:12px 14px;
+ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.55;
+ overflow:auto;}
+#textview b{color:#7fd7ff;font-weight:700;}
 </style>
 </head>
 <body>
@@ -471,6 +478,7 @@ header .hero>div:last-of-type{width:auto;}
   </div>
   <div class="empty" id="empty">「最新データ取得」を押すと約250枚の画像を端末に保存します。<br>
   一度取得すれば、以降は機内など通信が無い環境でも表示できます。</div>
+  <pre id="textview"></pre>
   <div class="stage" id="stage"><img id="shot" alt=""><div class="caption" id="cap"></div></div>
 
 </main>
@@ -522,7 +530,7 @@ async function update(){
     await c.put(BASE+'manifest.json', new Response(JSON.stringify(mf),{headers:{'Content-Type':'application/json'}}));
     const files=[];
     mf.categories.forEach(k=>{
-      (k.items||[]).forEach(i=>files.push(i.file));
+      (k.items||[]).forEach(i=>{ if(i.file) files.push(i.file); });
       (k.series||[]).forEach(s=>(s.frames||[]).forEach(f=>files.push(f.file)));
     });
     ['offline.html','sw-offline.js','assets/top-icon-base.png?v=4',
@@ -559,6 +567,16 @@ function render(){
   $('subs').innerHTML=subs.map((s,i)=>
     '<button class="'+(i===subIdx?'active':'')+'" onclick="setSub('+i+')">'+(s.label||('#'+(i+1)))+'</button>').join('');
   stop();
+  if(k.mode==='text'){
+    frames=[]; $('player').style.display='none';
+    $('stage').style.display='none'; $('textview').style.display='block';
+    const it=subs[subIdx]||{};
+    $('textview').textContent=(it.text||'（データなし）');
+    $('textview').style.maxHeight='calc(100vh - '+
+      (document.querySelector('header').offsetHeight+$('cats').offsetHeight+$('subs').offsetHeight+40)+'px';
+    return;
+  }
+  $('stage').style.display='flex'; $('textview').style.display='none';
   if(k.mode==='series'){
     // manifestは新しい順。古い→新しいの順に並べ替え、初期表示は最新(末尾)
     frames=((subs[subIdx]||{}).frames||[]).slice().reverse();
