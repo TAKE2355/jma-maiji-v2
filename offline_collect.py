@@ -203,18 +203,29 @@ def collect_static(cat, jma_ts, akuten_ts):
     return items
 
 def collect_text(cat):
-    """METAR/TAF などのテキストを取得して manifest に直接埋め込む"""
+    """METAR/TAFを空港ごとに取得し、ヘッダ付きのグループにまとめる"""
     items = []
     for it in cat.get("items", []):
-        row = {"ids": it.get("ids", ""), "hours": it.get("hours", 3),
-               "metar": it.get("metar", True), "taf": it.get("taf", True)}
-        try:
-            lines = M.fetch_metar_text(row)
-        except Exception as e:
-            lines = ["取得エラー: " + str(e)[:80]]
-        print("    [%s] %s %d行" % ("OK" if lines else "NG", it.get("label", ""), len(lines)))
-        items.append({"label": it.get("label", ""), "ids": it.get("ids", ""),
-                      "text": "\n".join(lines)})
+        icaos = [s.strip().upper() for s in str(it.get("ids", "")).split(",") if s.strip()]
+        groups = []
+
+        def one(icao):
+            row = {"ids": icao, "hours": it.get("hours", 3),
+                   "metar": it.get("metar", True), "taf": it.get("taf", True)}
+            try:
+                return icao, M.fetch_metar_text(row)
+            except Exception as e:
+                return icao, ["取得エラー: " + str(e)[:60]]
+
+        with _cf.ThreadPoolExecutor(max_workers=6) as ex:
+            for icao, lines in ex.map(one, icaos):
+                groups.append({"icao": icao, "text": "\n".join(lines)})
+        # 入力順に並べ直す
+        order = {c: i for i, c in enumerate(icaos)}
+        groups.sort(key=lambda g: order.get(g["icao"], 999))
+        ok = sum(1 for g in groups if g["text"])
+        print("    METAR/TAF %d/%d 空港" % (ok, len(icaos)))
+        items.append({"label": it.get("label", ""), "groups": groups})
     return items
 
 def main():
