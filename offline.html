@@ -439,6 +439,33 @@ header .hero>div:last-of-type{width:auto;}
 .mt-h{background:#26292e;color:#ffd76a;font-weight:800;letter-spacing:.10em;
  font-size:19px;line-height:1.35;padding:5px 10px;border-top:1px solid #000;position:sticky;top:0;}
 .mt-b{white-space:pre-wrap;word-break:break-word;padding:5px 10px 9px;color:#dfe3e7;}
+
+/* ══ UI全体をコンパクト化 ══ */
+body{font-size:13px;}
+nav.cats,.subs{padding:5px 8px;gap:5px;}
+nav.cats button,.subs button{font-size:12px;padding:5px 10px;border-radius:5px;font-weight:600;}
+main{padding:0 8px 24px;}
+.player{gap:7px;margin:2px 0 6px;}
+.player button{width:34px;height:29px;font-size:13px;border-radius:5px;}
+.player button.play{width:44px;}
+.spd{font-size:11.5px;padding:5px 6px;border-radius:5px;}
+input[type=range]{max-width:25%;height:14px;}
+.caption{font-size:11.5px;padding:5px 8px;}
+.stage{border-radius:8px;margin-top:4px;}
+.btn{font-size:12.5px;padding:7px 12px;border-radius:6px;}
+.stamp{font-size:11.5px;}
+#textview{font-size:12px;line-height:1.5;}
+.mt-h{font-size:17px;padding:4px 9px;}
+.mt-b{padding:4px 9px 7px;}
+header{padding:5px 8px;gap:8px;}
+#nimbus-logo{font-size:15px !important;}
+.radar-icon,.radar-icon img,.radar-icon svg{width:48px !important;height:48px !important;flex:0 0 48px !important;}
+@media (max-width:640px){
+  nav.cats button,.subs button{font-size:11px;padding:4px 8px;}
+  #nimbus-logo{font-size:13px !important;}
+  .radar-icon,.radar-icon img,.radar-icon svg{width:40px !important;height:40px !important;flex:0 0 40px !important;}
+  .mt-h{font-size:15px;}
+}
 </style>
 </head>
 <body>
