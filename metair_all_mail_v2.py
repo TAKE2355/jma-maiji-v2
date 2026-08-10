@@ -1313,5 +1313,37 @@ def get_csa024a_image(code, overlay=False):
         print(f"  CSA024Aエラー: {e}")
     return None, None
 
+def probe_kumo():
+    def sanitize(t): 
+        for ch in "?&=;:": t=t.replace(ch,"_")
+        return t
+    print("=== KUMO調査 ===")
+    s = get_metair_session()
+    if s is None:
+        print("  session なし"); print("=== 終了 ==="); return
+    url = "https://www3.metair.go.jp/metair/view/winKobetsu/CSA003.html" + chr(63) + "csid" + chr(61) + "CSA003_KUMO" + chr(38) + "type" + chr(61) + "2"
+    try:
+        rr = s.get(url, timeout=25)
+        print(f"  page HTTP {rr.status_code} len {len(rr.text)}")
+        pics = sorted(set(re.findall(r'[A-Za-z0-9_\-/\.]*pict[A-Za-z0-9_\-/\.]*', rr.text)))
+        print("  pict refs:", sanitize(" ".join(pics[:12]))[:400])
+        ids = sorted(set(re.findall(r'CSA003[A-Za-z0-9_]*', rr.text)))
+        print("  csid refs:", sanitize(" ".join(ids[:12]))[:300])
+        js = sorted(set(re.findall(r'[A-Za-z0-9_\-/\.]+\.js', rr.text)))
+        print("  js:", sanitize(" ".join(js[:10]))[:300])
+    except Exception as ex:
+        print("  page EX", str(ex)[:120])
+    for cs in ["CSA003_KUMO", "CSA003"]:
+        for ct in ["2", "0", "N"]:
+            u = ("https://www3.metair.go.jp/metair/ajax/" + cs + "/ajaxUpdate"
+                 + chr(63) + "contentsType" + chr(61) + ct + chr(38) + "dbKey" + chr(61) + chr(38) + "lastDate" + chr(61))
+            try:
+                a = s.get(u, timeout=20)
+                print(f"  ajax {cs} ct{ct}: {a.status_code} len{len(a.text)} :: {sanitize(a.text[:160])}")
+            except Exception as ex:
+                print(f"  ajax {cs} ct{ct}: EX {str(ex)[:80]}")
+    print("=== 終了 ===")
+
 if __name__ == "__main__":
+    probe_kumo()
     main()
