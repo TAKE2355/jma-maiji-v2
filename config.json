@@ -747,34 +747,6 @@
         }
       ],
       "order": "row"
-    },
-    {
-      "orientation": "portrait",
-      "cols": 2,
-      "rows": 2,
-      "order": "row",
-      "mode": "chart",
-      "slots": [
-        {
-          "type": "metair_kumo",
-          "code": "0",
-          "label": "雲頂高度・最新",
-          "overlay": false
-        },
-        {
-          "type": "metair_kumo",
-          "code": "60",
-          "label": "雲頂高度・1時間前",
-          "overlay": false
-        },
-        {
-          "type": "metair_kumo",
-          "code": "120",
-          "label": "雲頂高度・2時間前",
-          "overlay": false
-        },
-        null
-      ]
     }
   ]
 }
