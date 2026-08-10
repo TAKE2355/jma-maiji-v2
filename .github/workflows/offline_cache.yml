@@ -1,0 +1,41 @@
+name: NIMBUS OFFLINE Cache
+
+on:
+  workflow_dispatch:
+  # 自動収集したい場合は下の schedule のコメントを外す（分は自由に変更可）
+  # schedule:
+  #   - cron: '5,35 * * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install fonts
+        run: sudo apt-get install -y fonts-noto-cjk
+
+      - name: Install Python packages
+        run: pip install requests pillow img2pdf pymupdf
+
+      - name: Collect images
+        env:
+          METAIR_USER: ${{ secrets.METAIR_USER }}
+          METAIR_PASS: ${{ secrets.METAIR_PASS }}
+        run: python offline_collect.py
+
+      - name: Force push to orphan branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd out
+          git init -q
+          git checkout -q -b offline-cache
+          git add -A
+          git -c user.name="nimbus-offline" -c user.email="nimbus@local" \
+              commit -q -m "offline cache $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" offline-cache
+          echo "pushed: $(ls | wc -l) files"
