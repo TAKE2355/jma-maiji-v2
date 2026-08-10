@@ -5,6 +5,21 @@
   },
   "categories": [
     {
+      "id": "metar",
+      "label": "METAR/TAF",
+      "mode": "text",
+      "items": [
+        {
+          "key": "all",
+          "label": "ALL",
+          "ids": "RJAA,RJTT,RJCC,RJEC,RJCB,RJCH,RJSM,RJSS,RJSN,RJGG,RJNS,RJTH,RJBB,RJOO,RJFF,RJFK,RJOA,RJOM,RJFT,RJFO,ROAH,RORS,ROMY,ROIG,RJKA,RCTP,VHHH,RPLL,RKSI",
+          "hours": 3,
+          "metar": true,
+          "taf": true
+        }
+      ]
+    },
+    {
       "id": "surface",
       "label": "天気図",
       "mode": "static",
@@ -681,53 +696,6 @@
           "label": "フィリピン全域",
           "kind": "pagasa",
           "code": "PH"
-        }
-      ]
-    },
-    {
-      "id": "metar",
-      "label": "METAR/TAF",
-      "mode": "text",
-      "items": [
-        {
-          "key": "jp_kanto",
-          "label": "関東・中部",
-          "ids": "RJTT,RJAA,RJGG,RJNS,RJTH",
-          "hours": 3,
-          "metar": true,
-          "taf": true
-        },
-        {
-          "key": "jp_west",
-          "label": "西日本",
-          "ids": "RJBB,RJOO,RJFF,RJFK,RJOA,RJOM",
-          "hours": 3,
-          "metar": true,
-          "taf": true
-        },
-        {
-          "key": "jp_north",
-          "label": "北日本",
-          "ids": "RJCC,RJSS,RJSN,RJCH,RJSA",
-          "hours": 3,
-          "metar": true,
-          "taf": true
-        },
-        {
-          "key": "jp_south",
-          "label": "南西諸島",
-          "ids": "ROAH,RORS,ROMY,ROIG,RJKA",
-          "hours": 3,
-          "metar": true,
-          "taf": true
-        },
-        {
-          "key": "asia",
-          "label": "アジア主要",
-          "ids": "RCTP,VHHH,RPLL,RKSI,VTBS,WSSS",
-          "hours": 3,
-          "metar": true,
-          "taf": true
         }
       ]
     }
