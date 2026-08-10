@@ -466,6 +466,9 @@ header{padding:5px 8px;gap:8px;}
   .radar-icon,.radar-icon img,.radar-icon svg{width:40px !important;height:40px !important;flex:0 0 40px !important;}
   .mt-h{font-size:15px;}
 }
+
+#btn-collect{background:#2f353c;border:1px solid var(--line);}
+#btn-collect:hover{border-color:#4a4f55;}
 </style>
 </head>
 <body>
@@ -489,6 +492,7 @@ header{padding:5px 8px;gap:8px;}
       <div class="sub">OFFLINE — CACHED WEATHER BRIEFING</div>
     </div>
     <div class="bar">
+    <button class="btn" id="btn-collect" title="サーバ側で気象データを取り直します（数分かかります）">サーバで再収集</button>
     <button class="btn" id="btn-update">最新データ取得</button>
     <div class="stamp" id="stamp">未取得</div>
   </div>
@@ -659,6 +663,58 @@ function play(){
 function stop(){ if(timer){clearInterval(timer);timer=null;} $('p-play').textContent='▶'; }
 
 $('btn-update').onclick=update;
+
+async function recollect(){
+  const b=$('btn-collect'), u=$('btn-update');
+  let cfg={};
+  try{ cfg=JSON.parse(localStorage.getItem('metair_v2')||'{}'); }catch(e){}
+  if(!cfg.pat||!cfg.repo){
+    b.textContent='GitHub未設定';
+    setTimeout(()=>{b.textContent='サーバで再収集';},2500);
+    return;
+  }
+  const H={'Authorization':'token '+cfg.pat,'Content-Type':'application/json'};
+  const API='https://api.github.com/repos/'+cfg.repo+'/actions/workflows/offline_cache.yml/runs';
+  b.disabled=true; u.disabled=true; b.textContent='収集を開始…';
+  try{
+    let prev=0;
+    try{ const p=await (await fetch(API+'?per_page=1',{headers:H})).json();
+         prev=(p.workflow_runs&&p.workflow_runs[0])?p.workflow_runs[0].id:0; }catch(e){}
+    const d=await fetch('https://api.github.com/repos/'+cfg.repo+
+      '/actions/workflows/offline_cache.yml/dispatches',
+      {method:'POST',headers:H,body:JSON.stringify({ref:cfg.branch||'main'})});
+    if(!d.ok) throw new Error('起動失敗 '+d.status);
+    let runId=0;
+    for(let i=0;i<20 && !runId;i++){
+      await new Promise(r=>setTimeout(r,3000));
+      const p=await (await fetch(API+'?per_page=1',{headers:H})).json();
+      const r0=p.workflow_runs&&p.workflow_runs[0];
+      if(r0 && r0.id!==prev) runId=r0.id;
+    }
+    if(!runId) throw new Error('実行の検出に失敗');
+    const t0=Date.now();
+    for(let i=0;i<120;i++){
+      await new Promise(r=>setTimeout(r,10000));
+      const p=await (await fetch('https://api.github.com/repos/'+cfg.repo+'/actions/runs/'+runId,{headers:H})).json();
+      const sec=Math.round((Date.now()-t0)/1000);
+      b.textContent='収集中 '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+      if(p.status==='completed'){
+        if(p.conclusion!=='success') throw new Error('収集失敗');
+        break;
+      }
+    }
+    b.textContent='取り込み中…';
+    await update();                       // サーバ→端末キャッシュ
+    b.textContent='サーバで再収集';
+  }catch(e){
+    b.textContent='失敗（再試行）';
+    setTimeout(()=>{b.textContent='サーバで再収集';},3000);
+  }finally{
+    b.disabled=false; u.disabled=false;
+  }
+}
+$('btn-collect').onclick=recollect;
+
 $('p-play').onclick=play;
 $('p-prev').onclick=()=>{stop();step(-1);};
 $('p-next').onclick=()=>{stop();step(1);};
