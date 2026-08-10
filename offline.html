@@ -42,11 +42,320 @@ input[type=range]{flex:1;accent-color:var(--danger);}
 .empty{color:var(--sub);padding:30px 4px;font-size:14px;line-height:1.7;}
 .spd{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px;
  font-family:inherit;font-size:13px;}
+/* TOPアイコン: レーダースイープ回転 */
+.radar-icon{position:relative;width:132px;height:132px;line-height:0;}
+.radar-icon .radar-sweep{
+  position:absolute; left:48.96%; top:51.04%;
+  width:89.6%; height:89.6%; border-radius:50%;
+  transform:translate(-50%,-50%); z-index:0; pointer-events:none;
+  background:conic-gradient(from 0deg,
+    rgba(74,235,102,0)   0deg,
+    rgba(74,235,102,0)   304deg,
+    rgba(74,235,102,.12) 320deg,
+    rgba(74,235,102,.40) 344deg,
+    rgba(74,235,102,.85) 359deg,
+    rgba(74,235,102,.85) 360deg);
+  -webkit-mask:radial-gradient(closest-side,#000 0%,#000 84%,transparent 100%);
+          mask:radial-gradient(closest-side,#000 0%,#000 84%,transparent 100%);
+  animation:radar-sweep-spin 3.2s linear infinite;
+}
+@keyframes radar-sweep-spin{
+  from{transform:translate(-50%,-50%) rotate(0deg);}
+  to  {transform:translate(-50%,-50%) rotate(360deg);}
+}
+@media (prefers-reduced-motion: reduce){
+  .radar-icon .radar-sweep{animation:none;}
+}
+
+/* TOPアイコン: 稲光フラッシュ */
+.radar-icon .radar-bolt{
+  position:absolute; left:0; top:0; z-index:2; opacity:0; pointer-events:none;
+
+
+}
+.radar-icon .radar-bolt.flash{animation:radar-bolt-flash .42s linear 1;}
+@keyframes radar-bolt-flash{
+  0%  {opacity:0;   filter:none;}
+  8%  {opacity:1;   filter:brightness(2.4) drop-shadow(0 0 6px rgba(255,190,190,1)) drop-shadow(0 0 16px rgba(255,60,60,.95));}
+  22% {opacity:.12; filter:brightness(1.2);}
+  38% {opacity:1;   filter:brightness(2.6) drop-shadow(0 0 7px rgba(255,210,210,1)) drop-shadow(0 0 18px rgba(255,60,60,1));}
+  58% {opacity:.18; filter:brightness(1.2);}
+  74% {opacity:.85; filter:brightness(2.0) drop-shadow(0 0 5px rgba(255,180,180,.9)) drop-shadow(0 0 12px rgba(255,60,60,.8));}
+  100%{opacity:0;   filter:none;}
+}
+@media (prefers-reduced-motion: reduce){
+  .radar-icon .radar-bolt{animation:none !important;}
+}
+
+/* TOPアイコン: 飛行機のレーダーブリップ減衰
+   スイープ(3.2s/周)が飛行機の方位305.5degを通過した瞬間に最大輝度、
+   一周かけて減衰し、次の通過直前に最小になる */
+.radar-icon .radar-plane{
+  position:absolute; left:0; top:0; z-index:1; pointer-events:none;
+  animation:radar-plane-blip 3.2s linear infinite;
+  animation-delay:-1.067s;   /* 3.2s * 240/360 - 3.2s → 240deg(8時)で最大、210degで最小 */
+}
+@keyframes radar-plane-blip{
+  /* 0% = スイープ240deg（最高輝度） 91.667% = 210deg（最低輝度） */
+  0%      {opacity:1;   filter:brightness(2.2) drop-shadow(0 0 5px rgba(190,255,205,1)) drop-shadow(0 0 13px rgba(110,255,150,.95));}
+  7%      {opacity:.94; filter:brightness(1.75) drop-shadow(0 0 4px rgba(160,255,185,.85)) drop-shadow(0 0 10px rgba(110,255,150,.6));}
+  20%     {opacity:.72; filter:brightness(1.32) drop-shadow(0 0 3px rgba(120,255,160,.5));}
+  40%     {opacity:.46; filter:brightness(1.12) drop-shadow(0 0 2px rgba(120,255,160,.25));}
+  62%     {opacity:.28; filter:brightness(1);}
+  80%     {opacity:.15; filter:brightness(1);}
+  91.667% {opacity:.06; filter:brightness(1);}
+  100%    {opacity:1;   filter:brightness(2.2) drop-shadow(0 0 5px rgba(190,255,205,1)) drop-shadow(0 0 13px rgba(110,255,150,.95));}
+}
+@media (prefers-reduced-motion: reduce){
+  .radar-icon .radar-plane{animation:none; opacity:1;}
+}
+
+/* ══ NIMBUS ロゴ演出（30秒ごとに10種からランダム） ══ */
+.nb-l{ display:inline-block; will-change:transform,opacity,filter; }
+#nimbus-logo .nb-l{ animation-fill-mode:both; }
+@media (prefers-reduced-motion: reduce){ .nb-l{animation:none !important;} }
+
+/* 1. スイープ発光: N→S へ1秒で1文字ずつ */
+.fx1 .nb-l{animation:nbf-glow .34s linear 1; animation-delay:calc(var(--i)*.14s);}
+@keyframes nbf-glow{
+  0%,100%{color:var(--danger); text-shadow:none;}
+  35%{color:#fff5f5; text-shadow:0 0 10px rgba(255,70,70,1),0 0 26px rgba(255,45,45,.85),0 0 48px rgba(255,45,45,.5);}
+}
+/* 2. ネオン管の点灯不良 */
+.fx2 .nb-l{animation:nbf-neon 2.2s linear 1; animation-delay:calc(var(--i)*.05s);}
+@keyframes nbf-neon{
+  0%,7%,13%,22%,29%,44%{opacity:.15; text-shadow:none;}
+  4%,10%,18%,26%,36%{opacity:1; text-shadow:0 0 12px rgba(255,60,60,.9);}
+  55%,100%{opacity:1; color:var(--danger); text-shadow:0 0 8px rgba(255,60,60,.35);}
+}
+/* 3. ウェーブ（上下に波打つ） */
+.fx3 .nb-l{animation:nbf-wave 1.1s cubic-bezier(.36,.07,.19,.97) 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-wave{
+  0%,100%{transform:translateY(0);}
+  30%{transform:translateY(-13px); text-shadow:0 6px 14px rgba(255,45,45,.55);}
+  60%{transform:translateY(4px);}
+}
+/* 4. ポップ拡大 */
+.fx4 .nb-l{animation:nbf-pop 0.9s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc(var(--i)*.09s);}
+@keyframes nbf-pop{
+  0%,100%{transform:scale(1); color:var(--danger);}
+  40%{transform:scale(1.55); color:#fff2f2; text-shadow:0 0 18px rgba(255,60,60,.95);}
+}
+/* 5. スペクトル（色が流れる） */
+.fx5 .nb-l{animation:nbf-spectrum 1.8s linear 1; animation-delay:calc(var(--i)*.11s);}
+@keyframes nbf-spectrum{
+  0%,100%{color:var(--danger); text-shadow:none;}
+  20%{color:#ffd54a; text-shadow:0 0 14px rgba(255,213,74,.8);}
+  45%{color:#5ef2a0; text-shadow:0 0 14px rgba(94,242,160,.8);}
+  70%{color:#5ec8ff; text-shadow:0 0 14px rgba(94,200,255,.8);}
+}
+/* 6. グリッチ（RGBずれ＋横滑り） */
+.fx6 .nb-l{animation:nbf-glitch 0.9s steps(2,end) 1; animation-delay:calc(var(--i)*.03s);}
+@keyframes nbf-glitch{
+  0%,100%{transform:translate(0); text-shadow:none;}
+  10%{transform:translate(-4px,1px); text-shadow:3px 0 rgba(0,255,255,.9),-3px 0 rgba(255,0,90,.9);}
+  25%{transform:translate(4px,-2px); text-shadow:-4px 0 rgba(0,255,255,.9),4px 0 rgba(255,0,90,.9);}
+  45%{transform:translate(-3px,2px); text-shadow:2px 0 rgba(0,255,255,.7),-2px 0 rgba(255,0,90,.7);}
+  70%{transform:translate(2px,0); text-shadow:-2px 0 rgba(0,255,255,.5),2px 0 rgba(255,0,90,.5);}
+}
+/* 7. 左から現れる（リビール） */
+.fx7 .nb-l{animation:nbf-reveal 1.2s ease-out 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-reveal{
+  0%{opacity:0; transform:translateX(-16px) scale(.8); filter:blur(4px);}
+  55%{opacity:1; transform:translateX(0) scale(1); filter:blur(0); text-shadow:0 0 16px rgba(255,60,60,.85);}
+  100%{opacity:1; transform:translateX(0); text-shadow:none;}
+}
+/* 8. ショックウェーブ（全文字同時に閃光） */
+.fx8 .nb-l{animation:nbf-shock 1.1s ease-out 1;}
+@keyframes nbf-shock{
+  0%{transform:scale(1);}
+  12%{transform:scale(1.18); color:#fff; text-shadow:0 0 26px rgba(255,255,255,1),0 0 60px rgba(255,50,50,.9);}
+  45%{transform:scale(.97); color:var(--danger); text-shadow:0 0 30px rgba(255,50,50,.35);}
+  100%{transform:scale(1); text-shadow:none;}
+}
+/* 9. Y軸フリップ */
+.fx9 .nb-l{animation:nbf-flip 1.3s ease-in-out 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-flip{
+  0%,100%{transform:rotateY(0);}
+  50%{transform:rotateY(360deg); color:#fff2f2; text-shadow:0 0 16px rgba(255,60,60,.9);}
+}
+/* 10. ストロボ（全体が高速点滅） */
+.fx10 .nb-l{animation:nbf-strobe 1.05s steps(1,end) 1;}
+@keyframes nbf-strobe{
+  0%,20%,40%,60%,80%{color:var(--danger); text-shadow:none;}
+  10%,30%,50%,70%{color:#fff; text-shadow:0 0 20px rgba(255,255,255,.95),0 0 44px rgba(255,50,50,.8);}
+  100%{color:var(--danger); text-shadow:none;}
+}
+
+/* 11. タイプライター */
+.fx11 .nb-l{animation:nbf-type .5s steps(1,end) 1; animation-delay:calc(var(--i)*.13s);}
+@keyframes nbf-type{0%{opacity:0}40%{opacity:0;color:#fff}41%,100%{opacity:1;color:var(--danger)}}
+/* 12. 落下バウンド */
+.fx12 .nb-l{animation:nbf-drop 1.1s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc(var(--i)*.07s);}
+@keyframes nbf-drop{0%{transform:translateY(-46px);opacity:0}55%{transform:translateY(6px);opacity:1}75%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+/* 13. 下から浮上 */
+.fx13 .nb-l{animation:nbf-rise 1s ease-out 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-rise{0%{transform:translateY(24px);opacity:0;filter:blur(3px)}60%{opacity:1;filter:blur(0)}100%{transform:translateY(0);opacity:1}}
+/* 14. スピンイン */
+.fx14 .nb-l{animation:nbf-spin 1.1s cubic-bezier(.22,1,.36,1) 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-spin{0%{transform:rotate(-200deg) scale(.4);opacity:0}70%{opacity:1}100%{transform:rotate(0) scale(1);opacity:1}}
+/* 15. ぼかしパルス */
+.fx15 .nb-l{animation:nbf-blur 1.4s ease-in-out 1;}
+@keyframes nbf-blur{0%,100%{filter:blur(0)}45%{filter:blur(5px);color:#ff8a8a}}
+/* 16. 伸縮 */
+.fx16 .nb-l{animation:nbf-stretch 1s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc(var(--i)*.07s);}
+@keyframes nbf-stretch{0%,100%{transform:scale(1,1)}30%{transform:scale(.6,1.5)}60%{transform:scale(1.35,.75)}}
+/* 17. シェイク */
+.fx17 .nb-l{animation:nbf-shake .8s linear 1; animation-delay:calc(var(--i)*.02s);}
+@keyframes nbf-shake{0%,100%{transform:translate(0)}15%{transform:translate(-5px,2px)}30%{transform:translate(5px,-2px)}45%{transform:translate(-4px,-2px)}60%{transform:translate(4px,2px)}80%{transform:translate(-2px,0)}}
+/* 18. ホップ */
+.fx18 .nb-l{animation:nbf-hop 1.15s ease-in-out 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-hop{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-20px) rotate(-14deg)}70%{transform:translateY(0) rotate(6deg)}}
+/* 19. フェードカスケード */
+.fx19 .nb-l{animation:nbf-cascade 1.2s ease-in-out 1; animation-delay:calc(var(--i)*.12s);}
+@keyframes nbf-cascade{0%,100%{opacity:1}45%{opacity:.08}}
+/* 20. レーザースキャン */
+.fx20 .nb-l{animation:nbf-laser .32s linear 1; animation-delay:calc(var(--i)*.07s);}
+@keyframes nbf-laser{0%,100%{color:var(--danger);text-shadow:none}50%{color:#fff;text-shadow:0 0 6px #fff,0 0 22px rgba(255,255,255,.9),0 0 40px rgba(255,60,60,.8)}}
+/* 21. ハートビート */
+.fx21 .nb-l{animation:nbf-beat 1.3s ease-in-out 1;}
+@keyframes nbf-beat{0%,100%{transform:scale(1)}12%{transform:scale(1.22);text-shadow:0 0 18px rgba(255,60,60,.9)}24%{transform:scale(1)}36%{transform:scale(1.16)}50%{transform:scale(1)}}
+/* 22. スキュー */
+.fx22 .nb-l{animation:nbf-skew 1s ease-in-out 1; animation-delay:calc(var(--i)*.06s);}
+@keyframes nbf-skew{0%,100%{transform:skewX(0)}35%{transform:skewX(-24deg)}70%{transform:skewX(12deg)}}
+/* 23. ゴールドシマー */
+.fx23 .nb-l{animation:nbf-gold 1.6s ease-in-out 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-gold{0%,100%{color:var(--danger);text-shadow:none}40%{color:#ffd76a;text-shadow:0 0 10px rgba(255,215,106,.95),0 0 30px rgba(255,180,40,.7)}60%{color:#fff6d6;text-shadow:0 0 16px rgba(255,235,180,1)}}
+/* 24. アイス */
+.fx24 .nb-l{animation:nbf-ice 1.7s ease-in-out 1; animation-delay:calc(var(--i)*.09s);}
+@keyframes nbf-ice{0%,100%{color:var(--danger);text-shadow:none}45%{color:#dff6ff;text-shadow:0 0 12px rgba(180,235,255,1),0 0 34px rgba(90,190,255,.75)}}
+/* 25. ファイア */
+.fx25 .nb-l{animation:nbf-fire 1.5s ease-in-out 1; animation-delay:calc(var(--i)*.06s);}
+@keyframes nbf-fire{0%,100%{color:var(--danger);text-shadow:none}25%{color:#ff8c1a;text-shadow:0 -4px 12px rgba(255,140,26,.9)}45%{color:#ffe14d;text-shadow:0 -8px 18px rgba(255,225,77,.95)}70%{color:#ff5a1a;text-shadow:0 -5px 14px rgba(255,90,26,.8)}}
+/* 26. エレクトリック */
+.fx26 .nb-l{animation:nbf-elec .9s steps(2,end) 1; animation-delay:calc(var(--i)*.04s);}
+@keyframes nbf-elec{0%,100%{color:var(--danger);text-shadow:none}15%{color:#cfefff;text-shadow:0 0 8px #7fd7ff,0 0 24px #2aa8ff}35%{color:var(--danger);text-shadow:none}55%{color:#fff;text-shadow:0 0 10px #9be3ff,0 0 30px #1f9dff}75%{color:var(--danger)}}
+/* 27. 逆順バウンス（S→N） */
+.fx27 .nb-l{animation:nbf-pop2 .9s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc((5 - var(--i))*.09s);}
+@keyframes nbf-pop2{0%,100%{transform:scale(1)}40%{transform:scale(1.45);color:#fff2f2;text-shadow:0 0 16px rgba(255,60,60,.95)}}
+/* 28. 逆スイープ発光（S→N） */
+.fx28 .nb-l{animation:nbf-glow .34s linear 1; animation-delay:calc((5 - var(--i))*.14s);}
+/* 29. 3D回転 */
+.fx29 .nb-l{animation:nbf-orbit 1.4s ease-in-out 1; animation-delay:calc(var(--i)*.09s);}
+@keyframes nbf-orbit{0%,100%{transform:perspective(400px) rotateX(0) scale(1)}50%{transform:perspective(400px) rotateX(360deg) scale(1.12);color:#fff2f2}}
+/* 30. X軸フリップ */
+.fx30 .nb-l{animation:nbf-flipx 1.1s ease-in-out 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-flipx{0%,100%{transform:perspective(400px) rotateX(0)}50%{transform:perspective(400px) rotateX(180deg);color:#ffb3b3}}
+
+/* 31. 飛散から集合 */
+.fx31 .nb-l{animation:nbf-gather 1.2s cubic-bezier(.22,1,.36,1) 1;}
+.fx31 .nb-l:nth-child(1){--dx:-70px;--dy:-40px}
+.fx31 .nb-l:nth-child(2){--dx:40px;--dy:-60px}
+.fx31 .nb-l:nth-child(3){--dx:-50px;--dy:50px}
+.fx31 .nb-l:nth-child(4){--dx:60px;--dy:40px}
+.fx31 .nb-l:nth-child(5){--dx:-30px;--dy:-70px}
+.fx31 .nb-l:nth-child(6){--dx:70px;--dy:-20px}
+@keyframes nbf-gather{0%{transform:translate(var(--dx),var(--dy)) rotate(90deg) scale(.5);opacity:0}100%{transform:translate(0,0) rotate(0) scale(1);opacity:1}}
+/* 32. 字間を詰める */
+.fx32{animation:nbf-squeeze 1.3s ease-in-out 1;}
+@keyframes nbf-squeeze{0%,100%{letter-spacing:.2em}45%{letter-spacing:-.04em}}
+/* 33. 字間を広げる */
+.fx33{animation:nbf-widen 1.5s ease-in-out 1;}
+@keyframes nbf-widen{0%,100%{letter-spacing:.2em}45%{letter-spacing:.62em}}
+/* 34. ゆっくり点灯・消灯 */
+.fx34 .nb-l{animation:nbf-slowglow 2.6s ease-in-out 1; animation-delay:calc(var(--i)*.05s);}
+@keyframes nbf-slowglow{0%,100%{text-shadow:none;color:var(--danger)}50%{color:#fff0f0;text-shadow:0 0 14px rgba(255,60,60,1),0 0 42px rgba(255,40,40,.8),0 0 80px rgba(255,40,40,.5)}}
+/* 35. ランダム明滅 */
+.fx35 .nb-l{animation:nbf-rand 1.6s steps(1,end) 1; animation-delay:calc(var(--i)*.077s);}
+@keyframes nbf-rand{0%,9%,23%,41%,58%,79%{opacity:1}5%,17%,33%,50%,68%,88%{opacity:.12}100%{opacity:1}}
+/* 36. 色相回転 */
+.fx36{animation:nbf-hue 2s linear 1;}
+@keyframes nbf-hue{0%,100%{filter:hue-rotate(0)}50%{filter:hue-rotate(340deg) saturate(1.6)}}
+/* 37. マトリクス落下 */
+.fx37 .nb-l{animation:nbf-matrix 1.3s ease-out 1; animation-delay:calc(var(--i)*.09s);}
+@keyframes nbf-matrix{0%{transform:translateY(-30px);opacity:0;color:#7CFF9B;text-shadow:0 0 12px rgba(124,255,155,.9)}45%{opacity:1;color:#7CFF9B;text-shadow:0 0 16px rgba(124,255,155,1)}100%{transform:translateY(0);opacity:1;color:var(--danger);text-shadow:none}}
+/* 38. ネオンバズ */
+.fx38 .nb-l{animation:nbf-buzz 1.2s steps(1,end) 1;}
+@keyframes nbf-buzz{0%,100%{opacity:1;color:var(--danger);text-shadow:none}8%,24%,40%,56%{opacity:.5;color:#ff5cf0;text-shadow:0 0 14px rgba(255,92,240,.9)}16%,32%,48%,64%{opacity:1;color:#ffb3f7;text-shadow:0 0 22px rgba(255,92,240,1)}}
+/* 39. 振り子 */
+.fx39 .nb-l{animation:nbf-pend 1.4s ease-in-out 1; animation-delay:calc(var(--i)*.07s); transform-origin:50% 120%;}
+@keyframes nbf-pend{0%,100%{transform:rotate(0)}25%{transform:rotate(-18deg)}55%{transform:rotate(13deg)}80%{transform:rotate(-5deg)}}
+/* 40. ズームブラー */
+.fx40 .nb-l{animation:nbf-zoomblur 1.1s cubic-bezier(.22,1,.36,1) 1;}
+@keyframes nbf-zoomblur{0%{transform:scale(2.4);opacity:0;filter:blur(10px)}60%{opacity:1;filter:blur(0)}100%{transform:scale(1);opacity:1}}
+/* 41. ミラー反転 */
+.fx41 .nb-l{animation:nbf-mirror 1.2s ease-in-out 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-mirror{0%,100%{transform:scaleX(1)}45%{transform:scaleX(-1);color:#ffd0d0}}
+/* 42. 3Dチルト */
+.fx42{animation:nbf-tilt 1.6s ease-in-out 1;}
+@keyframes nbf-tilt{0%,100%{transform:perspective(600px) rotateX(0) rotateY(0)}30%{transform:perspective(600px) rotateX(28deg) rotateY(-16deg)}65%{transform:perspective(600px) rotateX(-18deg) rotateY(12deg)}}
+/* 43. ソナーピング */
+.fx43 .nb-l{animation:nbf-ping 1.4s cubic-bezier(.22,1,.36,1) 1; animation-delay:calc(var(--i)*.06s);}
+@keyframes nbf-ping{0%{transform:scale(1);text-shadow:0 0 0 rgba(255,60,60,.9)}25%{transform:scale(1.12);text-shadow:0 0 10px rgba(255,90,90,1),0 0 0 rgba(255,60,60,.6)}100%{transform:scale(1);text-shadow:0 0 60px rgba(255,60,60,0)}}
+/* 44. スライスワイプ */
+.fx44 .nb-l{animation:nbf-slice 1.1s ease-in-out 1; animation-delay:calc(var(--i)*.08s);}
+@keyframes nbf-slice{0%{clip-path:inset(0 0 100% 0)}40%{clip-path:inset(0 0 0 0);color:#fff}70%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(0 0 0 0);color:var(--danger)}}
+/* 45. カラージッター */
+.fx45 .nb-l{animation:nbf-jitter 1s steps(1,end) 1; animation-delay:calc(var(--i)*.03s);}
+@keyframes nbf-jitter{0%,100%{color:var(--danger)}12%{color:#fff}24%{color:#3ee7ff}36%{color:var(--danger)}48%{color:#ffe14d}60%{color:#fff}72%{color:#ff3b8e}84%{color:var(--danger)}}
+/* 46. スローウェーブ */
+.fx46 .nb-l{animation:nbf-slowwave 2.4s ease-in-out 1; animation-delay:calc(var(--i)*.14s);}
+@keyframes nbf-slowwave{0%,100%{transform:translateY(0)}25%{transform:translateY(-9px)}50%{transform:translateY(0)}75%{transform:translateY(6px)}}
+/* 47. 収縮→復元 */
+.fx47 .nb-l{animation:nbf-shrink 1.1s cubic-bezier(.34,1.56,.64,1) 1; animation-delay:calc(var(--i)*.06s);}
+@keyframes nbf-shrink{0%,100%{transform:scale(1);opacity:1}40%{transform:scale(0) rotate(180deg);opacity:.2}}
+/* 48. スポットライト */
+.fx48 .nb-l{animation:nbf-spot 1.5s ease-in-out 1; animation-delay:calc(var(--i)*.11s);}
+@keyframes nbf-spot{0%,100%{filter:brightness(.45)}40%{filter:brightness(2.6) drop-shadow(0 0 12px rgba(255,80,80,.95))}}
+/* 49. CRT ON/OFF */
+.fx49{animation:nbf-crt 1.2s ease-in-out 1;}
+@keyframes nbf-crt{0%{transform:scaleY(1) scaleX(1);filter:brightness(1)}18%{transform:scaleY(.02) scaleX(1.1);filter:brightness(3)}30%{transform:scaleY(.02) scaleX(.4);filter:brightness(4)}45%{transform:scaleY(.02) scaleX(1);filter:brightness(2)}70%{transform:scaleY(1.08) scaleX(1);filter:brightness(1.6)}100%{transform:scaleY(1) scaleX(1);filter:brightness(1)}}
+/* 50. ダブルスイープ */
+.fx50 .nb-l{animation:nbf-double 1.4s linear 1; animation-delay:calc(var(--i)*.1s);}
+@keyframes nbf-double{0%,100%{color:var(--danger);text-shadow:none}12%{color:#fff;text-shadow:0 0 12px rgba(255,60,60,1),0 0 30px rgba(255,45,45,.8)}24%{color:var(--danger);text-shadow:none}48%{color:#fff;text-shadow:0 0 12px rgba(255,60,60,1),0 0 30px rgba(255,45,45,.8)}62%{color:var(--danger);text-shadow:none}}
+
+/* NIMBUS の商標記号 */
+.nb-r{
+  font-size:.30em;
+  font-weight:700;
+  vertical-align:super;
+  line-height:1;
+  letter-spacing:normal;
+  margin-left:-.10em;
+  opacity:.9;
+}
+
+
+/* オフライン版ヘッダ用の縮小 */
+.hero{display:flex;align-items:center;gap:12px;}
+.radar-icon{width:82px;height:82px;flex:0 0 82px;}
+.radar-icon img,.radar-icon svg{width:82px !important;height:82px !important;}
+#nimbus-logo{font-family:'Orbitron',var(--font);font-size:25px;letter-spacing:.18em;font-weight:900;
+  color:var(--danger);margin:0 0 2px;}
+.hero .sub{color:var(--sub);font-size:10.5px;letter-spacing:.2em;font-weight:700;}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">NIMBUS OFFLINE<small>CACHED WEATHER BRIEFING</small></div>
+  <div class="hero">
+    <div class="radar-icon">
+        <div class="radar-sweep"></div>
+        <img src="assets/top-icon-base.png?v=4" width="132" height="132" alt="NIMBUS"
+             style="display:block;image-rendering:auto;position:relative;z-index:1;">
+        <svg class="radar-plane" width="132" height="132" viewBox="0 0 192 192" aria-hidden="true">
+          <g transform="translate(48.1 124.5) rotate(300) scale(0.5) translate(-50 -50)">
+            <path d="M50 5 C53.4 5 56 9.6 56.4 16.2 L56.4 33.5 L93 56.5 L93 64.5 L56.4 54.5 L56.4 74 L64.5 81.5 L64.5 88.5 L50 84.5 L35.5 88.5 L35.5 81.5 L43.6 74 L43.6 54.5 L7 64.5 L7 56.5 L43.6 33.5 L43.6 16.2 C44 9.6 46.6 5 50 5 Z" fill="#86c27d"/>
+          </g>
+        </svg>
+        <img src="assets/top-icon-bolt1.png?v=3" width="132" height="132" alt="" class="radar-bolt">
+        <img src="assets/top-icon-bolt2.png?v=3" width="132" height="132" alt="" class="radar-bolt">
+        <img src="assets/top-icon-bolt3.png?v=3" width="132" height="132" alt="" class="radar-bolt">
+      </div>
+    <div>
+      <h2 id="nimbus-logo"><span class="nb-l" style="--i:0">N</span><span class="nb-l" style="--i:1">I</span><span class="nb-l" style="--i:2">M</span><span class="nb-l" style="--i:3">B</span><span class="nb-l" style="--i:4">U</span><span class="nb-l" style="--i:5">S</span><span class="nb-r">&trade;</span></h2>
+      <div class="sub">OFFLINE — CACHED WEATHER BRIEFING</div>
+    </div>
+  </div>
   <div class="bar">
     <button class="btn" id="btn-update">最新データ取得</button>
     <div class="stamp" id="stamp">未取得</div>
@@ -94,8 +403,18 @@ async function boot(){
     const hit=await c.match(BASE+'manifest.json',{ignoreSearch:true});
     if(hit){ MF=await hit.json(); render(); }
   }catch(e){}
-  if(!MF){ try{ const r=await fetch(BASE+'manifest.json',{cache:'no-store'});
-    if(r.ok){ MF=await r.json(); render(); } }catch(e){} }
+  // オンラインなら最新のmanifestを取り直して構成を更新（画像はキャッシュのまま）
+  try{
+    const r=await fetch(BASE+'manifest.json?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){
+      const mf=await r.json();
+      if(!MF || mf.generated_utc!==MF.generated_utc){
+        MF=mf; render();
+        const c=await caches.open(CACHE);
+        await c.put(BASE+'manifest.json', new Response(JSON.stringify(mf),{headers:{'Content-Type':'application/json'}}));
+      }
+    }
+  }catch(e){}
 }
 
 async function update(){
@@ -112,13 +431,17 @@ async function update(){
       (k.items||[]).forEach(i=>files.push(i.file));
       (k.series||[]).forEach(s=>(s.frames||[]).forEach(f=>files.push(f.file)));
     });
+    ['offline.html','sw-offline.js','assets/top-icon-base.png?v=4',
+      'assets/top-icon-bolt1.png?v=3','assets/top-icon-bolt2.png?v=3','assets/top-icon-bolt3.png?v=3']
+      .forEach(f=>files.push('@'+f));
     let done=0;
     const q=files.slice();
     async function worker(){
       while(q.length){
         const f=q.shift();
-        try{ const res=await fetch(BASE+f,{cache:'reload'});
-             if(res.ok) await c.put(BASE+f, res.clone()); }catch(e){}
+        const url = f.charAt(0)==='@' ? new URL(f.slice(1), location.href).href : BASE+f;
+        try{ const res=await fetch(url,{cache:'reload'});
+             if(res.ok) await c.put(url, res.clone()); }catch(e){}
         done++; bar.style.width=(done/files.length*100).toFixed(1)+'%';
         b.textContent='取得中 '+done+'/'+files.length;
       }
@@ -185,6 +508,47 @@ $('p-next').onclick=()=>{stop();step(1);};
 $('p-range').oninput=e=>{stop();fi=+e.target.value;show();};
 $('p-speed').onchange=()=>{ if(timer){stop();play();} };
 boot();
+</script>
+<script>
+/* TOPアイコン: 3つの雷をそれぞれランダムなタイミングで光らせる */
+(function(){
+  function start(){
+    var bolts = document.querySelectorAll('.radar-icon .radar-bolt');
+    if(!bolts.length) return;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    bolts.forEach(function(el){
+      function fire(){
+        el.classList.remove('flash');
+        void el.offsetWidth;          /* reflow でアニメを再スタート */
+        el.classList.add('flash');
+        setTimeout(fire, 900 + Math.random()*4600);
+      }
+      setTimeout(fire, Math.random()*3500);
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start);
+  else start();
+})();
+</script>
+<script>
+/* NIMBUSロゴ: 30秒ごとに10種の演出からランダムに1つ再生 */
+(function(){
+  var FX=[]; for(var n=1;n<=50;n++) FX.push('fx'+n);
+  function start(){
+    var el=document.getElementById('nimbus-logo');
+    if(!el) return;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    function play(){
+      FX.forEach(function(f){el.classList.remove(f);});
+      void el.offsetWidth;                       /* reflow でアニメを再スタート */
+      el.classList.add(FX[Math.floor(Math.random()*FX.length)]);
+    }
+    setTimeout(play, 1200);
+    setInterval(play, 30000);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start);
+  else start();
+})();
 </script>
 </body>
 </html>
