@@ -85,7 +85,7 @@ function tsLabel(ts){
   const M=ts.slice(4,6),D=ts.slice(6,8),h=ts.slice(8,10),m=ts.slice(10,12);
   const utc=new Date(Date.UTC(+ts.slice(0,4),+M-1,+D,+h,+m));
   const j=new Date(utc.getTime()+9*3600000);
-  return h+':'+m+'Z ('+pad(j.getHours())+':'+pad(j.getMinutes())+'J) '+M+'/'+D;
+  return h+':'+m+'Z ('+pad(j.getUTCHours())+':'+pad(j.getUTCMinutes())+'J) '+M+'/'+D;
 }
 
 async function boot(){
@@ -117,7 +117,7 @@ async function update(){
     async function worker(){
       while(q.length){
         const f=q.shift();
-        try{ const res=await fetch(BASE+f+'?t='+mf.generated_utc,{cache:'no-store'});
+        try{ const res=await fetch(BASE+f,{cache:'reload'});
              if(res.ok) await c.put(BASE+f, res.clone()); }catch(e){}
         done++; bar.style.width=(done/files.length*100).toFixed(1)+'%';
         b.textContent='取得中 '+done+'/'+files.length;
