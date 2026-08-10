@@ -253,15 +253,17 @@ def main():
         if cat.get("mode") == "text":
             entry["items"] = collect_text(cat)
             total += len(entry["items"])
-        elif cat.get("mode") == "series":
-            entry["series"] = []
-            for s in cat.get("series", []):
-                fr = collect_series(s, jma_ts, akuten_ts)
-                total += len(fr)
-                entry["series"].append({"key": s["key"], "label": s.get("label", ""), "frames": fr})
         else:
-            entry["items"] = collect_static(cat, jma_ts, akuten_ts)
-            total += len(entry["items"])
+            # items(静止画) と series(連続再生) は同じカテゴリに併存できる
+            if cat.get("items"):
+                entry["items"] = collect_static(cat, jma_ts, akuten_ts)
+                total += len(entry["items"])
+            if cat.get("series"):
+                entry["series"] = []
+                for s in cat.get("series", []):
+                    fr = collect_series(s, jma_ts, akuten_ts)
+                    total += len(fr)
+                    entry["series"].append({"key": s["key"], "label": s.get("label", ""), "frames": fr})
         manifest["categories"].append(entry)
 
     json.dump(manifest, open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8"),
