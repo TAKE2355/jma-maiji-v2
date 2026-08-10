@@ -14,8 +14,13 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  const isAsset = url.hostname === 'raw.githubusercontent.com' ||
-                  url.pathname.endsWith('offline.html');
+  const isAsset = url.hostname === 'raw.githubusercontent.com'
+               || url.hostname === 'fonts.googleapis.com'
+               || url.hostname === 'fonts.gstatic.com'
+               || (url.origin === self.location.origin &&
+                   (url.pathname.includes('/assets/') ||
+                    url.pathname.endsWith('offline.html') ||
+                    url.pathname.endsWith('sw-offline.js')));
   if (!isAsset) return;
 
   e.respondWith((async () => {
