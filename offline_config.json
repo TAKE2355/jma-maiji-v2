@@ -554,42 +554,42 @@
         {
           "type": "metair_csa024a",
           "code": "RJAA_ALWIN1",
-          "label": "ALWIN・NRT"
+          "label": "NRT"
         },
         {
           "type": "metair_csa024a",
           "code": "RJCC_ALWIN1",
-          "label": "ALWIN・CTS"
+          "label": "CTS"
         },
         {
           "type": "metair_csa024a",
           "code": "RJTT_ALWIN1",
-          "label": "ALWIN・HND"
+          "label": "HND"
         },
         {
           "type": "metair_csa024a",
           "code": "RJGG_ALWIN1",
-          "label": "ALWIN・NGO"
+          "label": "NGO"
         },
         {
           "type": "metair_csa024a",
           "code": "RJBB_ALWIN1",
-          "label": "ALWIN・KIX"
+          "label": "KIX"
         },
         {
           "type": "metair_csa024a",
           "code": "RJFF_ALWIN1",
-          "label": "ALWIN・FUK"
+          "label": "FUK"
         },
         {
           "type": "metair_csa024a",
           "code": "RJFK_ALWIN1",
-          "label": "ALWIN・KOJ"
+          "label": "KOJ"
         },
         {
           "type": "metair_csa024a",
           "code": "ROAH_ALWIN1",
-          "label": "ALWIN・OKA"
+          "label": "OKA"
         }
       ]
     },
