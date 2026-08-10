@@ -16,7 +16,7 @@
     {
       "email": "takeshi.kai@jetstar.com",
       "name": "JJPBRFG",
-      "enabled": true,
+      "enabled": false,
       "time_slots": [
         {
           "start": 5,
