@@ -22,7 +22,7 @@
     {
       "id": "surface",
       "label": "天気図",
-      "mode": "static",
+      "mode": "mixed",
       "items": [
         {
           "type": "metair_csa019",
@@ -39,12 +39,7 @@
           "code": "QACE98",
           "label": "FSAS24アジア太平洋海上悪天24時間予想図"
         }
-      ]
-    },
-    {
-      "id": "anim_charts",
-      "label": "天気図(動画)",
-      "mode": "series",
+      ],
       "series": [
         {
           "key": "ch_QACA95",
