@@ -523,6 +523,26 @@
           "type": "imoc_thunder",
           "code": "3",
           "label": "発雷確率12h"
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "1-0",
+          "label": "発雷確率・南日本3h"
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "1-1",
+          "label": "発雷確率・南日本6h"
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "1-2",
+          "label": "発雷確率・南日本9h"
+        },
+        {
+          "type": "imoc_thunder",
+          "code": "1-3",
+          "label": "発雷確率・南日本12h"
         }
       ]
     },
