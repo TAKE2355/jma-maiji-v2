@@ -43,12 +43,14 @@ nav.cats button.active,.subs button.sb.active{background:var(--danger);border-co
 .tools .lbl{color:var(--sub);font-size:11px;}
 
 /* 画像エリア */
-main{padding:4px 6px 6px;}
-#grid{display:grid;gap:4px;overflow-y:auto;overscroll-behavior:contain;}
-.tile{position:relative;background:#000;border:1px solid var(--line);border-radius:6px;overflow:hidden;
- display:flex;align-items:center;justify-content:center;cursor:zoom-in;}
+main{padding:2px;}
+#grid{display:grid;gap:2px;overflow-y:auto;overscroll-behavior:contain;align-content:start;}
+.tile{position:relative;background:#000;border:0;border-radius:3px;overflow:hidden;
+ display:block;line-height:0;cursor:zoom-in;}
 #grid.zoom .tile{cursor:zoom-out;}
-.tile img{max-width:100%;max-height:100%;width:auto;height:auto;display:block;}
+.tile img{width:100%;height:auto;display:block;}
+#grid.zoom .tile img{width:auto;max-width:100%;max-height:100%;margin:0 auto;}
+#grid.zoom .tile{display:flex;align-items:center;justify-content:center;}
 .tile .tag{position:absolute;left:0;top:0;background:rgba(0,0,0,.62);color:#ffd76a;font-weight:700;
  font-size:11px;padding:2px 7px;border-bottom-right-radius:6px;pointer-events:none;}
 .ovl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;
@@ -702,20 +704,20 @@ function render(){
   // 左端ツール + サブタブ
   $('subs').style.display='flex';
   $('subs').innerHTML =
-    subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
-    + '<span class="tools">'
+    '<span class="tools left">'
     + '<button id="b-first" title="全画像を最古へ">&#9198;</button>'
-    + '<button id="bulk" title="全画像を再生／停止">'+(bulkPlaying?'&#9654;':'&#9208;')+'</button>'
+    + '<button id="bulk" title="全画像を再生／停止">'+(bulkPlaying?'&#9208;':'&#9654;')+'</button>'
     + '<button id="b-last" title="全画像を最新へ">&#9197;</button>'
+    + '</span>'
+    + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
+    + '<span class="tools right">'
     + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
-    + '<span class="lbl">行</span><select id="ly-r">'+[1,2,3,4].map(n=>'<option'+(n===LAY().rows?' selected':'')+'>'+n+'</option>').join('')+'</select>'
     + '<span class="lbl">順番</span><button id="ly-o" class="tg'+(LAY().order==='col'?' on':'')+'">'+(LAY().order==='row'?'横':'縦')+'</button>'
     + '</span>';
   $('bulk').onclick=toggleBulk;
   $('b-first').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});
   $('b-last').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=Math.max(0,((t.s.frames||[]).length-1)); show(t); flash(t);});
   $('ly-c').onchange=e=>{LAY().cols=+e.target.value;saveLay();render();};
-  $('ly-r').onchange=e=>{LAY().rows=+e.target.value;saveLay();render();};
   $('ly-o').onclick=()=>{LAY().order=(LAY().order==='row'?'col':'row');saveLay();render();};
 
   $('textview').style.display='none'; $('grid').style.display='grid';
@@ -737,7 +739,7 @@ function buildGrid(subs){
     + '<div class="tag">'+esc(s.label)+'</div>'
     + '<img alt="">'
     + (s.kind==='series' && (s.frames||[]).length>1
-       ? '<div class="ovl"><button class="fs">&#9198;</button><button class="p">&#9208;</button>'
+       ? '<div class="ovl"><button class="fs">&#9198;</button><button class="p">&#9654;</button>'
          +'<button class="ls">&#9197;</button><span class="cap"></span></div>' : '')
     + '</div>').join('');
 
@@ -788,17 +790,17 @@ function play(t){
   const n=(t.s.frames||[]).length; if(n<2) return;
   if(t.idx>=n-1) t.idx=0;
   show(t);
-  if(t.play) t.play.innerHTML='&#9654;';
+  if(t.play) t.play.innerHTML='&#9208;';
   t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },220);
 }
 function stop(t){
   if(t.timer){clearInterval(t.timer);t.timer=null;}
-  if(t.play) t.play.innerHTML='&#9208;';
+  if(t.play) t.play.innerHTML='&#9654;';
 }
 function togglePlay(t){ t.timer?stop(t):play(t); }
 function toggleBulk(){
   bulkPlaying=!bulkPlaying;
-  $('bulk').innerHTML=bulkPlaying?'&#9654;':'&#9208;';
+  $('bulk').innerHTML=bulkPlaying?'&#9208;':'&#9654;';
   $('bulk').classList.toggle('on',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
@@ -813,8 +815,7 @@ function fitArea(){
   const h=Math.max(200, window.innerHeight-used);
   $('grid').style.height=h+'px';
   $('textview').style.maxHeight=h+'px';
-  const rows=(zoomIdx>=0)?1:LAY().rows;
-  [...$('grid').children].forEach(el=>{ el.style.height=Math.floor((h-4*(rows-1))/rows)+'px'; });
+  [...$('grid').children].forEach(el=>{ el.style.height = (zoomIdx>=0)? h+'px' : ''; });
 }
 window.addEventListener('resize',fitArea);
 
