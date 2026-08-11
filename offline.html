@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0e1012">
+<meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>NIMBUS OFFLINE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <style>
@@ -19,6 +21,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(14,16,18,.96);border-bot
 .btn:disabled{opacity:.5;}
 .bar{display:flex;gap:8px;align-items:center;margin-left:auto;}
 .stamp{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;}
+.ver{font-size:10px;color:#5c6268;letter-spacing:.04em;}
 .stamp b{color:var(--text);}
 .prog{height:3px;background:var(--line);border-radius:2px;overflow:hidden;display:none;width:100%;}
 .prog>i{display:block;height:100%;width:0;background:var(--ok);transition:width .12s;}
@@ -660,6 +663,7 @@ nav.cats button.pg{border-style:dashed;}
   <div class="bar">
     <button class="btn" id="btn-update">GET IT NOW!!</button>
     <div class="stamp" id="stamp">未取得</div>
+    <div class="ver" id="ver"></div>
   </div>
   <div class="prog" id="prog"><i></i></div>
 </header>
@@ -674,6 +678,28 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
+const APP_VER='pt6orl-260811';
+
+// ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
+async function checkUpdate(){
+  try{
+    const r=await fetch('offline.html?cb='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return;
+    const t=await r.text();
+    const m=t.match(/const APP_VER='([^']+)'/);
+    if(!m || m[1]===APP_VER) return;
+    try{
+      const c=await caches.open(CACHE);
+      for(const k of await c.keys()){
+        if(/offline\.html|sw-offline\.js/.test(k.url)) await c.delete(k,{ignoreSearch:true});
+      }
+    }catch(e){}
+    try{ for(const reg of await navigator.serviceWorker.getRegistrations()) await reg.update(); }catch(e){}
+    location.reload();
+  }catch(e){}
+}
+window.addEventListener('load',()=>setTimeout(checkUpdate,1500));
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkUpdate(); });
 const BASE='https://raw.githubusercontent.com/TAKE2355/jma-maiji-v2/offline-cache/';
 // raw.githubusercontent.com はブランチ名URLだとCDNに数分キャッシュされるため、
 // コミットSHA固定のURLを解決して確実に最新を取得する（キャッシュの保存キーはBASEのまま）
@@ -695,7 +721,10 @@ async function freshBase(){
 const CACHE='nimbus-offline-v1';
 let MF=null, CACHE_MB="";
 
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw-offline.js');
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw-offline.js',{updateViaCache:'none'})
+    .then(reg=>{ reg.update(); setInterval(()=>reg.update(), 10*60*1000); }).catch(()=>{});
+}
 
 
 async function boot(){
@@ -1533,6 +1562,7 @@ window.addEventListener('scroll',flashAll,{passive:true});
 
 $('btn-update').onclick=update;
 if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+{ const v=$('ver'); if(v) v.textContent='v'+APP_VER; }
 boot().then(()=>calcCacheSize());
 setTimeout(fitArea,300);
 </script>
