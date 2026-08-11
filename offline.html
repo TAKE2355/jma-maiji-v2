@@ -832,6 +832,10 @@ function subsOf(k){
 async function calcCacheSize(){
   try{
     const c=await caches.open(CACHE);
+    // 旧版で二重保存されたSHA固定URLのエントリを掃除
+    for(const k of await c.keys()){
+      if(/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[0-9a-f]{40}\//.test(k.url)) await c.delete(k);
+    }
     const ks=await c.keys();
     let n=0;
     for(const k of ks){
