@@ -8,6 +8,9 @@ jobs:
       - uses: actions/checkout@v4
       - run: pip install requests pillow img2pdf pymupdf
       - env:
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
           METAIR_USER: ${{ secrets.METAIR_USER }}
           METAIR_PASS: ${{ secrets.METAIR_PASS }}
         run: python probe_cb.py
