@@ -643,10 +643,17 @@
         },
         {
           "key": "hrpns",
-          "label": "高解像度降水",
+          "label": "高解像度降水・全国",
           "kind": "nowc",
           "step": 5,
           "frames": 24
+        },
+        {
+          "key": "thnc",
+          "label": "雷活動度・全国",
+          "kind": "thnc",
+          "step": 10,
+          "frames": 18
         },
         {
           "key": "wv",
