@@ -558,6 +558,13 @@ nav.cats button.pg{border-style:dashed;}
  border-radius:5px;padding:5px 9px;margin:0 5px 5px 0;font-size:12px;cursor:pointer;}
 .set-item.on{border-color:var(--danger);color:#fff;background:#2a1416;}
 .set-item input{accent-color:var(--danger);}
+
+.set-head{display:flex;align-items:center;gap:10px;margin:2px 4px 10px;}
+.set-hint{color:var(--sub);font-size:11.5px;}
+.set-page .grip{color:var(--sub);cursor:grab;font-size:15px;padding:0 2px;user-select:none;}
+.set-name.fixed{flex:1;min-width:0;font-size:13px;font-weight:700;padding:6px 2px;}
+#set-list .set-page.dragging{opacity:.5;outline:2px dashed var(--danger);}
+#set-list .set-page.dropzone{outline:2px solid var(--ok);}
 </style>
 </head>
 <body>
@@ -755,7 +762,7 @@ let catIdx=0, zoomIdx=-1, bulkPlaying=false;
 // レイアウトは上位タブ(カテゴリ)ごとに保存
 let LAYS={};
 try{ LAYS=JSON.parse(localStorage.getItem('nimbus_off_layouts')||'{}')||{}; }catch(e){}
-function curCatId(){ const k=MF&&MF.categories[catIdx]; return k?(k.id||k.label||('c'+catIdx)):'c0'; }
+function curCatId(){ const c=curTab(); return c? c.key : 'c0'; }
 function LAY(){
   const id=curCatId();
   if(!LAYS[id]) LAYS[id]={cols:3, rows:2, order:'row'};
@@ -862,7 +869,9 @@ function subsOf(k){
     (k.items||[]).map(o=>({label:o.label,kind:'still',file:o.file,caption:o.caption})),
     (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()}))
   );
-  return applyOrder(list, list.map(x=>x.label), _ord);
+  const hid=HIDDEN[k.id||k.label]||[];
+  const vis=list.filter(x=>hid.indexOf(x.label)<0);
+  return applyOrder(vis, vis.map(x=>x.label), _ord);
 }
 
 // ══ 描画 ═════════════════════════════════════════════════════════
@@ -888,17 +897,48 @@ async function calcCacheSize(){
 }
 
 
-// ══ ユーザー定義ページ ══════════════════════════════════════════
-let PAGES=[], selPage=-1, settingsOpen=false;
-try{ PAGES=JSON.parse(localStorage.getItem('nimbus_off_pages')||'[]')||[]; }catch(e){}
-const savePages=()=>{ try{ localStorage.setItem('nimbus_off_pages',JSON.stringify(PAGES)); }catch(e){} };
-const ikey=(c,l)=>c+''+l;
 
+// ══ タブ構成（既存カテゴリ＋ユーザーページ） ══════════════════════
+let PAGES=[], TABORD=[], HIDDEN={}, selKey=null, selEdit=null, settingsOpen=false;
+try{ PAGES=JSON.parse(localStorage.getItem('nimbus_off_pages')||'[]')||[]; }catch(e){}
+try{ TABORD=JSON.parse(localStorage.getItem('nimbus_off_taborder')||'[]')||[]; }catch(e){}
+try{ HIDDEN=JSON.parse(localStorage.getItem('nimbus_off_hidden')||'{}')||{}; }catch(e){}
+const savePages=()=>{ try{
+  localStorage.setItem('nimbus_off_pages',JSON.stringify(PAGES));
+  localStorage.setItem('nimbus_off_taborder',JSON.stringify(TABORD));
+  localStorage.setItem('nimbus_off_hidden',JSON.stringify(HIDDEN));
+}catch(e){} };
+
+function tabsAll(){
+  const cs=(MF?MF.categories:[]).map(k=>({t:'c',key:'c:'+(k.id||k.label),label:k.label,cat:k}));
+  const ps=PAGES.map(p=>({t:'p',key:'p:'+p.id,label:p.label||'ページ',page:p}));
+  let all=cs.concat(ps);
+  if(TABORD.length) all=applyOrder(all, all.map(x=>x.key), TABORD);
+  return all;
+}
+function curTab(){
+  const T=tabsAll();
+  return T.find(x=>x.key===selKey) || T[0] || null;
+}
+function setTab(key){
+  selKey=key; settingsOpen=false; zoomIdx=-1; GZ=1;
+  const g=$('grid'); if(g) g.style.width='100%';
+  render();
+}
+
+// 全画像の一覧（非表示も含む）
+function rawSubs(k){
+  if(!k||k.mode==='text') return [];
+  return [].concat(
+    (k.items||[]).map(o=>({label:o.label,kind:'still',file:o.file,caption:o.caption})),
+    (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()}))
+  );
+}
 function allImages(){
   const out=[];
   (MF?MF.categories:[]).forEach(k=>{
     if(k.mode==='text') return;
-    subsOf(k).forEach(s=>out.push({cat:(k.id||k.label), catLabel:k.label, label:s.label}));
+    rawSubs(k).forEach(s=>out.push({cat:(k.id||k.label),catLabel:k.label,label:s.label}));
   });
   return out;
 }
@@ -907,60 +947,84 @@ function pageSubs(p){
   (p.items||[]).forEach(it=>{
     const k=(MF?MF.categories:[]).find(c=>(c.id||c.label)===it.cat);
     if(!k) return;
-    const s=subsOf(k).find(x=>x.label===it.label);
-    if(s) res.push(Object.assign({},s,{label:it.label}));
+    const s=rawSubs(k).find(x=>x.label===it.label);
+    if(s) res.push(s);
   });
   return res;
 }
 function addPage(){
-  PAGES.push({id:'p'+Date.now(), label:'新しいページ', items:[]});
-  savePages(); selPage=PAGES.length-1; renderSettings();
+  PAGES.push({id:'p'+Date.now(),label:'新しいページ',items:[]});
+  TABORD=tabsAll().map(x=>x.key);
+  savePages(); selEdit='p:'+PAGES[PAGES.length-1].id; renderSettings(); render();
 }
-function delPage(i){ PAGES.splice(i,1); savePages(); if(selPage>=PAGES.length) selPage=PAGES.length-1; renderSettings(); render(); }
-function renamePage(i,v){ PAGES[i].label=v||('ページ'+(i+1)); savePages(); render(); }
-function togglePick(i,cat,label){
-  const p=PAGES[i]; if(!p) return;
-  const at=(p.items||[]).findIndex(x=>x.cat===cat&&x.label===label);
-  if(at>=0) p.items.splice(at,1); else (p.items=p.items||[]).push({cat,label});
+function delPage(id){
+  PAGES=PAGES.filter(p=>p.id!==id);
+  TABORD=TABORD.filter(k=>k!=='p:'+id);
+  if(selKey==='p:'+id) selKey=null;
+  savePages(); renderSettings(); render();
+}
+function renamePage(id,v){ const p=PAGES.find(x=>x.id===id); if(p){p.label=v||'ページ'; savePages(); render();} }
+function toggleItem(tabKey,cat,label){
+  if(tabKey.charAt(0)==='p'){
+    const p=PAGES.find(x=>'p:'+x.id===tabKey); if(!p) return;
+    const at=(p.items||[]).findIndex(x=>x.cat===cat&&x.label===label);
+    if(at>=0) p.items.splice(at,1); else (p.items=p.items||[]).push({cat,label});
+  }else{
+    const id=tabKey.slice(2);
+    const arr=HIDDEN[id]||(HIDDEN[id]=[]);
+    const at=arr.indexOf(label);
+    if(at>=0) arr.splice(at,1); else arr.push(label);
+  }
   savePages(); renderSettings(); render();
 }
 
 function renderSettings(){
   const el=$('settings'); if(!el) return;
+  const T=tabsAll();
   const imgs=allImages();
-  let h='<div class="set-head"><button class="btn" onclick="addPage()">＋ ページを追加</button></div>';
-  if(!PAGES.length){
-    h+='<p class="empty">ページを追加すると、好きな画像だけを集めたタブを作れます。<br>チェックした順番がタブの並び順になります（あとからドラッグで変更可）。</p>';
-  }
-  PAGES.forEach((p,i)=>{
-    const picked=(p.items||[]);
-    h+='<div class="set-page'+(i===selPage?' open':'')+'">'
-     + '<div class="set-row">'
-     +   '<input class="set-name" value="'+esc(p.label||'')+'" onchange="renamePage('+i+',this.value)">'
-     +   '<span class="set-cnt">'+picked.length+'枚</span>'
-     +   '<button class="set-del" onclick="delPage('+i+')">削除</button>'
-     +   '<button class="set-tg" onclick="selPage=(selPage==='+i+'?-1:'+i+');renderSettings()">'+(i===selPage?'閉じる':'編集')+'</button>'
+  let h='<div class="set-head"><button class="btn" onclick="addPage()">＋ ページを追加</button>'
+      + '<span class="set-hint">ドラッグで上位タブの順番を変更できます</span></div><div id="set-list">';
+  T.forEach(tb=>{
+    const isPage=tb.t==='p';
+    const open=(selEdit===tb.key);
+    const picked = isPage ? (tb.page.items||[]) : null;
+    const hid = !isPage ? (HIDDEN[tb.cat.id||tb.cat.label]||[]) : null;
+    const own = !isPage ? rawSubs(tb.cat) : [];
+    const cnt = isPage ? picked.length : (tb.cat.mode==='text' ? '—' : (own.length-hid.length));
+    h+='<div class="set-page'+(open?' open':'')+'" data-key="'+tb.key+'">'
+     + '<div class="set-row"><span class="grip">≡</span>'
+     + (isPage
+        ? '<input class="set-name" value="'+esc(tb.label)+'" onchange="renamePage(\''+tb.page.id+'\',this.value)">'
+        : '<span class="set-name fixed">'+esc(tb.label)+'</span>')
+     + '<span class="set-cnt">'+cnt+(isPage||tb.cat.mode!=='text'?'枚':'')+'</span>'
+     + (isPage?'<button class="set-del" onclick="delPage(\''+tb.page.id+'\')">削除</button>':'')
+     + (tb.t==='c'&&tb.cat.mode==='text' ? '' :
+        '<button class="set-tg" onclick="selEdit=(selEdit===\''+tb.key+'\'?null:\''+tb.key+'\');renderSettings()">'+(open?'閉じる':'編集')+'</button>')
      + '</div>';
-    if(i===selPage){
-      if(picked.length){
+    if(open){
+      if(isPage && picked.length)
         h+='<div class="set-order">'+picked.map((x,n)=>'<span class="ord">'+(n+1)+'. '+esc(x.label)+'</span>').join('')+'</div>';
-      }
+      const list = isPage ? imgs : own.map(s=>({cat:(tb.cat.id||tb.cat.label),catLabel:tb.cat.label,label:s.label}));
       let cur='';
       h+='<div class="set-list">';
-      imgs.forEach(im=>{
-        if(im.catLabel!==cur){ cur=im.catLabel; h+='<div class="set-cat">'+esc(cur)+'</div>'; }
-        const on=picked.some(x=>x.cat===im.cat&&x.label===im.label);
+      list.forEach(im=>{
+        if(isPage && im.catLabel!==cur){ cur=im.catLabel; h+='<div class="set-cat">'+esc(cur)+'</div>'; }
+        const on = isPage ? picked.some(x=>x.cat===im.cat&&x.label===im.label) : (hid.indexOf(im.label)<0);
         h+='<label class="set-item'+(on?' on':'')+'">'
-         + '<input type="checkbox" '+(on?'checked':'')+' onchange="togglePick('+i+',\''+im.cat.replace(/'/g,"\\'")+'\',\''+im.label.replace(/'/g,"\\'")+'\')">'
+         + '<input type="checkbox" '+(on?'checked':'')+' onchange="toggleItem(\''+tb.key+'\',\''+im.cat.replace(/'/g,"\\'")+'\',\''+im.label.replace(/'/g,"\\'")+'\')">'
          + '<span>'+esc(im.label)+'</span></label>';
       });
       h+='</div>';
     }
     h+='</div>';
   });
+  h+='</div>';
   el.innerHTML=h;
+  enableDrag($('set-list'),'.set-page',(from,to)=>{
+    const keys=tabsAll().map(x=>x.key);
+    TABORD=moveItem(keys,from,to); savePages(); renderSettings(); render();
+  });
 }
-function openSettings(){ settingsOpen=true; render(); }
 
 function render(){
   if(!MF) return;
@@ -970,12 +1034,17 @@ function render(){
   const cs=MF.categories;
   const ordered=applyOrder(cs, cs.map(c=>c.id||c.label), CATORD);
   if(ordered.some((c,i)=>c!==cs[i])) MF.categories=ordered;
+  const T=tabsAll();
+  const cur=curTab(); if(cur) selKey=cur.key;
   $('cats').innerHTML='<button id="gear" class="'+(settingsOpen?'active':'')+'" title="ページ設定">&#9881;</button>'
-    + MF.categories.map((k,i)=>
-      '<button class="'+((!settingsOpen&&pageIdx<0&&i===catIdx)?'active':'')+'" onclick="setCat('+i+')">'+esc(k.label)+'</button>').join('')
-    + PAGES.map((p,i)=>
-      '<button class="pg'+((!settingsOpen&&pageIdx===i)?' active':'')+'" onclick="setPage('+i+')">'+esc(p.label||('ページ'+(i+1)))+'</button>').join('');
+    + T.map(tb=>'<button class="'+(tb.t==='p'?'pg ':'')+((!settingsOpen&&tb.key===selKey)?'active':'')
+        +'" onclick="setTab(\''+tb.key+'\')">'+esc(tb.label)+'</button>').join('');
   $('gear').onclick=()=>{ settingsOpen=!settingsOpen; render(); };
+  enableDrag($('cats'),'button',(from,to)=>{
+    if(from===0||to===0) return;                 // ⚙は固定
+    const keys=T.map(x=>x.key);
+    TABORD=moveItem(keys,from-1,to-1); savePages(); render();
+  });
   enableDrag($('cats'),'button',(from,to)=>{
     MF.categories=moveItem(MF.categories,from,to);
     CATORD=MF.categories.map(c=>c.id||c.label);
@@ -988,8 +1057,8 @@ function render(){
     renderSettings(); fitArea(); return;
   }
   $('settings').style.display='none'; $('gwrap').style.display='';
-  const k=(pageIdx>=0)? {label:(PAGES[pageIdx]||{}).label, __page:PAGES[pageIdx]} : (MF.categories[catIdx]||{});
-  const subs=(pageIdx>=0)? pageSubs(PAGES[pageIdx]||{items:[]}) : subsOf(k);
+  const k=(cur&&cur.t==='c')? cur.cat : {label:(cur?cur.label:''),mode:'series'};
+  const subs=(cur&&cur.t==='p')? pageSubs(cur.page) : subsOf(k);
 
   if(k.mode==='text'){
     $('subs').innerHTML=subs.length>1
@@ -1017,15 +1086,16 @@ function render(){
     + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
     + '</span>';
   enableDrag($('subs'),'button.sb',(from,to)=>{
-    if(pageIdx>=0){
-      const p=PAGES[pageIdx];
+    const _c=curTab();
+    if(_c&&_c.t==='p'){
+      const p=_c.page;
       p.items=moveItem(p.items||[],from,to); savePages();
       if(zoomIdx===from) zoomIdx=to; else if(from<zoomIdx&&to>=zoomIdx) zoomIdx--; else if(from>zoomIdx&&to<=zoomIdx) zoomIdx++;
       render(); return;
     }
-    const k2=MF.categories[catIdx]; const key=k2.id||k2.label;
-    const cur=subsOf(k2).map(x=>x.label);
-    ORD[key]=moveItem(cur,from,to);
+    const k2=(_c&&_c.cat)||{}; const key=k2.id||k2.label;
+    const now=subsOf(k2).map(x=>x.label);
+    ORD[key]=moveItem(now,from,to);
     if(zoomIdx===from) zoomIdx=to; else if(from<zoomIdx&&to>=zoomIdx) zoomIdx--; else if(from>zoomIdx&&to<=zoomIdx) zoomIdx++;
     saveOrd(); render();
   });
@@ -1127,9 +1197,7 @@ function toggleBulk(){
   $('bulk').classList.toggle('playing',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
-let pageIdx=-1;
-function setCat(i){ catIdx=i; pageIdx=-1; settingsOpen=false; zoomIdx=-1; GZ=1; const g=$('grid'); if(g) g.style.width='100%'; render(); }
-function setPage(i){ pageIdx=i; settingsOpen=false; zoomIdx=-1; GZ=1; const g=$('grid'); if(g) g.style.width='100%'; render(); }
+
 function setZoom(i){ zoomIdx=(zoomIdx===i? -1 : i); render(); }
 
 // 画面の残り高さにグリッドを収める
