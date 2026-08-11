@@ -1,0 +1,13 @@
+name: PROBE
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests pillow img2pdf pymupdf
+      - env:
+          METAIR_USER: ${{ secrets.METAIR_USER }}
+          METAIR_PASS: ${{ secrets.METAIR_PASS }}
+        run: python probe_cb.py
