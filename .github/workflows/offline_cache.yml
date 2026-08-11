@@ -46,3 +46,17 @@ jobs:
               commit -q -m "offline cache $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" offline-cache
           echo "pushed: $(ls | wc -l) files"
+          echo "SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Publish cache version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name  "nimbus-offline"
+          git config user.email "nimbus@local"
+          echo "$SHA" > cache-ver.txt
+          git add cache-ver.txt
+          git commit -q -m "chore: cache version $SHA" || exit 0
+          git pull --rebase -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main || true
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
