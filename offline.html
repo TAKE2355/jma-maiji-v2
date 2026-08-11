@@ -565,6 +565,17 @@ nav.cats button.pg{border-style:dashed;}
 .set-name.fixed{flex:1;min-width:0;font-size:13px;font-weight:700;padding:6px 2px;}
 #set-list .set-page.dragging{opacity:.5;outline:2px dashed var(--danger);}
 #set-list .set-page.dropzone{outline:2px solid var(--ok);}
+
+.set-tabs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:4px 4px 12px;
+ border-bottom:1px solid var(--line);margin-bottom:12px;}
+.set-tabs .st{background:var(--card);color:var(--sub);border:1px solid var(--line);border-radius:5px;
+ padding:6px 12px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;}
+.set-tabs .st.pg{border-style:dashed;}
+.set-tabs .st.active{background:var(--danger);border-color:var(--danger);color:#fff;}
+.set-tabs .btn.add{margin-left:6px;padding:6px 12px;font-size:12.5px;}
+.set-body{padding:0 4px;}
+.set-body .set-row{padding:0 0 10px;}
+#gear{font-size:15px;margin-left:4px;}
 </style>
 </head>
 <body>
@@ -958,6 +969,8 @@ function addPage(){
   savePages(); selEdit='p:'+PAGES[PAGES.length-1].id; renderSettings(); render();
 }
 function delPage(id){
+  const p=PAGES.find(x=>x.id===id);
+  if(!confirm('ページ「'+((p&&p.label)||'')+'」を削除します。よろしいですか？')) return;
   PAGES=PAGES.filter(p=>p.id!==id);
   TABORD=TABORD.filter(k=>k!=='p:'+id);
   if(selKey==='p:'+id) selKey=null;
@@ -982,48 +995,50 @@ function renderSettings(){
   const el=$('settings'); if(!el) return;
   const T=tabsAll();
   const imgs=allImages();
-  let h='<div class="set-head"><button class="btn" onclick="addPage()">＋ ページを追加</button>'
-      + '<span class="set-hint">ドラッグで上位タブの順番を変更できます</span></div><div id="set-list">';
-  T.forEach(tb=>{
+  if(!selEdit || !T.some(t=>t.key===selEdit)) selEdit=(T[0]&&T[0].key)||null;
+  const tb=T.find(t=>t.key===selEdit);
+
+  // 上段：ページ一覧（左→右）＋ 追加ボタン
+  let h='<div class="set-tabs">'
+    + T.map(t=>'<button class="st'+(t.key===selEdit?' active':'')+(t.t==='p'?' pg':'')
+        +'" onclick="selEdit=\''+t.key+'\';renderSettings()">'+esc(t.label)+'</button>').join('')
+    + '<button class="btn add" onclick="addPage()">＋ページ追加</button></div>';
+
+  // 下段：編集画面
+  h+='<div class="set-body">';
+  if(tb){
     const isPage=tb.t==='p';
-    const open=(selEdit===tb.key);
-    const picked = isPage ? (tb.page.items||[]) : null;
-    const hid = !isPage ? (HIDDEN[tb.cat.id||tb.cat.label]||[]) : null;
-    const own = !isPage ? rawSubs(tb.cat) : [];
-    const cnt = isPage ? picked.length : (tb.cat.mode==='text' ? '—' : (own.length-hid.length));
-    h+='<div class="set-page'+(open?' open':'')+'" data-key="'+tb.key+'">'
-     + '<div class="set-row"><span class="grip">≡</span>'
+    const picked=isPage?(tb.page.items||[]):null;
+    const hid=!isPage?(HIDDEN[tb.cat.id||tb.cat.label]||[]):null;
+    const own=!isPage?rawSubs(tb.cat):[];
+    h+='<div class="set-row">'
      + (isPage
         ? '<input class="set-name" value="'+esc(tb.label)+'" onchange="renamePage(\''+tb.page.id+'\',this.value)">'
         : '<span class="set-name fixed">'+esc(tb.label)+'</span>')
-     + '<span class="set-cnt">'+cnt+(isPage||tb.cat.mode!=='text'?'枚':'')+'</span>'
-     + (isPage?'<button class="set-del" onclick="delPage(\''+tb.page.id+'\')">削除</button>':'')
-     + (tb.t==='c'&&tb.cat.mode==='text' ? '' :
-        '<button class="set-tg" onclick="selEdit=(selEdit===\''+tb.key+'\'?null:\''+tb.key+'\');renderSettings()">'+(open?'閉じる':'編集')+'</button>')
+     + '<span class="set-cnt">'+(isPage?picked.length:(tb.cat.mode==='text'?'—':own.length-hid.length))+(isPage||tb.cat.mode!=='text'?'枚':'')+'</span>'
+     + (isPage?'<button class="set-del" onclick="delPage(\''+tb.page.id+'\')">このページを削除</button>':'')
      + '</div>';
-    if(open){
+    if(tb.t==='c' && tb.cat.mode==='text'){
+      h+='<p class="empty">METAR/TAF は表示項目の設定がありません。</p>';
+    }else{
       if(isPage && picked.length)
         h+='<div class="set-order">'+picked.map((x,n)=>'<span class="ord">'+(n+1)+'. '+esc(x.label)+'</span>').join('')+'</div>';
-      const list = isPage ? imgs : own.map(s=>({cat:(tb.cat.id||tb.cat.label),catLabel:tb.cat.label,label:s.label}));
+      const list=isPage?imgs:own.map(s=>({cat:(tb.cat.id||tb.cat.label),catLabel:tb.cat.label,label:s.label}));
       let cur='';
       h+='<div class="set-list">';
       list.forEach(im=>{
         if(isPage && im.catLabel!==cur){ cur=im.catLabel; h+='<div class="set-cat">'+esc(cur)+'</div>'; }
-        const on = isPage ? picked.some(x=>x.cat===im.cat&&x.label===im.label) : (hid.indexOf(im.label)<0);
+        const on=isPage?picked.some(x=>x.cat===im.cat&&x.label===im.label):(hid.indexOf(im.label)<0);
         h+='<label class="set-item'+(on?' on':'')+'">'
          + '<input type="checkbox" '+(on?'checked':'')+' onchange="toggleItem(\''+tb.key+'\',\''+im.cat.replace(/'/g,"\\'")+'\',\''+im.label.replace(/'/g,"\\'")+'\')">'
          + '<span>'+esc(im.label)+'</span></label>';
       });
       h+='</div>';
+      if(isPage) h+='<p class="empty">チェックした順番が下位タブの並びになります。あとからタブをドラッグして変更できます。</p>';
     }
-    h+='</div>';
-  });
+  }
   h+='</div>';
   el.innerHTML=h;
-  enableDrag($('set-list'),'.set-page',(from,to)=>{
-    const keys=tabsAll().map(x=>x.key);
-    TABORD=moveItem(keys,from,to); savePages(); renderSettings(); render();
-  });
 }
 
 function render(){
@@ -1036,14 +1051,14 @@ function render(){
   if(ordered.some((c,i)=>c!==cs[i])) MF.categories=ordered;
   const T=tabsAll();
   const cur=curTab(); if(cur) selKey=cur.key;
-  $('cats').innerHTML='<button id="gear" class="'+(settingsOpen?'active':'')+'" title="ページ設定">&#9881;</button>'
-    + T.map(tb=>'<button class="'+(tb.t==='p'?'pg ':'')+((!settingsOpen&&tb.key===selKey)?'active':'')
-        +'" onclick="setTab(\''+tb.key+'\')">'+esc(tb.label)+'</button>').join('');
+  $('cats').innerHTML=T.map(tb=>'<button class="'+(tb.t==='p'?'pg ':'')+((!settingsOpen&&tb.key===selKey)?'active':'')
+        +'" onclick="setTab(\''+tb.key+'\')">'+esc(tb.label)+'</button>').join('')
+    + '<button id="gear" class="'+(settingsOpen?'active':'')+'" title="ページ設定">&#9881;</button>';
   $('gear').onclick=()=>{ settingsOpen=!settingsOpen; render(); };
   enableDrag($('cats'),'button',(from,to)=>{
-    if(from===0||to===0) return;                 // ⚙は固定
-    const keys=T.map(x=>x.key);
-    TABORD=moveItem(keys,from-1,to-1); savePages(); render();
+    const n=T.length;
+    if(from>=n||to>=n) return;                   // ⚙(末尾)は固定
+    TABORD=moveItem(T.map(x=>x.key),from,to); savePages(); render();
   });
   enableDrag($('cats'),'button',(from,to)=>{
     MF.categories=moveItem(MF.categories,from,to);
