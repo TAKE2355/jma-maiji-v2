@@ -678,7 +678,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='1fht1gs-260811';
+const APP_VER='e9brnh-260811';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -705,17 +705,23 @@ const BASE='https://raw.githubusercontent.com/TAKE2355/jma-maiji-v2/offline-cach
 // コミットSHA固定のURLを解決して確実に最新を取得する（キャッシュの保存キーはBASEのまま）
 const REPO='TAKE2355/jma-maiji-v2';
 async function freshBase(){
+  // ① 同一オリジンの cache-ver.txt（GitHub Pages）から最新SHAを取得
+  //    GitHub APIに依存しないので、未認証の回数制限に引っかからない
+  try{
+    const r=await fetch('cache-ver.txt?cb='+Date.now(),{cache:'no-store'});
+    if(r.ok){
+      const sha=(await r.text()).trim();
+      if(/^[0-9a-f]{40}$/.test(sha)) return 'https://raw.githubusercontent.com/'+REPO+'/'+sha+'/';
+    }
+  }catch(e){}
+  // ② PATがあればGitHub APIで解決
   try{
     let h={};
-    try{ const c=JSON.parse(localStorage.getItem('metair_v2')||'{}');
-         if(c.pat) h={'Authorization':'token '+c.pat}; }catch(e){}
-    const r=await fetch('https://api.github.com/repos/'+REPO+'/branches/offline-cache',
-                        {headers:h, cache:'no-store'});
-    if(!r.ok) return BASE;
-    const b=await r.json();
-    const sha=b&&b.commit&&b.commit.sha;
-    return sha ? ('https://raw.githubusercontent.com/'+REPO+'/'+sha+'/') : BASE;
-  }catch(e){ return BASE; }
+    try{ const c=JSON.parse(localStorage.getItem('metair_v2')||'{}'); if(c.pat) h={'Authorization':'token '+c.pat}; }catch(e){}
+    const r=await fetch('https://api.github.com/repos/'+REPO+'/branches/offline-cache',{headers:h,cache:'no-store'});
+    if(r.ok){ const b=await r.json(); const sha=b&&b.commit&&b.commit.sha; if(sha) return 'https://raw.githubusercontent.com/'+REPO+'/'+sha+'/'; }
+  }catch(e){}
+  return BASE;
 }
 
 const CACHE='nimbus-offline-v1';
