@@ -1,4 +1,4 @@
-import re, json, requests
+import re, requests
 import metair_all_mail_v2 as M
 Q, A, E = chr(63), chr(38), chr(61)
 def san(s):
@@ -13,18 +13,16 @@ vs = re.search(r'name="javax\.faces\.ViewState"[^>]+value="([^"]+)"', r0.text)
 s.post(M.METAIR_LOGIN_URL, data={"loginForm":"loginForm","loginForm:username":M.METAIR_USER,
    "loginForm:password":M.METAIR_PASS,"loginForm:doLogin":"\u30ed\u30b0\u30a4\u30f3",
    "loginForm:forceflg":"true","javax.faces.ViewState":vs.group(1)}, timeout=25)
-u = B + "/metair/ajax/CSA003/ajaxUpdate" + Q + "did1" + E + "CSA003" + A + "did2" + E + "CSA003_KUMO" + A + "lastDate" + E
-j = s.get(u, timeout=25).json()
-ds = j.get("dataSet") or []
-print("NSETS", len(ds))
-for i, arr in enumerate(ds):
-    dirs = sorted(set(re.findall(r"/pict/[a-z/]+/", " ".join(x.get("fname","") for x in arr))))
-    pfx  = sorted(set(re.findall(r"([A-Z]{4}[0-9]{2})_RJTD", " ".join(x.get("fname","") for x in arr))))
-    print("SET", i, "n=" + str(len(arr)), [san(d) for d in dirs], pfx,
-          (arr[0]["date"] if arr else ""), (arr[-1]["date"] if arr else ""))
-# 認証なしで取得できるか確認
-if ds and ds[0]:
-    for k in (0, 1):
-        f = ds[0][k]["fname"]
-        rr = requests.get(B + f, headers=M.METAIR_HEADERS, timeout=20)
-        print("PUB", san(f)[-34:], rr.status_code, len(rr.content))
+for u in [B + "/metair/view/winKobetsu/CSA003.html" + Q + "csid" + E + "CSA003_KUMO" + A + "type" + E + "2",
+          B + "/metair/ajax/CSA003/ajaxInit" + Q + "did1" + E + "CSA003" + A + "did2" + E + "CSA003_KUMO"]:
+    try:
+        t = s.get(u, timeout=25).text
+        print("SRC", san(u)[-40:], len(t))
+        for m in re.finditer(r"<option[^>]*>[^<]*</option>", t):
+            print("  OPT:", san(m.group(0))[:140])
+        for w in ["積乱雲", "雲頂", "可視", "赤外", "水蒸気"]:
+            for m in re.finditer(w, t):
+                print("  W:", w, san(t[max(0,m.start()-120):m.start()+120])[:240])
+                break
+    except Exception as e:
+        print("ERR", san(u)[-40:], e)
