@@ -22,12 +22,12 @@ self.addEventListener('fetch', e => {
                || url.hostname === 'fonts.gstatic.com'
                || (url.origin === self.location.origin &&
                    (url.pathname.includes('/assets/') ||
-                    url.pathname.endsWith('offline.html') ||
+                    url.pathname.endsWith('offline.html') || url.pathname.endsWith('app.html') ||
                     url.pathname.endsWith('sw-offline.js')));
   if (!isAsset) return;
 
   const isShell = url.origin === self.location.origin &&
-                  (url.pathname.endsWith('offline.html') || url.pathname.endsWith('sw-offline.js'));
+                  (url.pathname.endsWith('offline.html') || url.pathname.endsWith('app.html') || url.pathname.endsWith('sw-offline.js'));
 
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
