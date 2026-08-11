@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0e1012">
 <title>NIMBUS OFFLINE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -35,6 +35,7 @@ nav.cats button.active,.subs button.sb.active{background:var(--danger);border-co
  border-right:1px solid var(--line);margin-right:3px;}
 .tools button{background:#2f353c;border:1px solid var(--line);color:var(--text);border-radius:5px;
  width:34px;height:28px;font-size:14px;font-family:inherit;cursor:pointer;}
+.ovl button, .tools.left button{cursor:pointer;font-family:inherit;}
 
 .tools button.tg{width:auto;min-width:34px;padding:0 8px;font-size:11.5px;font-weight:700;}
 .tools{display:flex;gap:5px;align-items:center;flex:0 0 auto;}
@@ -46,9 +47,7 @@ nav.cats button.active,.subs button.sb.active{background:var(--danger);border-co
 
 /* 画像エリア */
 main{padding:2px;}
-#gwrap{overflow:auto;overscroll-behavior:contain;}
-#grid{display:grid;gap:2px;align-content:start;align-items:start;grid-auto-rows:min-content;
- transform-origin:0 0;will-change:transform;}
+#grid{display:grid;gap:2px;overflow-y:auto;overscroll-behavior:contain;align-content:start;align-items:start;grid-auto-rows:min-content;}
 .tile{position:relative;background:#000;border:0;border-radius:3px;overflow:hidden;
  display:block;line-height:0;cursor:zoom-in;}
 #grid.zoom .tile{cursor:zoom-out;}
@@ -56,8 +55,8 @@ main{padding:2px;}
 #grid.zoom .tile img{width:auto;max-width:100%;max-height:100%;margin:0 auto;}
 #grid.zoom .tile{display:flex;align-items:center;justify-content:center;}
 .tile .tag{position:absolute;left:0;top:0;background:rgba(0,0,0,.72);color:#ffd76a;font-weight:800;
- font-size:16px;letter-spacing:.04em;padding:3px 10px;border-bottom-right-radius:8px;pointer-events:none;
- opacity:0;transition:opacity .45s;text-shadow:0 1px 3px #000;}
+ font-size:16px;line-height:1.5;letter-spacing:.04em;padding:6px 12px 6px;border-bottom-right-radius:8px;
+ pointer-events:none;opacity:0;transition:opacity .45s;text-shadow:0 1px 3px #000;white-space:nowrap;}
 .tile.tagon .tag{opacity:1;}
 @media (max-width:640px){ .tile .tag{font-size:13px;padding:2px 8px;} }
 .ovl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;
@@ -66,9 +65,18 @@ main{padding:2px;}
 .tile.act .ovl{opacity:1;pointer-events:auto;}
 .ovl button{background:rgba(30,34,39,.9);border:1px solid #3a4048;color:#fff;border-radius:4px;
  width:28px;height:24px;font-size:11px;font-family:inherit;cursor:pointer;padding:0;}
-.ovl button.p, .tools button#bulk{background:rgba(18,20,23,.92);border-color:#3a4048;color:var(--danger);
- font-size:13px;line-height:1;}
-.ovl button.p.playing, .tools button#bulk.playing{background:#000;border-color:#000;color:#fff;}
+/* 再生UI（テスラ調：フラット・細い枠・余計な装飾なし） */
+.ovl button, .tools.left button{
+  background:rgba(10,12,14,.72); border:1px solid rgba(255,255,255,.20); color:#eceff2;
+  border-radius:3px; width:36px; height:26px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  transition:background .15s, border-color .15s, color .15s;
+}
+.ovl button:hover, .tools.left button:hover{ border-color:rgba(255,255,255,.45); background:rgba(20,24,28,.85); }
+.ovl button:active, .tools.left button:active{ background:rgba(255,255,255,.14); }
+.ovl button.p, .tools.left button#bulk{ color:var(--danger); }
+.ovl button.p.playing, .tools.left button#bulk.playing{ background:#000; border-color:rgba(255,255,255,.35); color:#fff; }
 .ovl .cap{color:#dfe3e7;font-size:10.5px;font-variant-numeric:tabular-nums;margin-left:auto;
  white-space:nowrap;text-shadow:0 1px 2px #000;}
 
@@ -553,7 +561,7 @@ header{padding:5px 8px;gap:8px;}
 <div class="subs" id="subs"></div>
 <main>
   <pre id="textview"></pre>
-  <div id="gwrap"><div id="grid"></div></div>
+  <div id="grid"></div>
   <div class="empty" id="empty">「最新データ取得」を押すと画像を端末に保存します。<br>
   一度取得すれば、通信が無い環境でも表示できます。</div>
 </main>
@@ -669,6 +677,12 @@ function LAY(){
 }
 const saveLay=()=>{ try{ localStorage.setItem('nimbus_off_layouts',JSON.stringify(LAYS)); }catch(e){} };
 
+const ICO={
+  first:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h2v14H7z"/><path d="M20 5v14L9.5 12z"/></svg>',
+  last:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg>',
+  play:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+  pause:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z"/></svg>'
+};
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function tsLabel(ts){
   if(!ts||ts.length<12) return '';
@@ -714,9 +728,9 @@ function render(){
   $('subs').style.display='flex';
   $('subs').innerHTML =
     '<span class="tools left">'
-    + '<button id="b-first" title="全画像を最古へ">&#9198;</button>'
-    + '<button id="bulk" title="全画像を再生／停止">'+(bulkPlaying?'&#9208;':'&#9654;')+'</button>'
-    + '<button id="b-last" title="全画像を最新へ">&#9197;</button>'
+    + '<button id="b-first" title="全画像を最古へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h2v14H7z"/><path d="M20 5v14L9.5 12z"/></svg></button>'
+    + '<button id="bulk" title="全画像を再生／停止" class="'+(bulkPlaying?'playing':'')+'">'+(bulkPlaying?ICO.pause:ICO.play)+'</button>'
+    + '<button id="b-last" title="全画像を最新へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg></button>'
     + '</span>'
     + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
     + '<span class="tools right">'
@@ -749,8 +763,8 @@ function buildGrid(subs){
     + '<div class="tag">'+esc(s.label)+'</div>'
     + '<img alt="">'
     + (s.kind==='series' && (s.frames||[]).length>1
-       ? '<div class="ovl"><button class="fs">&#9198;</button><button class="p">&#9654;</button>'
-         +'<button class="ls">&#9197;</button><span class="cap"></span></div>' : '')
+       ? '<div class="ovl"><button class="fs">'+ICO.first+'</button><button class="p">'+ICO.play+'</button>'
+         +'<button class="ls">'+ICO.last+'</button><span class="cap"></span></div>' : '')
     + '</div>').join('');
 
   [...g.children].forEach((el,i)=>{
@@ -808,17 +822,17 @@ function play(t){
   const n=(t.s.frames||[]).length; if(n<2) return;
   if(t.idx>=n-1) t.idx=0;
   show(t);
-  if(t.play){ t.play.innerHTML='&#9208;'; t.play.classList.add('playing'); }
+  if(t.play){ t.play.innerHTML=ICO.pause; t.play.classList.add('playing'); }
   t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },220);
 }
 function stop(t){
   if(t.timer){clearInterval(t.timer);t.timer=null;}
-  if(t.play){ t.play.innerHTML='&#9654;'; t.play.classList.remove('playing'); }
+  if(t.play){ t.play.innerHTML=ICO.play; t.play.classList.remove('playing'); }
 }
 function togglePlay(t){ t.timer?stop(t):play(t); }
 function toggleBulk(){
   bulkPlaying=!bulkPlaying;
-  $('bulk').innerHTML=bulkPlaying?'&#9208;':'&#9654;';
+  $('bulk').innerHTML=bulkPlaying?ICO.pause:ICO.play;
   $('bulk').classList.toggle('playing',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
@@ -831,43 +845,14 @@ function fitArea(){
   const used=(hd?hd.offsetHeight:0)+(ct?ct.offsetHeight:0)
             +(sb&&getComputedStyle(sb).display!=='none'?sb.offsetHeight:0)+16;
   const h=Math.max(200, window.innerHeight-used);
-  const w=$('gwrap');
-  if(w){ w.style.height=h+'px'; }
   $('grid').style.height = (zoomIdx>=0)? h+'px' : '';
+  $('grid').style.maxHeight = h+'px';
   $('textview').style.maxHeight=h+'px';
   [...$('grid').children].forEach(el=>{ el.style.height = (zoomIdx>=0)? h+'px' : ''; });
 }
 window.addEventListener('resize',fitArea);
 
-// ── 画像エリアだけを拡大縮小（ヘッダ・タブは固定） ──
-let GZ=1;
-function applyZoom(){
-  const g=$('grid');
-  g.style.transform='scale('+GZ+')';
-  g.style.width=(100/GZ)+'%';
-}
-function setZoomLevel(z){ GZ=Math.min(5,Math.max(1,z)); applyZoom(); showTags(); }
-(function(){
-  const w=$('gwrap'); if(!w) return;
-  w.addEventListener('wheel',e=>{
-    if(!(e.ctrlKey||e.metaKey)) return;
-    e.preventDefault();
-    setZoomLevel(GZ*(e.deltaY<0?1.12:0.89));
-  },{passive:false});
-  let d0=0,z0=1;
-  w.addEventListener('touchstart',e=>{
-    if(e.touches.length!==2) return;
-    d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    z0=GZ;
-  },{passive:true});
-  w.addEventListener('touchmove',e=>{
-    if(e.touches.length!==2||!d0) return;
-    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    setZoomLevel(z0*d/d0);
-  },{passive:true});
-  w.addEventListener('touchend',()=>{ d0=0; },{passive:true});
-  w.addEventListener('dblclick',()=>setZoomLevel(GZ>1?1:2));
-})();
+
 
 $('btn-update').onclick=update;
 boot();
