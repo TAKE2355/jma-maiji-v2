@@ -533,7 +533,7 @@ header{padding:5px 8px;gap:8px;}
 button.dragging{background:var(--danger)!important;border-color:var(--danger)!important;color:#fff!important;opacity:.7;}
 .dropzone{outline:2px solid var(--ok);outline-offset:-2px;}
 button.dropzone{background:#1d3b2a!important;border-color:var(--ok)!important;color:#fff!important;}
-.tile,.sb,nav.cats button{touch-action:pan-y;}
+/* ピンチズームを妨げないよう touch-action は既定のまま。ドラッグ中のみJSで抑止する */
 </style>
 </head>
 <body>
@@ -765,9 +765,11 @@ function enableDrag(container, selector, onDrop){
   let src=null, moved=false;
   const items=()=>[...container.querySelectorAll(selector)];
   container.addEventListener('pointerdown', e=>{
+    if(e.isPrimary===false || (e.pointerType==='touch' && e.pressure===0 && e.width>50)) return;
     const el=e.target.closest(selector);
     if(!el || e.target.closest('.ovl') || e.target.closest('select')) return;
     src=el; moved=false;
+    el.style.touchAction='none';
     el.setPointerCapture && el.setPointerCapture(e.pointerId);
   });
   container.addEventListener('pointermove', e=>{
@@ -788,7 +790,7 @@ function enableDrag(container, selector, onDrop){
       const el=document.elementFromPoint(e.clientX,e.clientY);
       target=el&&el.closest(selector);
     }
-    items().forEach(x=>x.classList.remove('dragging','dropzone'));
+    items().forEach(x=>{x.classList.remove('dragging','dropzone'); x.style.touchAction='';});
     const s=src; src=null; moved=false;
     if(wasMoved && target && target!==s){
       clickSound(false);
@@ -797,7 +799,7 @@ function enableDrag(container, selector, onDrop){
   };
   container.addEventListener('pointerup', finish);
   container.addEventListener('pointercancel', ()=>{ 
-    items().forEach(x=>x.classList.remove('dragging','dropzone')); src=null; moved=false; });
+    items().forEach(x=>{x.classList.remove('dragging','dropzone'); x.style.touchAction='';}); src=null; moved=false; });
 }
 function moveItem(arr,from,to){ if(from<0||to<0||from===to) return arr; const a=arr.slice(); const [x]=a.splice(from,1); a.splice(to,0,x); return a; }
 
