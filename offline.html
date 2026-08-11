@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0e1012">
 <title>NIMBUS OFFLINE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -35,7 +35,7 @@ nav.cats button.active,.subs button.sb.active{background:var(--danger);border-co
  border-right:1px solid var(--line);margin-right:3px;}
 .tools button{background:#2f353c;border:1px solid var(--line);color:var(--text);border-radius:5px;
  width:34px;height:28px;font-size:14px;font-family:inherit;cursor:pointer;}
-.tools button.on{background:var(--danger);border-color:var(--danger);color:#fff;}
+
 .tools button.tg{width:auto;min-width:34px;padding:0 8px;font-size:11.5px;font-weight:700;}
 .tools{display:flex;gap:5px;align-items:center;flex:0 0 auto;}
 .tools.left{border-right:1px solid var(--line);padding-right:6px;margin-right:3px;}
@@ -46,22 +46,29 @@ nav.cats button.active,.subs button.sb.active{background:var(--danger);border-co
 
 /* 画像エリア */
 main{padding:2px;}
-#grid{display:grid;gap:2px;overflow-y:auto;overscroll-behavior:contain;align-content:start;align-items:start;grid-auto-rows:min-content;}
+#gwrap{overflow:auto;overscroll-behavior:contain;}
+#grid{display:grid;gap:2px;align-content:start;align-items:start;grid-auto-rows:min-content;
+ transform-origin:0 0;will-change:transform;}
 .tile{position:relative;background:#000;border:0;border-radius:3px;overflow:hidden;
  display:block;line-height:0;cursor:zoom-in;}
 #grid.zoom .tile{cursor:zoom-out;}
 .tile img{width:100%;height:auto;display:block;}
 #grid.zoom .tile img{width:auto;max-width:100%;max-height:100%;margin:0 auto;}
 #grid.zoom .tile{display:flex;align-items:center;justify-content:center;}
-.tile .tag{position:absolute;left:0;top:0;background:rgba(0,0,0,.62);color:#ffd76a;font-weight:700;
- font-size:11px;padding:2px 7px;border-bottom-right-radius:6px;pointer-events:none;}
+.tile .tag{position:absolute;left:0;top:0;background:rgba(0,0,0,.72);color:#ffd76a;font-weight:800;
+ font-size:16px;letter-spacing:.04em;padding:3px 10px;border-bottom-right-radius:8px;pointer-events:none;
+ opacity:0;transition:opacity .45s;text-shadow:0 1px 3px #000;}
+.tile.tagon .tag{opacity:1;}
+@media (max-width:640px){ .tile .tag{font-size:13px;padding:2px 8px;} }
 .ovl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;
  padding:5px 7px;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,0));
  opacity:0;transition:opacity .35s;pointer-events:none;}
 .tile.act .ovl{opacity:1;pointer-events:auto;}
 .ovl button{background:rgba(30,34,39,.9);border:1px solid #3a4048;color:#fff;border-radius:4px;
  width:28px;height:24px;font-size:11px;font-family:inherit;cursor:pointer;padding:0;}
-.ovl button.p{background:var(--danger);border-color:var(--danger);}
+.ovl button.p, .tools button#bulk{background:rgba(18,20,23,.92);border-color:#3a4048;color:var(--danger);
+ font-size:13px;line-height:1;}
+.ovl button.p.playing, .tools button#bulk.playing{background:#000;border-color:#000;color:#fff;}
 .ovl .cap{color:#dfe3e7;font-size:10.5px;font-variant-numeric:tabular-nums;margin-left:auto;
  white-space:nowrap;text-shadow:0 1px 2px #000;}
 
@@ -546,7 +553,7 @@ header{padding:5px 8px;gap:8px;}
 <div class="subs" id="subs"></div>
 <main>
   <pre id="textview"></pre>
-  <div id="grid"></div>
+  <div id="gwrap"><div id="grid"></div></div>
   <div class="empty" id="empty">「最新データ取得」を押すと画像を端末に保存します。<br>
   一度取得すれば、通信が無い環境でも表示できます。</div>
 </main>
@@ -725,6 +732,7 @@ function render(){
   $('textview').style.display='none'; $('grid').style.display='grid';
   buildGrid(subs);
   fitArea();
+  setTimeout(showTags,60);
 }
 
 let TILES=[];
@@ -778,6 +786,14 @@ function show(t){
     t.img.src=BASE+t.s.file;
   }
 }
+function showTags(){
+  clearTimeout(showTags._t);
+  TILES.forEach(t=>t.el.classList.add('tagon'));
+  showTags._t=setTimeout(()=>TILES.forEach(t=>t.el.classList.remove('tagon')),2000);
+}
+['pointerdown','touchstart','wheel','keydown'].forEach(ev=>
+  document.addEventListener(ev,showTags,{passive:true}));
+
 function flash(t){
   t.el.classList.add('act');
   if(t.hideT) clearTimeout(t.hideT);
@@ -792,18 +808,18 @@ function play(t){
   const n=(t.s.frames||[]).length; if(n<2) return;
   if(t.idx>=n-1) t.idx=0;
   show(t);
-  if(t.play) t.play.innerHTML='&#9208;';
+  if(t.play){ t.play.innerHTML='&#9208;'; t.play.classList.add('playing'); }
   t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },220);
 }
 function stop(t){
   if(t.timer){clearInterval(t.timer);t.timer=null;}
-  if(t.play) t.play.innerHTML='&#9654;';
+  if(t.play){ t.play.innerHTML='&#9654;'; t.play.classList.remove('playing'); }
 }
 function togglePlay(t){ t.timer?stop(t):play(t); }
 function toggleBulk(){
   bulkPlaying=!bulkPlaying;
   $('bulk').innerHTML=bulkPlaying?'&#9208;':'&#9654;';
-  $('bulk').classList.toggle('on',bulkPlaying);
+  $('bulk').classList.toggle('playing',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
 function setCat(i){ catIdx=i; zoomIdx=-1; render(); }
@@ -815,12 +831,43 @@ function fitArea(){
   const used=(hd?hd.offsetHeight:0)+(ct?ct.offsetHeight:0)
             +(sb&&getComputedStyle(sb).display!=='none'?sb.offsetHeight:0)+16;
   const h=Math.max(200, window.innerHeight-used);
+  const w=$('gwrap');
+  if(w){ w.style.height=h+'px'; }
   $('grid').style.height = (zoomIdx>=0)? h+'px' : '';
-  $('grid').style.maxHeight = h+'px';
   $('textview').style.maxHeight=h+'px';
   [...$('grid').children].forEach(el=>{ el.style.height = (zoomIdx>=0)? h+'px' : ''; });
 }
 window.addEventListener('resize',fitArea);
+
+// ── 画像エリアだけを拡大縮小（ヘッダ・タブは固定） ──
+let GZ=1;
+function applyZoom(){
+  const g=$('grid');
+  g.style.transform='scale('+GZ+')';
+  g.style.width=(100/GZ)+'%';
+}
+function setZoomLevel(z){ GZ=Math.min(5,Math.max(1,z)); applyZoom(); showTags(); }
+(function(){
+  const w=$('gwrap'); if(!w) return;
+  w.addEventListener('wheel',e=>{
+    if(!(e.ctrlKey||e.metaKey)) return;
+    e.preventDefault();
+    setZoomLevel(GZ*(e.deltaY<0?1.12:0.89));
+  },{passive:false});
+  let d0=0,z0=1;
+  w.addEventListener('touchstart',e=>{
+    if(e.touches.length!==2) return;
+    d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    z0=GZ;
+  },{passive:true});
+  w.addEventListener('touchmove',e=>{
+    if(e.touches.length!==2||!d0) return;
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    setZoomLevel(z0*d/d0);
+  },{passive:true});
+  w.addEventListener('touchend',()=>{ d0=0; },{passive:true});
+  w.addEventListener('dblclick',()=>setZoomLevel(GZ>1?1:2));
+})();
 
 $('btn-update').onclick=update;
 boot();
