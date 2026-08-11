@@ -46,7 +46,7 @@ nav.cats button.active,.subs button.sb.active{background:var(--danger);border-co
 
 /* 画像エリア */
 main{padding:2px;}
-#grid{display:grid;gap:2px;overflow-y:auto;overscroll-behavior:contain;align-content:start;}
+#grid{display:grid;gap:2px;overflow-y:auto;overscroll-behavior:contain;align-content:start;align-items:start;grid-auto-rows:min-content;}
 .tile{position:relative;background:#000;border:0;border-radius:3px;overflow:hidden;
  display:block;line-height:0;cursor:zoom-in;}
 #grid.zoom .tile{cursor:zoom-out;}
@@ -815,7 +815,8 @@ function fitArea(){
   const used=(hd?hd.offsetHeight:0)+(ct?ct.offsetHeight:0)
             +(sb&&getComputedStyle(sb).display!=='none'?sb.offsetHeight:0)+16;
   const h=Math.max(200, window.innerHeight-used);
-  $('grid').style.height=h+'px';
+  $('grid').style.height = (zoomIdx>=0)? h+'px' : '';
+  $('grid').style.maxHeight = h+'px';
   $('textview').style.maxHeight=h+'px';
   [...$('grid').children].forEach(el=>{ el.style.height = (zoomIdx>=0)? h+'px' : ''; });
 }
