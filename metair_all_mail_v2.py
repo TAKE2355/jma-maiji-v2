@@ -730,6 +730,79 @@ def _cb_url(dt):
     d = dt.replace(minute=(dt.minute // 5) * 5, second=0, microsecond=0)
     return CB_BASE + d.strftime("%Y%m%d%H%M00") + ".jpg"
 
+# ── 気象庁ナウキャスト（タイル合成） ─────────────────────────────
+NOWC_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.jma.go.jp/bosai/nowc/"}
+NOWC_BASE = "https://www.jma.go.jp/bosai/jmatile/data"
+NOWC_Z, NOWC_X0, NOWC_X1, NOWC_Y0, NOWC_Y1 = 6, 53, 58, 22, 27   # 日本全域
+_NOWC_MAP = {}
+
+def _nowc_tile(url):
+    try:
+        r = requests.get(url, headers=NOWC_HDR, timeout=15)
+        if r.status_code == 200 and len(r.content) > 100:
+            return Image.open(io.BytesIO(r.content)).convert("RGBA")
+    except Exception:
+        pass
+    return None
+
+def _nowc_basemap():
+    """日本全域の淡色地図（国土地理院タイル）を1枚に合成してキャッシュ"""
+    if "map" in _NOWC_MAP:
+        return _NOWC_MAP["map"].copy()
+    w = (NOWC_X1 - NOWC_X0 + 1) * 256
+    h = (NOWC_Y1 - NOWC_Y0 + 1) * 256
+    cv = Image.new("RGBA", (w, h), (255, 255, 255, 255))
+    for x in range(NOWC_X0, NOWC_X1 + 1):
+        for y in range(NOWC_Y0, NOWC_Y1 + 1):
+            tl = _nowc_tile("https://cyberjapandata.gsi.go.jp/xyz/pale/%d/%d/%d.png" % (NOWC_Z, x, y))
+            if tl is not None:
+                cv.paste(tl, ((x - NOWC_X0) * 256, (y - NOWC_Y0) * 256), tl)
+    _NOWC_MAP["map"] = cv.copy()
+    return cv
+
+def nowc_times():
+    """ナウキャストの利用可能時刻一覧（新しい順）"""
+    try:
+        r = requests.get(NOWC_BASE + "/nowc/targetTimes_N1.json", headers=NOWC_HDR, timeout=20)
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        print(f"    ナウキャスト時刻一覧失敗: {e}")
+    return []
+
+def get_nowc_hrpns(basetime, validtime):
+    """高解像度降水ナウキャスト（日本全域）をタイルから1枚に合成"""
+    try:
+        cv = _nowc_basemap()
+        tpl = (NOWC_BASE + "/nowc/" + str(basetime) + "/none/" + str(validtime)
+               + "/surf/hrpns/%d/%d/%d.png")
+        got = 0
+        for x in range(NOWC_X0, NOWC_X1 + 1):
+            for y in range(NOWC_Y0, NOWC_Y1 + 1):
+                tl = _nowc_tile(tpl % (NOWC_Z, x, y))
+                if tl is not None:
+                    cv.paste(tl, ((x - NOWC_X0) * 256, (y - NOWC_Y0) * 256), tl)
+                    got += 1
+        if got == 0:
+            return None, None
+        return cv.convert("RGB"), str(validtime)
+    except Exception as e:
+        print(f"  高解像度降水エラー: {e}")
+        return None, None
+
+def get_nowc_latest(code):
+    """code は遡るコマ数(0=最新、5分刻み)"""
+    try:
+        idx = int(str(code))
+    except Exception:
+        idx = 0
+    tt = nowc_times()
+    if not tt or idx >= len(tt):
+        return None, None
+    e = tt[idx]
+    return get_nowc_hrpns(e.get("basetime"), e.get("validtime"))
+
 WV_BASE = "https://www3.metair.go.jp/pict/satellite/ea/ir3_h/ENJP26_RJTD_"
 
 def _wv_url(dt):
@@ -1007,6 +1080,9 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         im, period = get_imoc_thunder(code)
         return im, (f"{label}  {period}" if period else label)
 
+    elif chart_type == "jma_nowc":
+        im, ts = get_nowc_latest(code)
+        return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
     elif chart_type == "metair_wv":
         im, ts = get_wv_image(code, overlay=want_ov)
         return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
