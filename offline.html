@@ -535,6 +535,29 @@ button.dragging{background:var(--danger)!important;border-color:var(--danger)!im
 .dropzone{outline:2px solid var(--ok);outline-offset:-2px;}
 button.dropzone{background:#1d3b2a!important;border-color:var(--ok)!important;color:#fff!important;}
 /* ピンチズームを妨げないよう touch-action は既定のまま。ドラッグ中のみJSで抑止する */
+
+/* ページ設定 */
+#settings{display:none;overflow:auto;padding:8px 4px 20px;}
+#gear{font-size:15px;}
+nav.cats button.pg{border-style:dashed;}
+.set-head{margin:2px 4px 10px;}
+.set-page{border:1px solid var(--line);border-radius:7px;margin:0 4px 8px;background:var(--card);}
+.set-row{display:flex;align-items:center;gap:8px;padding:8px 10px;}
+.set-name{flex:1;min-width:0;background:#101315;border:1px solid var(--line);color:var(--text);
+ border-radius:5px;padding:6px 8px;font-size:13px;font-family:inherit;}
+.set-cnt{color:var(--sub);font-size:12px;white-space:nowrap;}
+.set-del,.set-tg{background:#2f353c;border:1px solid var(--line);color:var(--text);border-radius:5px;
+ padding:6px 10px;font-size:12px;font-family:inherit;cursor:pointer;white-space:nowrap;}
+.set-del{background:var(--danger);border-color:var(--danger);color:#fff;}
+.set-order{display:flex;flex-wrap:wrap;gap:5px;padding:0 10px 8px;}
+.set-order .ord{background:#101315;border:1px solid var(--line);border-radius:4px;padding:3px 7px;
+ font-size:11.5px;color:var(--sub);}
+.set-list{border-top:1px solid var(--line);padding:8px 10px 12px;}
+.set-cat{color:var(--sub);font-size:11.5px;letter-spacing:.08em;margin:8px 0 4px;}
+.set-item{display:inline-flex;align-items:center;gap:5px;background:#101315;border:1px solid var(--line);
+ border-radius:5px;padding:5px 9px;margin:0 5px 5px 0;font-size:12px;cursor:pointer;}
+.set-item.on{border-color:var(--danger);color:#fff;background:#2a1416;}
+.set-item input{accent-color:var(--danger);}
 </style>
 </head>
 <body>
@@ -569,6 +592,7 @@ button.dropzone{background:#1d3b2a!important;border-color:var(--ok)!important;co
 <div class="subs" id="subs"></div>
 <main>
   <pre id="textview"></pre>
+  <div id="settings"></div>
   <div id="gwrap"><div id="grid"></div></div>
   <div class="empty" id="empty">「GET IT NOW!!」を押すと画像を端末に保存します。<br>
   一度取得すれば、通信が無い環境でも表示できます。</div>
@@ -863,6 +887,81 @@ async function calcCacheSize(){
   }catch(e){}
 }
 
+
+// ══ ユーザー定義ページ ══════════════════════════════════════════
+let PAGES=[], selPage=-1, settingsOpen=false;
+try{ PAGES=JSON.parse(localStorage.getItem('nimbus_off_pages')||'[]')||[]; }catch(e){}
+const savePages=()=>{ try{ localStorage.setItem('nimbus_off_pages',JSON.stringify(PAGES)); }catch(e){} };
+const ikey=(c,l)=>c+''+l;
+
+function allImages(){
+  const out=[];
+  (MF?MF.categories:[]).forEach(k=>{
+    if(k.mode==='text') return;
+    subsOf(k).forEach(s=>out.push({cat:(k.id||k.label), catLabel:k.label, label:s.label}));
+  });
+  return out;
+}
+function pageSubs(p){
+  const res=[];
+  (p.items||[]).forEach(it=>{
+    const k=(MF?MF.categories:[]).find(c=>(c.id||c.label)===it.cat);
+    if(!k) return;
+    const s=subsOf(k).find(x=>x.label===it.label);
+    if(s) res.push(Object.assign({},s,{label:it.label}));
+  });
+  return res;
+}
+function addPage(){
+  PAGES.push({id:'p'+Date.now(), label:'新しいページ', items:[]});
+  savePages(); selPage=PAGES.length-1; renderSettings();
+}
+function delPage(i){ PAGES.splice(i,1); savePages(); if(selPage>=PAGES.length) selPage=PAGES.length-1; renderSettings(); render(); }
+function renamePage(i,v){ PAGES[i].label=v||('ページ'+(i+1)); savePages(); render(); }
+function togglePick(i,cat,label){
+  const p=PAGES[i]; if(!p) return;
+  const at=(p.items||[]).findIndex(x=>x.cat===cat&&x.label===label);
+  if(at>=0) p.items.splice(at,1); else (p.items=p.items||[]).push({cat,label});
+  savePages(); renderSettings(); render();
+}
+
+function renderSettings(){
+  const el=$('settings'); if(!el) return;
+  const imgs=allImages();
+  let h='<div class="set-head"><button class="btn" onclick="addPage()">＋ ページを追加</button></div>';
+  if(!PAGES.length){
+    h+='<p class="empty">ページを追加すると、好きな画像だけを集めたタブを作れます。<br>チェックした順番がタブの並び順になります（あとからドラッグで変更可）。</p>';
+  }
+  PAGES.forEach((p,i)=>{
+    const picked=(p.items||[]);
+    h+='<div class="set-page'+(i===selPage?' open':'')+'">'
+     + '<div class="set-row">'
+     +   '<input class="set-name" value="'+esc(p.label||'')+'" onchange="renamePage('+i+',this.value)">'
+     +   '<span class="set-cnt">'+picked.length+'枚</span>'
+     +   '<button class="set-del" onclick="delPage('+i+')">削除</button>'
+     +   '<button class="set-tg" onclick="selPage=(selPage==='+i+'?-1:'+i+');renderSettings()">'+(i===selPage?'閉じる':'編集')+'</button>'
+     + '</div>';
+    if(i===selPage){
+      if(picked.length){
+        h+='<div class="set-order">'+picked.map((x,n)=>'<span class="ord">'+(n+1)+'. '+esc(x.label)+'</span>').join('')+'</div>';
+      }
+      let cur='';
+      h+='<div class="set-list">';
+      imgs.forEach(im=>{
+        if(im.catLabel!==cur){ cur=im.catLabel; h+='<div class="set-cat">'+esc(cur)+'</div>'; }
+        const on=picked.some(x=>x.cat===im.cat&&x.label===im.label);
+        h+='<label class="set-item'+(on?' on':'')+'">'
+         + '<input type="checkbox" '+(on?'checked':'')+' onchange="togglePick('+i+',\''+im.cat.replace(/'/g,"\\'")+'\',\''+im.label.replace(/'/g,"\\'")+'\')">'
+         + '<span>'+esc(im.label)+'</span></label>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  el.innerHTML=h;
+}
+function openSettings(){ settingsOpen=true; render(); }
+
 function render(){
   if(!MF) return;
   $('empty').style.display='none';
@@ -871,16 +970,26 @@ function render(){
   const cs=MF.categories;
   const ordered=applyOrder(cs, cs.map(c=>c.id||c.label), CATORD);
   if(ordered.some((c,i)=>c!==cs[i])) MF.categories=ordered;
-  $('cats').innerHTML=MF.categories.map((k,i)=>
-    '<button class="'+(i===catIdx?'active':'')+'" onclick="setCat('+i+')">'+esc(k.label)+'</button>').join('');
+  $('cats').innerHTML='<button id="gear" class="'+(settingsOpen?'active':'')+'" title="ページ設定">&#9881;</button>'
+    + MF.categories.map((k,i)=>
+      '<button class="'+((!settingsOpen&&pageIdx<0&&i===catIdx)?'active':'')+'" onclick="setCat('+i+')">'+esc(k.label)+'</button>').join('')
+    + PAGES.map((p,i)=>
+      '<button class="pg'+((!settingsOpen&&pageIdx===i)?' active':'')+'" onclick="setPage('+i+')">'+esc(p.label||('ページ'+(i+1)))+'</button>').join('');
+  $('gear').onclick=()=>{ settingsOpen=!settingsOpen; render(); };
   enableDrag($('cats'),'button',(from,to)=>{
     MF.categories=moveItem(MF.categories,from,to);
     CATORD=MF.categories.map(c=>c.id||c.label);
     if(catIdx===from) catIdx=to; else if(from<catIdx&&to>=catIdx) catIdx--; else if(from>catIdx&&to<=catIdx) catIdx++;
     saveOrd(); render();
   });
-  const k=MF.categories[catIdx]||{};
-  const subs=subsOf(k);
+  if(settingsOpen){
+    $('subs').style.display='none'; $('textview').style.display='none';
+    $('gwrap').style.display='none'; $('settings').style.display='block';
+    renderSettings(); fitArea(); return;
+  }
+  $('settings').style.display='none'; $('gwrap').style.display='';
+  const k=(pageIdx>=0)? {label:(PAGES[pageIdx]||{}).label, __page:PAGES[pageIdx]} : (MF.categories[catIdx]||{});
+  const subs=(pageIdx>=0)? pageSubs(PAGES[pageIdx]||{items:[]}) : subsOf(k);
 
   if(k.mode==='text'){
     $('subs').innerHTML=subs.length>1
@@ -908,6 +1017,12 @@ function render(){
     + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
     + '</span>';
   enableDrag($('subs'),'button.sb',(from,to)=>{
+    if(pageIdx>=0){
+      const p=PAGES[pageIdx];
+      p.items=moveItem(p.items||[],from,to); savePages();
+      if(zoomIdx===from) zoomIdx=to; else if(from<zoomIdx&&to>=zoomIdx) zoomIdx--; else if(from>zoomIdx&&to<=zoomIdx) zoomIdx++;
+      render(); return;
+    }
     const k2=MF.categories[catIdx]; const key=k2.id||k2.label;
     const cur=subsOf(k2).map(x=>x.label);
     ORD[key]=moveItem(cur,from,to);
@@ -1012,7 +1127,9 @@ function toggleBulk(){
   $('bulk').classList.toggle('playing',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
-function setCat(i){ catIdx=i; zoomIdx=-1; GZ=1; const g=$('grid'); if(g) g.style.width='100%'; render(); }
+let pageIdx=-1;
+function setCat(i){ catIdx=i; pageIdx=-1; settingsOpen=false; zoomIdx=-1; GZ=1; const g=$('grid'); if(g) g.style.width='100%'; render(); }
+function setPage(i){ pageIdx=i; settingsOpen=false; zoomIdx=-1; GZ=1; const g=$('grid'); if(g) g.style.width='100%'; render(); }
 function setZoom(i){ zoomIdx=(zoomIdx===i? -1 : i); render(); }
 
 // 画面の残り高さにグリッドを収める
