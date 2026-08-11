@@ -1227,7 +1227,8 @@ function renderSettings(){
   let h='<div class="set-tabs">'
     + T.map(t=>'<button class="st'+(t.key===selEdit?' active':'')+(t.t==='p'?' pg':'')
         +'" onclick="selEdit=\''+t.key+'\';renderSettings()">'+esc(t.label)+'</button>').join('')
-    + '<button class="btn add" onclick="addPage()">＋ページ追加</button></div>';
+    + '<button class="btn add" onclick="addPage()">＋ページ追加</button>'
+    + '<span class="set-hint">タブをドラッグで並べ替え</span></div>';
 
   // 下段：編集画面
   h+='<div class="set-body">';
@@ -1272,6 +1273,12 @@ function renderSettings(){
   }
   h+='</div>';
   el.innerHTML=modeBar+h;
+  // 上位タブをドラッグで並べ替え
+  const tabRow=el.querySelector('.set-tabs');
+  if(tabRow) enableDrag(tabRow,'.st',(from,to)=>{
+    TABORD=moveItem(tabsAll().map(x=>x.key),from,to);
+    savePages(); renderSettings(); render();
+  });
   if($('sel-list')){
     enableDrag($('sel-list'),'.sel-row',(from,to)=>{
       const t2=tabsAll().find(x=>x.key===selEdit); if(!t2) return;
