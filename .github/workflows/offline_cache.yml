@@ -47,6 +47,7 @@ jobs:
           git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" offline-cache
           echo "pushed: $(ls | wc -l) files"
           echo "SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "NFILES=$(ls | wc -l)" >> $GITHUB_ENV
 
       - name: Publish cache version
         env:
@@ -55,8 +56,23 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           git config user.name  "nimbus-offline"
           git config user.email "nimbus@local"
-          echo "$SHA" > cache-ver.txt
-          git add cache-ver.txt
-          git commit -q -m "chore: cache version $SHA" || exit 0
           git pull --rebase -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main || true
+          echo "$SHA" > cache-ver.txt
+          python3 - <<'PY'
+          import json, os, time
+          p = 'cache-log.json'
+          try:
+              L = json.load(open(p))
+          except Exception:
+              L = []
+          now = int(time.time())
+          L.append({"t": now,
+                    "n": int(os.environ.get("NFILES", "0") or 0),
+                    "e": os.environ.get("GITHUB_EVENT_NAME", ""),
+                    "s": (os.environ.get("SHA", "") or "")[:7]})
+          L = [x for x in L if x.get("t", 0) > now - 8 * 86400][-900:]
+          json.dump(L, open(p, 'w'), separators=(',', ':'))
+          PY
+          git add cache-ver.txt cache-log.json
+          git commit -q -m "chore: cache version $SHA" || exit 0
           git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
