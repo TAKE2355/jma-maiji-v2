@@ -608,6 +608,13 @@
           "frames": 36
         },
         {
+          "key": "cb",
+          "label": "積乱雲域",
+          "kind": "cb",
+          "step": 5,
+          "frames": 36
+        },
+        {
           "key": "echotop",
           "label": "エコー頂高度",
           "kind": "echotop",
