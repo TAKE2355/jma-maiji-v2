@@ -1,38 +1,31 @@
-import requests
+import requests, re, json
 HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
        "Referer": "https://www.jma.go.jp/bosai/nowc/"}
 B = "https://www.jma.go.jp/bosai/jmatile/data"
-for p in ["/liden/targetTimes.json", "/liden/targetTimes_N1.json",
-          "/nowc/targetTimes_N1.json", "/nowc/targetTimes_N3.json"]:
+def san(s):
+    s = re.sub(r"\s+", " ", str(s))
+    for a, b in (("https://","HX"),("http://","HX"),(chr(63),"~"),(chr(38),"~"),(chr(61),"~"),(";","~")):
+        s = s.replace(a, b)
+    return s
+for i in range(1, 10):
     try:
-        r = requests.get(B + p, headers=HDR, timeout=20)
-        print("TT", p, r.status_code, len(r.text), r.text[:220].replace("\n", " "))
+        r = requests.get(B + "/nowc/targetTimes_N%d.json" % i, headers=HDR, timeout=15)
+        if r.status_code == 200:
+            j = r.json()
+            print("N%d" % i, len(j), j[0].get("basetime"), j[0].get("validtime"), j[0].get("elements"))
+        else:
+            print("N%d" % i, r.status_code)
     except Exception as e:
-        print("TTERR", p, e)
-n1 = requests.get(B + "/nowc/targetTimes_N1.json", headers=HDR, timeout=20).json()
-bt, vt = n1[0]["basetime"], n1[0]["validtime"]
-try:
-    li = requests.get(B + "/liden/targetTimes.json", headers=HDR, timeout=20).json()
-    lbt, lvt = li[0]["basetime"], li[0]["validtime"]
-except Exception as e:
-    lbt = lvt = None
-    print("LIDEN TT NG", e)
-print("BT", bt, vt, "LIDEN", lbt, lvt)
-cands = []
-for el in ("thns", "thns_nd", "liden", "liden_nd", "tons"):
-    cands.append((el + "@nowc", B + "/nowc/" + bt + "/none/" + vt + "/surf/" + el + "/{z}/{x}/{y}.png"))
-if lbt:
-    for el in ("liden", "liden_nd"):
-        cands.append((el + "@liden", B + "/liden/" + lbt + "/none/" + lvt + "/surf/" + el + "/{z}/{x}/{y}.png"))
-for name, tpl in cands:
-    hits = tot = sz = 0
-    for x in (54, 55, 56):
-        for y in (24, 25):
-            try:
-                r = requests.get(tpl.format(z=6, x=x, y=y), headers=HDR, timeout=15)
-                tot += 1
-                if r.status_code == 200 and len(r.content) > 100:
-                    hits += 1; sz += len(r.content)
-            except Exception:
-                pass
-    print("TILE", name, hits, "/", tot, "avg", (sz // hits) if hits else 0)
+        print("N%d ERR" % i, e)
+h = requests.get("https://www.jma.go.jp/bosai/nowc/", headers=HDR, timeout=20).text
+srcs = re.findall(r'src="([^"]+\.js[^"]*)"', h)
+print("SRC", [san(s) for s in srcs][:12])
+for s in srcs:
+    u = s if s.startswith("http") else ("https://www.jma.go.jp/bosai/nowc/" + s.lstrip("./"))
+    try:
+        t = requests.get(u, headers=HDR, timeout=20).text
+    except Exception:
+        continue
+    for m in re.finditer("liden", t):
+        print("LD:", san(t[max(0, m.start()-220):m.start()+220])[:420])
+        break
