@@ -3,8 +3,12 @@ name: NIMBUS OFFLINE Cache
 on:
   workflow_dispatch:
   schedule:
-    # 30分ごとに自動収集（分は自由に変更可）
-    - cron: '5,35 * * * *'
+    # GitHubのスケジュールは遅延・欠落が多いため15分ごとに設定（実際は間引かれる）
+    - cron: '3,18,33,48 * * * *'
+
+concurrency:
+  group: offline-cache
+  cancel-in-progress: false
 
 permissions:
   contents: write
