@@ -533,17 +533,17 @@
       "items": [
         {
           "type": "metair_ashfall",
-          "code": "2",
+          "code": "阿蘇山",
           "label": "降灰予報・阿蘇山"
         },
         {
           "type": "metair_ashfall",
-          "code": "3",
+          "code": "桜島",
           "label": "降灰予報・桜島"
         },
         {
           "type": "metair_ashfall",
-          "code": "6",
+          "code": "霧島山",
           "label": "降灰予報・霧島山"
         }
       ]
