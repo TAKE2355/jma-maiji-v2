@@ -537,7 +537,8 @@ button.dropzone{background:#1d3b2a!important;border-color:var(--ok)!important;co
 /* ピンチズームを妨げないよう touch-action は既定のまま。ドラッグ中のみJSで抑止する */
 
 /* ページ設定 */
-#settings{display:none;overflow:auto;padding:8px 4px 20px;}
+#settings{display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+ padding:8px 4px 24px;overscroll-behavior:contain;}
 #gear{font-size:15px;}
 nav.cats button.pg{border-style:dashed;}
 .set-head{margin:2px 4px 10px;}
@@ -847,11 +848,13 @@ function enableDrag(container, selector, onDrop, handle){
   const items=()=>[...container.querySelectorAll(selector)];
   container.addEventListener('pointerdown', e=>{
     if(e.isPrimary===false) return;
-    // 入力欄・ボタン類の操作を邪魔しない
-    if(e.target.closest('input,textarea,select,button,label')) return;
-    if(handle && !e.target.closest(handle)) return;
     const el=e.target.closest(selector);
     if(!el || e.target.closest('.ovl')) return;
+    // 入力欄などの操作は邪魔しない。ボタンは「項目そのもの」以外なら除外
+    if(e.target.closest('input,textarea,select,label')) return;
+    const _b=e.target.closest('button');
+    if(_b && _b!==el) return;
+    if(handle && !e.target.closest(handle)) return;
     src=el; moved=false;
     el.style.touchAction='none';
     el.setPointerCapture && el.setPointerCapture(e.pointerId);
@@ -1303,6 +1306,7 @@ function fitArea(){
             +(sb&&getComputedStyle(sb).display!=='none'?sb.offsetHeight:0)+16;
   const h=Math.max(200, window.innerHeight-used);
   const w=$('gwrap'); if(w) w.style.height=h+'px';
+  const st=$('settings'); if(st) st.style.height=h+'px';
   $('grid').style.height = (zoomIdx>=0)? h+'px' : '';
   $('textview').style.maxHeight=h+'px';
   [...$('grid').children].forEach(el=>{ el.style.height = (zoomIdx>=0)? h+'px' : ''; });
