@@ -209,7 +209,7 @@
           "prefix": "WANLC",
           "code": "151",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_152",
@@ -218,7 +218,7 @@
           "prefix": "WANLC",
           "code": "152",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_153",
@@ -227,7 +227,7 @@
           "prefix": "WANLC",
           "code": "153",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_154",
@@ -236,7 +236,7 @@
           "prefix": "WANLC",
           "code": "154",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_155",
@@ -245,7 +245,7 @@
           "prefix": "WANLC",
           "code": "155",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_156",
@@ -254,7 +254,7 @@
           "prefix": "WANLC",
           "code": "156",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_157",
@@ -263,7 +263,7 @@
           "prefix": "WANLC",
           "code": "157",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_158",
@@ -272,7 +272,7 @@
           "prefix": "WANLC",
           "code": "158",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_199",
@@ -281,7 +281,7 @@
           "prefix": "WANLC",
           "code": "199",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_101",
@@ -290,7 +290,7 @@
           "prefix": "WANLC",
           "code": "101",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_102",
@@ -299,7 +299,7 @@
           "prefix": "WANLC",
           "code": "102",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_103",
@@ -308,7 +308,7 @@
           "prefix": "WANLC",
           "code": "103",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_105",
@@ -317,7 +317,7 @@
           "prefix": "WANLC",
           "code": "105",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_106",
@@ -326,7 +326,7 @@
           "prefix": "WANLC",
           "code": "106",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_107",
@@ -335,7 +335,7 @@
           "prefix": "WANLC",
           "code": "107",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "xsec_108",
@@ -344,7 +344,7 @@
           "prefix": "WANLC",
           "code": "108",
           "step": 60,
-          "frames": 24
+          "frames": 12
         }
       ]
     },
@@ -360,7 +360,7 @@
           "prefix": "WANLF",
           "code": "139",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_137",
@@ -369,7 +369,7 @@
           "prefix": "WANLF",
           "code": "137",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_135",
@@ -378,7 +378,7 @@
           "prefix": "WANLF",
           "code": "135",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_133",
@@ -387,7 +387,7 @@
           "prefix": "WANLF",
           "code": "133",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_131",
@@ -396,7 +396,7 @@
           "prefix": "WANLF",
           "code": "131",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_129",
@@ -405,7 +405,7 @@
           "prefix": "WANLF",
           "code": "129",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_127",
@@ -414,7 +414,7 @@
           "prefix": "WANLF",
           "code": "127",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_125",
@@ -423,7 +423,7 @@
           "prefix": "WANLF",
           "code": "125",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_123",
@@ -432,7 +432,7 @@
           "prefix": "WANLF",
           "code": "123",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_121",
@@ -441,7 +441,7 @@
           "prefix": "WANLF",
           "code": "121",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_119",
@@ -450,7 +450,7 @@
           "prefix": "WANLF",
           "code": "119",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_117",
@@ -459,7 +459,7 @@
           "prefix": "WANLF",
           "code": "117",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_115",
@@ -468,7 +468,7 @@
           "prefix": "WANLF",
           "code": "115",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_111",
@@ -477,7 +477,7 @@
           "prefix": "WANLF",
           "code": "111",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_109",
@@ -486,7 +486,7 @@
           "prefix": "WANLF",
           "code": "109",
           "step": 60,
-          "frames": 24
+          "frames": 12
         },
         {
           "key": "flevel_105",
@@ -495,7 +495,7 @@
           "prefix": "WANLF",
           "code": "105",
           "step": 60,
-          "frames": 24
+          "frames": 12
         }
       ]
     },
