@@ -636,6 +636,24 @@ nav.cats button.pg{border-style:dashed;}
 .src-empty{color:var(--sub);font-size:11.5px;border:1px dashed var(--line);border-radius:5px;
  padding:8px;text-align:center;}
 .src-item.dragging{opacity:.5;outline:2px dashed var(--danger);}
+
+/* ── 収集状況 ── */
+.hbeat{width:11px;height:11px;border-radius:50%;background:#666;cursor:pointer;flex:0 0 auto;margin-left:6px;box-shadow:0 0 6px rgba(0,0,0,.6)}
+.hz{padding:12px 14px;font-size:12px;color:#ddd;line-height:1.5}
+.hz .big{font-size:16px;font-weight:700;color:#fff}
+.hz .verdict{font-size:13px;font-weight:700;margin:6px 0 2px}
+.hz .sub{color:#999;font-size:11.5px}
+.hz h4{margin:16px 0 6px;font-size:12px;color:#aaa;font-weight:600}
+.hrow{display:flex;align-items:center;gap:4px;margin:2px 0}
+.hrow b{width:34px;font-size:11px;color:#888;font-weight:500;text-align:right}
+.hcell{width:30px;height:13px;border-radius:2px;background:#3a3a3a}
+.hcell.ok{background:#2ecc71}
+.hcell.few{background:#e6a23c}
+.hcell.fut{background:#2a2a2a;border:1px dashed #444;box-sizing:border-box}
+.hleg{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 4px;font-size:11px;color:#999}
+.hleg i{width:14px;height:10px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:0px}
+.hlist div{padding:4px 0;border-bottom:1px solid #2a2a2a;display:flex;gap:12px;font-size:11.5px;color:#bbb}
+.hlist div span:first-child{width:88px;color:#eee}
 </style>
 </head>
 <body>
@@ -664,6 +682,7 @@ nav.cats button.pg{border-style:dashed;}
     <button class="btn" id="btn-update">GET IT NOW!!</button>
     <div class="stamp" id="stamp">未取得</div>
     <div class="ver" id="ver"></div>
+    <span class="hbeat" id="hbeat" onclick="openHealth()"></span>
   </div>
   <div class="prog" id="prog"><i></i></div>
 </header>
@@ -678,7 +697,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='e9brnh-260811';
+const APP_VER='hlog1-260811';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1246,12 +1265,81 @@ function delSel(tabKey,cat,label){
   toggleItem(tabKey,cat,label);
 }
 
+
+// ══ 収集状況（GitHub Actions 実行履歴）══════════════════════════
+let HLOG=null, HLOG_T=0;
+try{ HLOG=JSON.parse(localStorage.getItem("nimbus_off_hlog")||"null"); }catch(e){}
+async function loadHLog(force){
+  if(HLOG && !force && Date.now()-HLOG_T<60000) return HLOG;
+  try{ const r=await fetch("cache-log.json?cb="+Date.now(),{cache:"no-store"});
+       if(r.ok){ HLOG=await r.json(); HLOG_T=Date.now();
+         try{ localStorage.setItem("nimbus_off_hlog",JSON.stringify(HLOG.slice(-200))); }catch(e){} } }catch(e){}
+  return HLOG;
+}
+function jstStr(sec){ const d=new Date(sec*1000+9*3600000), p=n=>("0"+n).slice(-2);
+  return p(d.getUTCMonth()+1)+"/"+p(d.getUTCDate())+" "+p(d.getUTCHours())+":"+p(d.getUTCMinutes()); }
+function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
+function updBeat(){ const e=$("hbeat"); if(!e) return; const L=lastRun();
+  if(!L){ e.style.background="#666"; e.title="収集状況"; return; }
+  const m=(Date.now()/1000-L.t)/60;
+  e.style.background = m<25?"#2ecc71":(m<70?"#e6a23c":"#e74c3c");
+  e.title="最終収集 "+jstStr(L.t)+" JST"; }
+function openHealth(){ settingsOpen=true; setMode="health"; render(); }
+async function renderHealth(){
+  await loadHLog(true);
+  const el=$("hzbody"); if(!el) return;
+  const L=(HLOG||[]).slice(), now=Date.now()/1000, SLOT=[3,18,33,48];
+  const hourTop=Math.floor(now/3600)*3600;
+  let ok=0, few=0, miss=0, rows="";
+  for(let h=0;h<24;h++){
+    const hs=hourTop-h*3600; let cells="";
+    for(const m of SLOT){
+      const t0=hs+m*60;
+      if(t0>now-6*60){ cells+='<div class="hcell fut"></div>'; continue; }
+      const e=L.find(x=>Math.abs(x.t-t0)<=9*60);
+      if(!e){ miss++; cells+='<div class="hcell" title="'+jstStr(t0)+' 欠測"></div>'; }
+      else if((e.n||0)>=700){ ok++; cells+='<div class="hcell ok" title="'+jstStr(e.t)+' '+e.n+'件"></div>'; }
+      else { few++; cells+='<div class="hcell few" title="'+jstStr(e.t)+' '+(e.n||0)+'件"></div>'; }
+    }
+    const d=new Date(hs*1000+9*3600000);
+    rows+='<div class="hrow"><b>'+("0"+d.getUTCHours()).slice(-2)+'時</b>'+cells+'</div>';
+  }
+  const last=L.length?L[L.length-1]:null;
+  const age=last?Math.round((now-last.t)/60):null;
+  let vc="#e74c3c", vt="収集が止まっている可能性があります";
+  if(age!=null && age<=25){ vc="#2ecc71"; vt="正常に稼働中"; }
+  else if(age!=null && age<=70){ vc="#e6a23c"; vt="やや遅延（GitHubの定期実行はしばしば遅れます）"; }
+  if(!last){ vc="#888"; vt="記録がまだありません（次回の収集後に表示されます）"; }
+  const done=ok+few, total=done+miss;
+  let h="";
+  h+='<div class="verdict" style="color:'+vc+'">● '+vt+'</div>';
+  h+='<div class="big">'+(last?(jstStr(last.t)+" JST ／ "+(last.n||0)+"件 ／ "+(last.e==="schedule"?"定期":"手動")):"—")+'</div>';
+  h+='<div class="sub">'+(age!=null?(age+"分前に収集"):"")+'</div>';
+  h+='<h4>直近24時間の実行状況（1行＝1時間 / 4スロット）</h4>';
+  h+='<div class="sub">実行 '+done+' ／ '+total+' スロット'+(miss?'（欠測 '+miss+'）':"")+'</div>';
+  h+='<div class="hleg"><span><i style="background:#2ecc71"></i>正常(700件以上)</span>'
+    +'<span><i style="background:#e6a23c"></i>件数不足</span>'
+    +'<span><i style="background:#3a3a3a"></i>欠測</span>'
+    +'<span><i style="background:#2a2a2a;border:1px dashed #444"></i>実行前</span></div>';
+  h+=rows;
+  h+='<h4>最近の実行</h4><div class="hlist">';
+  for(const e of L.slice(-12).reverse())
+    h+='<div><span>'+jstStr(e.t)+'</span><span>'+(e.n||0)+'件</span><span>'+(e.e==="schedule"?"定期":"手動")+'</span><span>'+(e.s||"")+'</span></div>';
+  h+='</div>';
+  h+='<h4>&nbsp;</h4><button class="btn" onclick="renderHealth()">再読み込み</button>';
+  el.innerHTML=h; updBeat();
+}
+setTimeout(()=>{ loadHLog(true).then(updBeat); }, 1200);
+setInterval(()=>{ loadHLog(true).then(updBeat); }, 5*60*1000);
+
 function renderSettings(){
   const el=$('settings'); if(!el) return;
   const modeBar='<div class="set-mode">'
     + '<button class="'+(setMode==='page'?'active':'')+'" onclick="setMode=\'page\';renderSettings()">ページ設定</button>'
     + '<button class="'+(setMode==='source'?'active':'')+'" onclick="setMode=\'source\';renderSettings()">情報ソース</button>'
+    + '<button class="'+(setMode==='health'?'active':'')+'" onclick="setMode=\'health\';renderSettings()">収集状況</button>'
     + '</div>';
+  if(setMode==='health'){ el.innerHTML=modeBar+'<div class="hz" id="hzbody">読み込み中…</div>'; renderHealth(); return; }
   if(setMode==='source'){ renderSource(); el.innerHTML=modeBar+el.innerHTML; return; }
   const T=tabsAll();
   const imgs=allImages();
