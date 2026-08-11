@@ -575,7 +575,7 @@ nav.cats button.pg{border-style:dashed;}
 .set-tabs .btn.add{margin-left:6px;padding:6px 12px;font-size:12.5px;}
 .set-body{padding:0 4px;}
 .set-body .set-row{padding:0 0 10px;}
-#gear{font-size:15px;margin-left:4px;}
+#gear{font-size:15px;margin-left:auto;flex:0 0 auto;}
 </style>
 </head>
 <body>
@@ -910,14 +910,16 @@ async function calcCacheSize(){
 
 
 // ══ タブ構成（既存カテゴリ＋ユーザーページ） ══════════════════════
-let PAGES=[], TABORD=[], HIDDEN={}, selKey=null, selEdit=null, settingsOpen=false;
+let PAGES=[], TABORD=[], HIDDEN={}, CATITEMS={}, selKey=null, selEdit=null, settingsOpen=false;
 try{ PAGES=JSON.parse(localStorage.getItem('nimbus_off_pages')||'[]')||[]; }catch(e){}
 try{ TABORD=JSON.parse(localStorage.getItem('nimbus_off_taborder')||'[]')||[]; }catch(e){}
 try{ HIDDEN=JSON.parse(localStorage.getItem('nimbus_off_hidden')||'{}')||{}; }catch(e){}
+try{ CATITEMS=JSON.parse(localStorage.getItem('nimbus_off_catitems')||'{}')||{}; }catch(e){}
 const savePages=()=>{ try{
   localStorage.setItem('nimbus_off_pages',JSON.stringify(PAGES));
   localStorage.setItem('nimbus_off_taborder',JSON.stringify(TABORD));
   localStorage.setItem('nimbus_off_hidden',JSON.stringify(HIDDEN));
+  localStorage.setItem('nimbus_off_catitems',JSON.stringify(CATITEMS));
 }catch(e){} };
 
 function tabsAll(){
@@ -953,6 +955,31 @@ function allImages(){
   });
   return out;
 }
+// タブが持つ項目リスト（未設定のカテゴリは自前の項目が既定）
+function tabItems(tb){
+  if(!tb) return [];
+  if(tb.t==='p') return tb.page.items||[];
+  const id=tb.cat.id||tb.cat.label;
+  if(CATITEMS[id]) return CATITEMS[id];
+  const hid=HIDDEN[id]||[];
+  return rawSubs(tb.cat).filter(s=>hid.indexOf(s.label)<0).map(s=>({cat:id,label:s.label}));
+}
+function setTabItems(tb,list){
+  if(tb.t==='p'){ tb.page.items=list; }
+  else { CATITEMS[tb.cat.id||tb.cat.label]=list; }
+  savePages();
+}
+function resolveItems(list){
+  const res=[];
+  (list||[]).forEach(it=>{
+    const k=(MF?MF.categories:[]).find(c=>(c.id||c.label)===it.cat);
+    if(!k) return;
+    const s=rawSubs(k).find(x=>x.label===it.label);
+    if(s) res.push(s);
+  });
+  return res;
+}
+
 function pageSubs(p){
   const res=[];
   (p.items||[]).forEach(it=>{
@@ -978,17 +1005,12 @@ function delPage(id){
 }
 function renamePage(id,v){ const p=PAGES.find(x=>x.id===id); if(p){p.label=v||'ページ'; savePages(); render();} }
 function toggleItem(tabKey,cat,label){
-  if(tabKey.charAt(0)==='p'){
-    const p=PAGES.find(x=>'p:'+x.id===tabKey); if(!p) return;
-    const at=(p.items||[]).findIndex(x=>x.cat===cat&&x.label===label);
-    if(at>=0) p.items.splice(at,1); else (p.items=p.items||[]).push({cat,label});
-  }else{
-    const id=tabKey.slice(2);
-    const arr=HIDDEN[id]||(HIDDEN[id]=[]);
-    const at=arr.indexOf(label);
-    if(at>=0) arr.splice(at,1); else arr.push(label);
-  }
-  savePages(); renderSettings(); render();
+  const tb=tabsAll().find(x=>x.key===tabKey); if(!tb) return;
+  const list=tabItems(tb).slice();
+  const at=list.findIndex(x=>x.cat===cat&&x.label===label);
+  if(at>=0) list.splice(at,1); else list.push({cat,label});
+  setTabItems(tb,list);
+  renderSettings(); render();
 }
 
 function renderSettings(){
@@ -1008,33 +1030,34 @@ function renderSettings(){
   h+='<div class="set-body">';
   if(tb){
     const isPage=tb.t==='p';
-    const picked=isPage?(tb.page.items||[]):null;
+    const cursel=tabItems(tb);
+    const picked=cursel;
     const hid=!isPage?(HIDDEN[tb.cat.id||tb.cat.label]||[]):null;
     const own=!isPage?rawSubs(tb.cat):[];
     h+='<div class="set-row">'
      + (isPage
         ? '<input class="set-name" value="'+esc(tb.label)+'" onchange="renamePage(\''+tb.page.id+'\',this.value)">'
         : '<span class="set-name fixed">'+esc(tb.label)+'</span>')
-     + '<span class="set-cnt">'+(isPage?picked.length:(tb.cat.mode==='text'?'—':own.length-hid.length))+(isPage||tb.cat.mode!=='text'?'枚':'')+'</span>'
+     + '<span class="set-cnt">'+((!isPage&&tb.cat.mode==='text')?'—':picked.length+'枚')+'</span>'
      + (isPage?'<button class="set-del" onclick="delPage(\''+tb.page.id+'\')">このページを削除</button>':'')
      + '</div>';
     if(tb.t==='c' && tb.cat.mode==='text'){
       h+='<p class="empty">METAR/TAF は表示項目の設定がありません。</p>';
     }else{
-      if(isPage && picked.length)
+      if(picked.length)
         h+='<div class="set-order">'+picked.map((x,n)=>'<span class="ord">'+(n+1)+'. '+esc(x.label)+'</span>').join('')+'</div>';
-      const list=isPage?imgs:own.map(s=>({cat:(tb.cat.id||tb.cat.label),catLabel:tb.cat.label,label:s.label}));
+      const list=imgs;
       let cur='';
       h+='<div class="set-list">';
       list.forEach(im=>{
-        if(isPage && im.catLabel!==cur){ cur=im.catLabel; h+='<div class="set-cat">'+esc(cur)+'</div>'; }
-        const on=isPage?picked.some(x=>x.cat===im.cat&&x.label===im.label):(hid.indexOf(im.label)<0);
+        if(im.catLabel!==cur){ cur=im.catLabel; h+='<div class="set-cat">'+esc(cur)+'</div>'; }
+        const on=cursel.some(x=>x.cat===im.cat&&x.label===im.label);
         h+='<label class="set-item'+(on?' on':'')+'">'
          + '<input type="checkbox" '+(on?'checked':'')+' onchange="toggleItem(\''+tb.key+'\',\''+im.cat.replace(/'/g,"\\'")+'\',\''+im.label.replace(/'/g,"\\'")+'\')">'
          + '<span>'+esc(im.label)+'</span></label>';
       });
       h+='</div>';
-      if(isPage) h+='<p class="empty">チェックした順番が下位タブの並びになります。あとからタブをドラッグして変更できます。</p>';
+      h+='<p class="empty">チェックした順番が下位タブの並びになります。あとからタブをドラッグして変更できます。</p>';
     }
   }
   h+='</div>';
@@ -1073,7 +1096,7 @@ function render(){
   }
   $('settings').style.display='none'; $('gwrap').style.display='';
   const k=(cur&&cur.t==='c')? cur.cat : {label:(cur?cur.label:''),mode:'series'};
-  const subs=(cur&&cur.t==='p')? pageSubs(cur.page) : subsOf(k);
+  const subs=(cur&&cur.t==='c'&&cur.cat.mode==='text')? subsOf(k) : resolveItems(tabItems(cur));
 
   if(k.mode==='text'){
     $('subs').innerHTML=subs.length>1
@@ -1101,18 +1124,10 @@ function render(){
     + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
     + '</span>';
   enableDrag($('subs'),'button.sb',(from,to)=>{
-    const _c=curTab();
-    if(_c&&_c.t==='p'){
-      const p=_c.page;
-      p.items=moveItem(p.items||[],from,to); savePages();
-      if(zoomIdx===from) zoomIdx=to; else if(from<zoomIdx&&to>=zoomIdx) zoomIdx--; else if(from>zoomIdx&&to<=zoomIdx) zoomIdx++;
-      render(); return;
-    }
-    const k2=(_c&&_c.cat)||{}; const key=k2.id||k2.label;
-    const now=subsOf(k2).map(x=>x.label);
-    ORD[key]=moveItem(now,from,to);
+    const _c=curTab(); if(!_c) return;
+    setTabItems(_c, moveItem(tabItems(_c),from,to));
     if(zoomIdx===from) zoomIdx=to; else if(from<zoomIdx&&to>=zoomIdx) zoomIdx--; else if(from>zoomIdx&&to<=zoomIdx) zoomIdx++;
-    saveOrd(); render();
+    render();
   });
   $('bulk').onclick=toggleBulk;
   $('b-first').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});
