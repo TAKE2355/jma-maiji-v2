@@ -173,13 +173,15 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
                 im = Image.open(io.BytesIO(b)) if b else None
             if im is None:
                 return None
-            fn = save(im, "%s_%02d.jpg" % (key, idx))
+            # 時刻をファイル名に含める → 端末側で「持っていないコマだけ」取得できる
+            stamp = (ts or ("%014d" % idx))
+            fn = save(im, "%s_%s.jpg" % (key, stamp))
             return {"file": fn, "ts": ts} if fn else None
         except Exception:
             return None
 
     res = [None] * len(specs)
-    with _cf.ThreadPoolExecutor(max_workers=8) as ex:
+    with _cf.ThreadPoolExecutor(max_workers=16) as ex:
         for i, r in zip(range(len(specs)), ex.map(one, list(enumerate(specs)))):
             res[i] = r
     frames = [r for r in res if r]
