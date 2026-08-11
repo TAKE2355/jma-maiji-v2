@@ -718,6 +718,44 @@ def _kumo_url(dt):
     d = dt.replace(minute=(dt.minute // 5) * 5, second=0, microsecond=0)
     return KUMO_BASE + d.strftime("%Y%m%d%H%M00") + ".jpg"
 
+CB_BASE = "https://www3.metair.go.jp/pict/satellite/hf/cov/ENJP61_RJTD_"
+
+def _cb_url(dt):
+    """積乱雲情報(ENJP61)のURL。5分刻み。"""
+    d = dt.replace(minute=(dt.minute // 5) * 5, second=0, microsecond=0)
+    return CB_BASE + d.strftime("%Y%m%d%H%M00") + ".jpg"
+
+def get_cb_image(code, overlay=False):
+    """MetAir 積乱雲情報。code は遡る分数(0=最新, 60=1時間前, 120=2時間前)。"""
+    try:
+        try:
+            offset = int(str(code))
+        except Exception:
+            offset = 0
+        base_dt = datetime.datetime.utcnow() - datetime.timedelta(minutes=offset)
+        im, ts = None, None
+        for back in range(0, 12):
+            dt = base_dt - datetime.timedelta(minutes=5 * back)
+            url = _cb_url(dt)
+            try:
+                rr = requests.get(url, headers=METAIR_HEADERS, timeout=20)
+                if rr.status_code == 200 and len(rr.content) > 2000:
+                    im = Image.open(io.BytesIO(rr.content)).convert("RGB")
+                    ts = url[-18:-4]
+                    break
+            except Exception:
+                continue
+        if im is None:
+            print(f"    積乱雲域: 取得失敗 offset={offset}min")
+            return None, None
+        print(f"  積乱雲域取得: offset={offset}min {im.size} ts={ts}")
+        if overlay and ts:
+            im = apply_overlay_layers(im, ts, lambda d: [_cb_url(d)])
+        return im, ts
+    except Exception as e:
+        print(f"  積乱雲域エラー[{code}]: {e}")
+        return None, None
+
 def get_kumo_image(code, overlay=False):
     """MetAir 雲頂高度情報。code は遡る分数(0=最新, 60=1時間前, 120=2時間前)。"""
     try:
@@ -926,6 +964,9 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         im, period = get_imoc_thunder(code)
         return im, (f"{label}  {period}" if period else label)
 
+    elif chart_type == "metair_cb":
+        im, ts = get_cb_image(code, overlay=want_ov)
+        return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
     elif chart_type == "metair_kumo":
         im, ts = get_kumo_image(code, overlay=want_ov)
         return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
