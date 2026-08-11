@@ -622,6 +622,13 @@
           "frames": 18
         },
         {
+          "key": "wv",
+          "label": "水蒸気",
+          "kind": "wv",
+          "step": 10,
+          "frames": 36
+        },
+        {
           "key": "cwa_tw",
           "label": "台湾・台湾域",
           "kind": "cwa",
