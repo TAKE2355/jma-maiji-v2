@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>NIMBUS OFFLINE 更新</title>
+<style>
+body{margin:0;background:#0e1012;color:#e8eaed;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;
+ display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.box{max-width:420px;text-align:center;}
+h1{font-family:'Orbitron',sans-serif;color:#e82127;font-size:20px;letter-spacing:.16em;margin:0 0 6px;}
+p{color:#8b9096;font-size:14px;line-height:1.8;margin:6px 0;}
+#log{color:#3ddc84;font-size:13px;margin-top:16px;min-height:120px;text-align:left;
+ background:#17191c;border:1px solid #2a2e33;border-radius:8px;padding:12px 14px;white-space:pre-wrap;}
+a.btn{display:inline-block;margin-top:16px;background:#e82127;color:#fff;text-decoration:none;
+ padding:12px 22px;border-radius:8px;font-weight:700;letter-spacing:.04em;}
+</style></head><body>
+<div class="box">
+<h1>NIMBUS OFFLINE</h1>
+<p>この端末を最新版に更新しています</p>
+<div id="log">開始しています…</div>
+<a class="btn" id="go" href="offline.html">アプリを開く</a>
+</div>
+<script>
+const log=document.getElementById('log');
+const say=s=>{ log.textContent+='\n'+s; };
+(async()=>{
+  try{
+    const regs=await navigator.serviceWorker.getRegistrations();
+    for(const r of regs) await r.unregister();
+    say('✓ 旧バージョンの常駐プログラムを解除 ('+regs.length+'件)');
+  }catch(e){ say('・常駐プログラムなし'); }
+  try{
+    const c=await caches.open('nimbus-offline-v1');
+    const ks=await c.keys();
+    let n=0;
+    for(const k of ks){
+      if(/offline\.html|sw-offline\.js|\/assets\//.test(k.url)){ await c.delete(k,{ignoreSearch:true}); n++; }
+    }
+    say('✓ 画面プログラムのキャッシュを削除 ('+n+'件)');
+    say('  気象画像 '+(ks.length-n)+'件はそのまま保持しています');
+  }catch(e){ say('・キャッシュなし'); }
+  say('');
+  say('完了しました。下のボタンでアプリを開いてください。');
+  document.getElementById('go').href='offline.html?fresh='+Date.now();
+})();
+</script>
+</body></html>
