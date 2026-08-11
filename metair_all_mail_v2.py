@@ -771,6 +771,33 @@ def nowc_times():
         print(f"    ナウキャスト時刻一覧失敗: {e}")
     return []
 
+def _nowc_stamp(im, validtime):
+    """画像の左下に時刻(JST/UTC)を大きく焼き込む"""
+    s = str(validtime)
+    try:
+        dt = datetime.datetime.strptime(s[:14], "%Y%m%d%H%M%S")
+    except Exception:
+        return im
+    jst = dt + datetime.timedelta(hours=9)
+    txt = jst.strftime("%m/%d %H:%M") + " JST    " + dt.strftime("%H%M") + "Z"
+    W, H = im.size
+    fs = max(28, W // 24)
+    f = get_font(fs)
+    d = ImageDraw.Draw(im)
+    try:
+        bb = d.textbbox((0, 0), txt, font=f)
+    except Exception:
+        tw0, th0 = d.textsize(txt, font=f)
+        bb = (0, 0, tw0, th0)
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    pad = max(8, fs // 4)
+    x = pad * 2
+    y = H - th - pad * 3
+    d.rectangle([x - pad, y - pad, x + tw + pad, y + th + pad],
+                fill=(255, 255, 255), outline=(30, 30, 30), width=3)
+    d.text((x - bb[0], y - bb[1]), txt, font=f, fill=(10, 10, 10))
+    return im
+
 def get_nowc_hrpns(basetime, validtime):
     """高解像度降水ナウキャスト（日本全域）をタイルから1枚に合成"""
     try:
@@ -786,7 +813,7 @@ def get_nowc_hrpns(basetime, validtime):
                     got += 1
         if got == 0:
             return None, None
-        return cv.convert("RGB"), str(validtime)
+        return _nowc_stamp(cv.convert("RGB"), validtime), str(validtime)
     except Exception as e:
         print(f"  高解像度降水エラー: {e}")
         return None, None
