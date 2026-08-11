@@ -14,6 +14,9 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // コミットSHA固定の取得URLは保存しない（BASEキーと二重になるため）
+  if (url.hostname === 'raw.githubusercontent.com' && /\/[0-9a-f]{40}\//.test(url.pathname)) return;
+
   const isAsset = url.hostname === 'raw.githubusercontent.com'
                || url.hostname === 'fonts.googleapis.com'
                || url.hostname === 'fonts.gstatic.com'
