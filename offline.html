@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0e1012">
 <title>NIMBUS OFFLINE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -47,7 +47,8 @@ nav.cats button.active,.subs button.sb.active{background:var(--danger);border-co
 
 /* 画像エリア */
 main{padding:2px;}
-#grid{display:grid;gap:2px;overflow-y:auto;overscroll-behavior:contain;align-content:start;align-items:start;grid-auto-rows:min-content;}
+#gwrap{overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y;}
+#grid{display:grid;gap:2px;align-content:start;align-items:start;grid-auto-rows:min-content;width:100%;}
 .tile{position:relative;background:#000;border:0;border-radius:3px;overflow:hidden;
  display:block;line-height:0;cursor:zoom-in;}
 #grid.zoom .tile{cursor:zoom-out;}
@@ -568,7 +569,7 @@ button.dropzone{background:#1d3b2a!important;border-color:var(--ok)!important;co
 <div class="subs" id="subs"></div>
 <main>
   <pre id="textview"></pre>
-  <div id="grid"></div>
+  <div id="gwrap"><div id="grid"></div></div>
   <div class="empty" id="empty">「GET IT NOW!!」を押すと画像を端末に保存します。<br>
   一度取得すれば、通信が無い環境でも表示できます。</div>
 </main>
@@ -1000,7 +1001,7 @@ function toggleBulk(){
   $('bulk').classList.toggle('playing',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
-function setCat(i){ catIdx=i; zoomIdx=-1; render(); }
+function setCat(i){ catIdx=i; zoomIdx=-1; GZ=1; const g=$('grid'); if(g) g.style.width='100%'; render(); }
 function setZoom(i){ zoomIdx=(zoomIdx===i? -1 : i); render(); }
 
 // 画面の残り高さにグリッドを収める
@@ -1009,15 +1010,61 @@ function fitArea(){
   const used=(hd?hd.offsetHeight:0)+(ct?ct.offsetHeight:0)
             +(sb&&getComputedStyle(sb).display!=='none'?sb.offsetHeight:0)+16;
   const h=Math.max(200, window.innerHeight-used);
+  const w=$('gwrap'); if(w) w.style.height=h+'px';
   $('grid').style.height = (zoomIdx>=0)? h+'px' : '';
-  $('grid').style.maxHeight = h+'px';
   $('textview').style.maxHeight=h+'px';
   [...$('grid').children].forEach(el=>{ el.style.height = (zoomIdx>=0)? h+'px' : ''; });
 }
 window.addEventListener('resize',fitArea);
+
+// ── 画像エリアのみピンチズーム（ヘッダ・タブは固定） ──
+let GZ=1;
+function applyZoom(cx,cy,prev){
+  const w=$('gwrap'), g=$('grid');
+  if(!w||!g) return;
+  const rect=w.getBoundingClientRect();
+  const px=(cx==null? rect.width/2 : cx-rect.left);
+  const py=(cy==null? rect.height/2 : cy-rect.top);
+  const x=w.scrollLeft+px, y=w.scrollTop+py;
+  const k=GZ/(prev||1);
+  g.style.width=(GZ*100)+'%';
+  w.scrollLeft=x*k-px;
+  w.scrollTop =y*k-py;
+  showTags(); TILES.forEach(t=>flash(t));
+}
+function setZoomLevel(z,cx,cy){
+  const prev=GZ;
+  GZ=Math.min(6,Math.max(1,z));
+  if(GZ!==prev) applyZoom(cx,cy,prev);
+}
+(function(){
+  const w=$('gwrap'); if(!w) return;
+  w.addEventListener('wheel',e=>{
+    if(!(e.ctrlKey||e.metaKey)) return;
+    e.preventDefault();
+    setZoomLevel(GZ*(e.deltaY<0?1.12:0.89), e.clientX, e.clientY);
+  },{passive:false});
+  let d0=0,z0=1,cx=0,cy=0;
+  w.addEventListener('touchstart',e=>{
+    if(e.touches.length!==2) return;
+    const a=e.touches[0], b=e.touches[1];
+    d0=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    cx=(a.clientX+b.clientX)/2; cy=(a.clientY+b.clientY)/2; z0=GZ;
+  },{passive:false});
+  w.addEventListener('touchmove',e=>{
+    if(e.touches.length!==2||!d0) return;
+    e.preventDefault();
+    const a=e.touches[0], b=e.touches[1];
+    const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    cx=(a.clientX+b.clientX)/2; cy=(a.clientY+b.clientY)/2;
+    setZoomLevel(z0*d/d0, cx, cy);
+  },{passive:false});
+  w.addEventListener('touchend',()=>{ d0=0; },{passive:true});
+  w.addEventListener('dblclick',e=>setZoomLevel(GZ>1?1:2.5,e.clientX,e.clientY));
+})();
 function flashAll(){ TILES.forEach(t=>flash(t)); showTags(); }
 ['scroll','wheel','touchmove','gesturechange','gestureend'].forEach(ev=>{
-  const g=$('grid'); if(g) g.addEventListener(ev,flashAll,{passive:true});
+  const g=$('gwrap')||$('grid'); if(g) g.addEventListener(ev,flashAll,{passive:true});
 });
 window.addEventListener('scroll',flashAll,{passive:true});
 
