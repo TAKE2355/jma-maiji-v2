@@ -642,6 +642,13 @@
           "frames": 18
         },
         {
+          "key": "hrpns",
+          "label": "高解像度降水",
+          "kind": "nowc",
+          "step": 5,
+          "frames": 24
+        },
+        {
           "key": "wv",
           "label": "水蒸気",
           "kind": "wv",
