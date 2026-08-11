@@ -706,6 +706,17 @@ async function update(){
       }
     }
     await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+    // manifestに存在しない古い画像を掃除（設定変更で不要になったファイル対策）
+    try{
+      const keep=new Set(files.filter(f=>f.charAt(0)!=='@').map(f=>BASE+f));
+      keep.add(BASE+'manifest.json');
+      let del=0;
+      for(const k of await c.keys()){
+        if(k.url.indexOf(BASE)!==0) continue;              // 自前アセットは対象外
+        if(!keep.has(k.url.split('?')[0])){ await c.delete(k); del++; }
+      }
+      if(del) console.log('古いキャッシュを削除:',del,'件');
+    }catch(e){}
     MF=mf; render();
     b.textContent='GET IT NOW!!';
     calcCacheSize();
@@ -1071,6 +1082,7 @@ window.addEventListener('scroll',flashAll,{passive:true});
 
 
 $('btn-update').onclick=update;
+if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
 boot().then(()=>calcCacheSize());
 setTimeout(fitArea,300);
 </script>
