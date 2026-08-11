@@ -527,6 +527,13 @@ header{padding:5px 8px;gap:8px;}
 #btn-collect{background:#2f353c;border:1px solid var(--line);}
 #btn-collect:hover{border-color:#4a4f55;}
 
+
+/* ドラッグ＆ドロップ */
+.dragging{opacity:.45;outline:2px dashed var(--danger);outline-offset:-2px;}
+button.dragging{background:var(--danger)!important;border-color:var(--danger)!important;color:#fff!important;opacity:.7;}
+.dropzone{outline:2px solid var(--ok);outline-offset:-2px;}
+button.dropzone{background:#1d3b2a!important;border-color:var(--ok)!important;color:#fff!important;}
+.tile,.sb,nav.cats button{touch-action:pan-y;}
 </style>
 </head>
 <body>
@@ -552,7 +559,7 @@ header{padding:5px 8px;gap:8px;}
     
   </div>
   <div class="bar">
-    <button class="btn" id="btn-update">最新データ取得</button>
+    <button class="btn" id="btn-update">SYNC NOW</button>
     <div class="stamp" id="stamp">未取得</div>
   </div>
   <div class="prog" id="prog"><i></i></div>
@@ -562,7 +569,7 @@ header{padding:5px 8px;gap:8px;}
 <main>
   <pre id="textview"></pre>
   <div id="grid"></div>
-  <div class="empty" id="empty">「最新データ取得」を押すと画像を端末に保存します。<br>
+  <div class="empty" id="empty">「SYNC NOW」を押すと画像を端末に保存します。<br>
   一度取得すれば、通信が無い環境でも表示できます。</div>
 </main>
 <script>
@@ -614,7 +621,7 @@ async function boot(){
 
 async function update(){
   const b=$('btn-update'), pr=$('prog'), bar=pr.firstElementChild;
-  b.disabled=true; b.textContent='取得中…'; pr.style.display='block'; bar.style.width='0';
+  b.disabled=true; b.textContent='SYNCING…'; pr.style.display='block'; bar.style.width='0';
   try{
     const c=await caches.open(CACHE);
     let SRC=await freshBase();
@@ -623,7 +630,7 @@ async function update(){
     let mf=await r.json();
     // サーバ側のデータが40分以上古ければ、先に収集を走らせてから取り込む
     if(dataAgeMin(mf.generated_utc) > 40){
-      b.textContent='データが古いため再収集…';
+      b.textContent='COLLECTING…';
       const ok=await runCollection(b);
       if(ok){
         SRC=await freshBase();
@@ -652,13 +659,13 @@ async function update(){
         try{ const res=await fetch(url,{cache:'reload'});
              if(res.ok) await c.put(key, res.clone()); }catch(e){}
         done++; bar.style.width=(done/files.length*100).toFixed(1)+'%';
-        b.textContent='取得中 '+done+'/'+files.length;
+        b.textContent='SYNC '+done+'/'+files.length;
       }
     }
     await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
     MF=mf; render();
-    b.textContent='最新データ取得';
-  }catch(e){ b.textContent='取得失敗（再試行）'; }
+    b.textContent='SYNC NOW';
+  }catch(e){ b.textContent='SYNC FAILED'; }
   finally{ b.disabled=false; setTimeout(()=>{pr.style.display='none';},900); }
 }
 
@@ -677,6 +684,80 @@ function LAY(){
 }
 const saveLay=()=>{ try{ localStorage.setItem('nimbus_off_layouts',JSON.stringify(LAYS)); }catch(e){} };
 
+
+// ══ 効果音（カチッ） ══════════════════════════════════════════════
+let _AC=null;
+function clickSound(high){
+  try{
+    _AC = _AC || new (window.AudioContext||window.webkitAudioContext)();
+    if(_AC.state==='suspended') _AC.resume();
+    const t=_AC.currentTime;
+    const o=_AC.createOscillator(), g=_AC.createGain(), f=_AC.createBiquadFilter();
+    o.type='square'; o.frequency.setValueAtTime(high?2200:1300,t);
+    o.frequency.exponentialRampToValueAtTime(high?900:520,t+0.035);
+    f.type='bandpass'; f.frequency.value=high?2000:1200; f.Q.value=1.2;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.30,t+0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    o.connect(f); f.connect(g); g.connect(_AC.destination);
+    o.start(t); o.stop(t+0.06);
+  }catch(e){}
+}
+
+// ══ 並び順の保存 ══════════════════════════════════════════════════
+let ORD={}, CATORD=[];
+try{ ORD=JSON.parse(localStorage.getItem('nimbus_off_order')||'{}')||{}; }catch(e){}
+try{ CATORD=JSON.parse(localStorage.getItem('nimbus_off_catorder')||'[]')||[]; }catch(e){}
+const saveOrd=()=>{ try{ localStorage.setItem('nimbus_off_order',JSON.stringify(ORD));
+                          localStorage.setItem('nimbus_off_catorder',JSON.stringify(CATORD)); }catch(e){} };
+function applyOrder(list, keys, saved){
+  if(!saved||!saved.length) return list;
+  const idx=k=>{ const i=saved.indexOf(k); return i<0?9999:i; };
+  return list.map((v,i)=>({v,k:keys[i]})).sort((a,b)=>idx(a.k)-idx(b.k)).map(o=>o.v);
+}
+
+// ══ ドラッグ＆ドロップ（長押し不要・ポインタ操作） ══════════════
+function enableDrag(container, selector, onDrop){
+  if(!container) return;
+  let src=null, moved=false;
+  const items=()=>[...container.querySelectorAll(selector)];
+  container.addEventListener('pointerdown', e=>{
+    const el=e.target.closest(selector);
+    if(!el || e.target.closest('.ovl') || e.target.closest('select')) return;
+    src=el; moved=false;
+    el.setPointerCapture && el.setPointerCapture(e.pointerId);
+  });
+  container.addEventListener('pointermove', e=>{
+    if(!src) return;
+    if(!moved){
+      if(Math.abs(e.movementX)+Math.abs(e.movementY) < 3) return;
+      moved=true; src.classList.add('dragging'); clickSound(true);
+    }
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const t=el&&el.closest(selector);
+    items().forEach(x=>x.classList.toggle('dropzone', x===t && x!==src));
+  });
+  const finish=e=>{
+    if(!src) return;
+    const wasMoved=moved;
+    let target=null;
+    if(wasMoved){
+      const el=document.elementFromPoint(e.clientX,e.clientY);
+      target=el&&el.closest(selector);
+    }
+    items().forEach(x=>x.classList.remove('dragging','dropzone'));
+    const s=src; src=null; moved=false;
+    if(wasMoved && target && target!==s){
+      clickSound(false);
+      onDrop(items().indexOf(s), items().indexOf(target));
+    }
+  };
+  container.addEventListener('pointerup', finish);
+  container.addEventListener('pointercancel', ()=>{ 
+    items().forEach(x=>x.classList.remove('dragging','dropzone')); src=null; moved=false; });
+}
+function moveItem(arr,from,to){ if(from<0||to<0||from===to) return arr; const a=arr.slice(); const [x]=a.splice(from,1); a.splice(to,0,x); return a; }
+
 const ICO={
   first:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h2v14H7z"/><path d="M20 5v14L9.5 12z"/></svg>',
   last:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg>',
@@ -694,11 +775,13 @@ function tsLabel(ts){
 // サブ項目（静止画 or 連続再生）を統一形式で取り出す
 function subsOf(k){
   if(!k) return [];
+  const _ord = ORD[k.id||k.label]||[];
   if(k.mode==='text') return (k.items||[]).map(o=>({label:o.label,text:o.text,groups:o.groups,kind:'text'}));
-  return [].concat(
+  const list=[].concat(
     (k.items||[]).map(o=>({label:o.label,kind:'still',file:o.file,caption:o.caption})),
     (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()}))
   );
+  return applyOrder(list, list.map(x=>x.label), _ord);
 }
 
 // ══ 描画 ═════════════════════════════════════════════════════════
@@ -706,8 +789,17 @@ function render(){
   if(!MF) return;
   $('empty').style.display='none';
   $('stamp').innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>';
+  const cs=MF.categories;
+  const ordered=applyOrder(cs, cs.map(c=>c.id||c.label), CATORD);
+  if(ordered.some((c,i)=>c!==cs[i])) MF.categories=ordered;
   $('cats').innerHTML=MF.categories.map((k,i)=>
     '<button class="'+(i===catIdx?'active':'')+'" onclick="setCat('+i+')">'+esc(k.label)+'</button>').join('');
+  enableDrag($('cats'),'button',(from,to)=>{
+    MF.categories=moveItem(MF.categories,from,to);
+    CATORD=MF.categories.map(c=>c.id||c.label);
+    if(catIdx===from) catIdx=to; else if(from<catIdx&&to>=catIdx) catIdx--; else if(from>catIdx&&to<=catIdx) catIdx++;
+    saveOrd(); render();
+  });
   const k=MF.categories[catIdx]||{};
   const subs=subsOf(k);
 
@@ -737,6 +829,13 @@ function render(){
     + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
     + '<span class="lbl">順番</span><button id="ly-o" class="tg'+(LAY().order==='col'?' on':'')+'">'+(LAY().order==='row'?'横':'縦')+'</button>'
     + '</span>';
+  enableDrag($('subs'),'button.sb',(from,to)=>{
+    const k2=MF.categories[catIdx]; const key=k2.id||k2.label;
+    const cur=subsOf(k2).map(x=>x.label);
+    ORD[key]=moveItem(cur,from,to);
+    if(zoomIdx===from) zoomIdx=to; else if(from<zoomIdx&&to>=zoomIdx) zoomIdx--; else if(from>zoomIdx&&to<=zoomIdx) zoomIdx++;
+    saveOrd(); render();
+  });
   $('bulk').onclick=toggleBulk;
   $('b-first').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});
   $('b-last').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=Math.max(0,((t.s.frames||[]).length-1)); show(t); flash(t);});
@@ -767,6 +866,12 @@ function buildGrid(subs){
          +'<button class="ls">'+ICO.last+'</button><span class="cap"></span></div>' : '')
     + '</div>').join('');
 
+  enableDrag(g,'.tile',(from,to)=>{
+    const k2=MF.categories[catIdx]; const key=k2.id||k2.label;
+    const cur=subsOf(k2).map(x=>x.label);
+    ORD[key]=moveItem(cur,from,to);
+    saveOrd(); render();
+  });
   [...g.children].forEach((el,i)=>{
     const s=list[i];
     const t={el, s, idx:(s.kind==='series'? Math.max(0,(s.frames||[]).length-1):0), timer:null,
@@ -851,6 +956,11 @@ function fitArea(){
   [...$('grid').children].forEach(el=>{ el.style.height = (zoomIdx>=0)? h+'px' : ''; });
 }
 window.addEventListener('resize',fitArea);
+function flashAll(){ TILES.forEach(t=>flash(t)); showTags(); }
+['scroll','wheel','touchmove','gesturechange','gestureend'].forEach(ev=>{
+  const g=$('grid'); if(g) g.addEventListener(ev,flashAll,{passive:true});
+});
+window.addEventListener('scroll',flashAll,{passive:true});
 
 
 
