@@ -559,7 +559,7 @@ button.dropzone{background:#1d3b2a!important;border-color:var(--ok)!important;co
     
   </div>
   <div class="bar">
-    <button class="btn" id="btn-update">SYNC NOW</button>
+    <button class="btn" id="btn-update">GET IT NOW!!</button>
     <div class="stamp" id="stamp">未取得</div>
   </div>
   <div class="prog" id="prog"><i></i></div>
@@ -569,7 +569,7 @@ button.dropzone{background:#1d3b2a!important;border-color:var(--ok)!important;co
 <main>
   <pre id="textview"></pre>
   <div id="grid"></div>
-  <div class="empty" id="empty">「SYNC NOW」を押すと画像を端末に保存します。<br>
+  <div class="empty" id="empty">「GET IT NOW!!」を押すと画像を端末に保存します。<br>
   一度取得すれば、通信が無い環境でも表示できます。</div>
 </main>
 <script>
@@ -593,7 +593,7 @@ async function freshBase(){
 }
 
 const CACHE='nimbus-offline-v1';
-let MF=null;
+let MF=null, CACHE_MB="";
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw-offline.js');
 
@@ -706,7 +706,8 @@ async function update(){
     }
     await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
     MF=mf; render();
-    b.textContent='SYNC NOW';
+    b.textContent='GET IT NOW!!';
+    calcCacheSize();
   }catch(e){ b.textContent='SYNC FAILED'; console.error('sync',e); }
   finally{ b.disabled=false; setTimeout(()=>{pr.style.display='none';},900); }
 }
@@ -827,10 +828,28 @@ function subsOf(k){
 }
 
 // ══ 描画 ═════════════════════════════════════════════════════════
+// キャッシュ済みデータの合計容量を計算
+async function calcCacheSize(){
+  try{
+    const c=await caches.open(CACHE);
+    const ks=await c.keys();
+    let n=0;
+    for(const k of ks){
+      const res=await c.match(k);
+      if(!res) continue;
+      const b=await res.clone().arrayBuffer();
+      n+=b.byteLength;
+    }
+    CACHE_MB=(n/1024/1024).toFixed(1);
+    const s=$('stamp'); if(s&&MF) s.innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>　<b>'+CACHE_MB+' MB</b>';
+  }catch(e){}
+}
+
 function render(){
   if(!MF) return;
   $('empty').style.display='none';
-  $('stamp').innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>';
+  $('stamp').innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>'
+    + (CACHE_MB? '　<b>'+CACHE_MB+' MB</b>' : '');
   const cs=MF.categories;
   const ordered=applyOrder(cs, cs.map(c=>c.id||c.label), CATORD);
   if(ordered.some((c,i)=>c!==cs[i])) MF.categories=ordered;
@@ -869,7 +888,6 @@ function render(){
     + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
     + '<span class="tools right">'
     + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
-    + '<span class="lbl">順番</span><button id="ly-o" class="tg'+(LAY().order==='col'?' on':'')+'">'+(LAY().order==='row'?'横':'縦')+'</button>'
     + '</span>';
   enableDrag($('subs'),'button.sb',(from,to)=>{
     const k2=MF.categories[catIdx]; const key=k2.id||k2.label;
@@ -882,7 +900,6 @@ function render(){
   $('b-first').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});
   $('b-last').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=Math.max(0,((t.s.frames||[]).length-1)); show(t); flash(t);});
   $('ly-c').onchange=e=>{LAY().cols=+e.target.value;saveLay();render();};
-  $('ly-o').onclick=()=>{LAY().order=(LAY().order==='row'?'col':'row');saveLay();render();};
 
   $('textview').style.display='none'; $('grid').style.display='grid';
   buildGrid(subs);
@@ -908,12 +925,6 @@ function buildGrid(subs){
          +'<button class="ls">'+ICO.last+'</button><span class="cap"></span></div>' : '')
     + '</div>').join('');
 
-  enableDrag(g,'.tile',(from,to)=>{
-    const k2=MF.categories[catIdx]; const key=k2.id||k2.label;
-    const cur=subsOf(k2).map(x=>x.label);
-    ORD[key]=moveItem(cur,from,to);
-    saveOrd(); render();
-  });
   [...g.children].forEach((el,i)=>{
     const s=list[i];
     const t={el, s, idx:(s.kind==='series'? Math.max(0,(s.frames||[]).length-1):0), timer:null,
@@ -1007,7 +1018,7 @@ window.addEventListener('scroll',flashAll,{passive:true});
 
 
 $('btn-update').onclick=update;
-boot();
+boot().then(()=>calcCacheSize());
 setTimeout(fitArea,300);
 </script>
 <script>
