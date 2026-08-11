@@ -818,6 +818,110 @@ def get_nowc_hrpns(basetime, validtime):
         print(f"  高解像度降水エラー: {e}")
         return None, None
 
+def _nowc_lonlat_to_xy(lon, lat, W, H):
+    import math
+    step = 360.0 / (2 ** NOWC_Z)
+    lon0 = -180.0 + NOWC_X0 * step
+    span = (NOWC_X1 - NOWC_X0 + 1) * step
+    x = (lon - lon0) / span * W
+    r = math.radians(lat)
+    yt = (1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * (2 ** NOWC_Z)
+    y = (yt - NOWC_Y0) * 256
+    return x, y
+
+def nowc_times_n3():
+    """雷・竜巻ナウキャストの時刻一覧（新しい順）"""
+    try:
+        r = requests.get(NOWC_BASE + "/nowc/targetTimes_N3.json", headers=NOWC_HDR, timeout=20)
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        print(f"    雷ナウキャスト時刻一覧失敗: {e}")
+    return []
+
+def _nowc_draw_liden(im, basetime, validtime):
+    """前5分の落雷（GeoJSONの点）を描画"""
+    try:
+        u = (NOWC_BASE + "/nowc/" + str(basetime) + "/none/" + str(validtime)
+             + "/surf/liden/data.geojson?id=liden")
+        r = requests.get(u, headers=NOWC_HDR, timeout=20)
+        if r.status_code != 200:
+            return im
+        feats = (r.json() or {}).get("features") or []
+        d = ImageDraw.Draw(im)
+        W, H = im.size
+        for f in feats:
+            try:
+                lon, lat = f["geometry"]["coordinates"][:2]
+                tp = int((f.get("properties") or {}).get("type", 0))
+            except Exception:
+                continue
+            x, y = _nowc_lonlat_to_xy(float(lon), float(lat), W, H)
+            if not (0 <= x < W and 0 <= y < H):
+                continue
+            col = (215, 0, 0) if tp == 4 else (255, 140, 0)
+            s, w = 12, 4
+            d.line([(x - s, y), (x + s, y)], fill=col, width=w)
+            d.line([(x, y - s), (x, y + s)], fill=col, width=w)
+        print(f"    落雷 {len(feats)}点")
+        return im
+    except Exception as e:
+        print(f"    落雷描画エラー: {e}")
+        return im
+
+def get_nowc_thunder(basetime, validtime, liden_bt=None, liden_vt=None):
+    """雷活動度（雷ナウキャスト実況）＋前5分の落雷を日本全域で1枚に合成"""
+    try:
+        cv = _nowc_basemap()
+        tpl = (NOWC_BASE + "/nowc/" + str(basetime) + "/none/" + str(validtime)
+               + "/surf/thns/%d/%d/%d.png")
+        got = 0
+        for x in range(NOWC_X0, NOWC_X1 + 1):
+            for y in range(NOWC_Y0, NOWC_Y1 + 1):
+                tl = _nowc_tile(tpl % (NOWC_Z, x, y))
+                if tl is not None:
+                    cv.paste(tl, ((x - NOWC_X0) * 256, (y - NOWC_Y0) * 256), tl)
+                    got += 1
+        if got == 0:
+            return None, None
+        out = cv.convert("RGB")
+        if liden_bt and liden_vt:
+            out = _nowc_draw_liden(out, liden_bt, liden_vt)
+        return _nowc_stamp(out, validtime), str(validtime)
+    except Exception as e:
+        print(f"  雷活動度エラー: {e}")
+        return None, None
+
+def nowc_thunder_specs(n):
+    """雷活動度の実況コマ（新しい順）と対応する落雷コマの組を返す"""
+    n3 = nowc_times_n3()
+    obs = [e for e in n3 if e.get("validtime") <= e.get("basetime")
+           and "thns" in (e.get("elements") or [])]
+    lid = {}
+    for e in n3:
+        if "liden" in (e.get("elements") or []):
+            lid.setdefault(e.get("validtime"), e)
+    out = []
+    for e in obs[:int(n)]:
+        vt = e.get("validtime")
+        le = lid.get(vt)
+        out.append((vt, e.get("basetime"), vt,
+                    le.get("basetime") if le else None,
+                    le.get("validtime") if le else None))
+    return out
+
+def get_nowc_thunder_latest(code):
+    """code は遡るコマ数(0=最新、10分刻み)"""
+    try:
+        idx = int(str(code))
+    except Exception:
+        idx = 0
+    sp = nowc_thunder_specs(idx + 1)
+    if len(sp) <= idx:
+        return None, None
+    _vt, bt, vt, lbt, lvt = sp[idx]
+    return get_nowc_thunder(bt, vt, lbt, lvt)
+
 def get_nowc_latest(code):
     """code は遡るコマ数(0=最新、5分刻み)"""
     try:
@@ -1107,6 +1211,9 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         im, period = get_imoc_thunder(code)
         return im, (f"{label}  {period}" if period else label)
 
+    elif chart_type == "jma_thunder":
+        im, ts = get_nowc_thunder_latest(code)
+        return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
     elif chart_type == "jma_nowc":
         im, ts = get_nowc_latest(code)
         return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
