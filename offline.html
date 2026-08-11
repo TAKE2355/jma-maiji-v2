@@ -697,7 +697,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='hlog2-260811';
+const APP_VER='hlog3-260811';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1290,6 +1290,8 @@ async function renderHealth(){
   const el=$("hzbody"); if(!el) return;
   const L=(HLOG||[]).slice(), now=Date.now()/1000, SLOT=[3,18,33,48];
   const first=L.length?L[0].t:now;
+  const peak=L.reduce((m,x)=>Math.max(m,x.n||0),0);
+  const THR=peak?Math.round(peak*0.95):700;
   const hourTop=Math.floor(now/3600)*3600;
   let ok=0, few=0, miss=0, rows="";
   for(let h=0;h<24;h++){
@@ -1299,7 +1301,7 @@ async function renderHealth(){
       if(t0>now-6*60||t0<first){ cells+='<div class="hcell fut"></div>'; continue; }
       const e=L.find(x=>Math.abs(x.t-t0)<=9*60);
       if(!e){ miss++; cells+='<div class="hcell" title="'+jstStr(t0)+' 欠測"></div>'; }
-      else if((e.n||0)>=700){ ok++; cells+='<div class="hcell ok" title="'+jstStr(e.t)+' '+e.n+'件"></div>'; }
+      else if((e.n||0)>=THR){ ok++; cells+='<div class="hcell ok" title="'+jstStr(e.t)+' '+e.n+'件"></div>'; }
       else { few++; cells+='<div class="hcell few" title="'+jstStr(e.t)+' '+(e.n||0)+'件"></div>'; }
     }
     const d=new Date(hs*1000+9*3600000);
@@ -1318,7 +1320,7 @@ async function renderHealth(){
   h+='<div class="sub">'+(age!=null?(age+"分前に収集"):"")+'</div>';
   h+='<h4>直近24時間の実行状況（1行＝1時間 / 4スロット）</h4>';
   h+='<div class="sub">実行 '+done+' ／ '+total+' スロット'+(miss?'（欠測 '+miss+'）':"")+'</div>';
-  h+='<div class="hleg"><span><i style="background:#2ecc71"></i>正常(700件以上)</span>'
+  h+='<div class="hleg"><span><i style="background:#2ecc71"></i>正常('+THR+'件以上)</span>'
     +'<span><i style="background:#e6a23c"></i>件数不足</span>'
     +'<span><i style="background:#3a3a3a"></i>欠測</span>'
     +'<span><i style="background:#2a2a2a;border:1px dashed #444"></i>記録前／実行前</span></div>';
