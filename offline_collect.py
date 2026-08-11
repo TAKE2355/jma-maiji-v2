@@ -178,6 +178,10 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
     elif kind == "jma":    specs = frames_jma(s.get("prefix"), s.get("code"), step, n, jma_ts)
     elif kind == "akuten": specs = frames_akuten(s.get("code"), step, n, akuten_ts)
     elif kind == "csa019": specs = frames_csa019(s.get("code"), n)
+    elif kind == "nowc":
+        tt = M.nowc_times()[:n]
+        specs = [(e.get("validtime"), e.get("basetime"), None) for e in tt]
+        M._nowc_basemap()          # 地図タイルを先に1回だけ作ってスレッド間で共有
     elif kind == "pagasa":
         fr = M._pagasa_frames()
         view = M.PAGASA_VIEWS.get(str(s.get("code")))
@@ -190,6 +194,8 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
         try:
             if kind == "pagasa":
                 im = M._pagasa_compose(url, view)
+            elif kind == "nowc":
+                im, _ts = M.get_nowc_hrpns(url, ts)
             else:
                 b = get_bytes(url, hdr)
                 im = Image.open(io.BytesIO(b)) if b else None
