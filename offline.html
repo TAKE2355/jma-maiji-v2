@@ -604,6 +604,35 @@ nav.cats button.pg{border-style:dashed;}
  cursor:pointer;font-family:inherit;}
 .sel-name{background:#0b0d0f;border:1px solid var(--line);border-radius:4px;padding:5px 8px;}
 .sel-name:focus{outline:none;border-color:var(--danger);}
+
+.set-mode{display:flex;gap:6px;padding:0 4px 10px;}
+.set-mode button{background:var(--card);border:1px solid var(--line);color:var(--sub);border-radius:5px;
+ padding:6px 14px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;}
+.set-mode button.active{background:var(--danger);border-color:var(--danger);color:#fff;}
+.sel-name.ro{flex:1;min-width:0;background:transparent;border:0;padding:5px 2px;font-size:13px;color:var(--text);}
+#src-wrap{display:flex;flex-direction:column;gap:10px;}
+.src-group{border:1px solid var(--line);border-radius:7px;background:var(--card);}
+.src-group.dropzone{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset;}
+.src-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);}
+.grp-name{flex:1;min-width:0;background:#0b0d0f;border:1px solid var(--line);color:var(--text);
+ border-radius:4px;padding:5px 8px;font-size:13px;font-weight:700;font-family:inherit;}
+.grp-name:focus{outline:none;border-color:var(--danger);}
+.grp-del{background:transparent;border:1px solid var(--line);color:var(--sub);border-radius:4px;
+ padding:5px 9px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.grp-del:hover{border-color:var(--danger);color:var(--danger);}
+.src-items{padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px;min-height:34px;}
+.src-item{display:flex;align-items:center;gap:8px;background:#101315;border:1px solid var(--line);
+ border-radius:5px;padding:4px 8px;}
+.src-item .grip{color:#9aa1a8;cursor:grab;font-size:16px;padding:4px 8px;margin:-4px -4px -4px -6px;
+ touch-action:none;border-radius:4px;}
+.src-item .grip:active{background:rgba(255,255,255,.10);cursor:grabbing;}
+.src-name{flex:1;min-width:0;background:#0b0d0f;border:1px solid var(--line);color:var(--text);
+ border-radius:4px;padding:5px 8px;font-size:12.5px;font-family:inherit;}
+.src-name:focus{outline:none;border-color:var(--danger);}
+.src-org{color:var(--sub);font-size:11px;white-space:nowrap;max-width:38%;overflow:hidden;text-overflow:ellipsis;}
+.src-empty{color:var(--sub);font-size:11.5px;border:1px dashed var(--line);border-radius:5px;
+ padding:8px;text-align:center;}
+.src-item.dragging{opacity:.5;outline:2px dashed var(--danger);}
 </style>
 </head>
 <body>
@@ -990,11 +1019,9 @@ function rawSubs(k){
   );
 }
 function allImages(){
+  syncGroups();
   const out=[];
-  (MF?MF.categories:[]).forEach(k=>{
-    if(k.mode==='text') return;
-    rawSubs(k).forEach(s=>out.push({cat:(k.id||k.label),catLabel:k.label,label:s.label}));
-  });
+  GROUPS.forEach(g=>(g.items||[]).forEach(it=>out.push({cat:it.cat,catLabel:g.label,label:it.label})));
   return out;
 }
 // タブが持つ項目リスト（未設定のカテゴリは自前の項目が既定）
@@ -1055,6 +1082,112 @@ function toggleItem(tabKey,cat,label){
   renderSettings(); render();
 }
 
+
+// ══ 情報ソース（分類）══════════════════════════════════════════════
+let GROUPS=[], setMode='page';
+try{ GROUPS=JSON.parse(localStorage.getItem('nimbus_off_groups')||'[]')||[]; }catch(e){}
+function syncGroups(){
+  if(!MF) return;
+  const seen=new Set();
+  GROUPS.forEach(g=>(g.items||[]).forEach(it=>seen.add(it.cat+''+it.label)));
+  (MF.categories||[]).forEach(k=>{
+    if(k.mode==='text') return;
+    const gid='g:'+(k.id||k.label);
+    let g=GROUPS.find(x=>x.id===gid);
+    if(!g){ g={id:gid,label:k.label,items:[]}; GROUPS.push(g); }
+    rawSubs(k).forEach(s=>{
+      const key=(k.id||k.label)+''+s.label;
+      if(!seen.has(key)){ g.items.push({cat:(k.id||k.label),label:s.label}); seen.add(key); }
+    });
+  });
+  // 実在しない項目を除去
+  GROUPS.forEach(g=>{
+    g.items=(g.items||[]).filter(it=>{
+      const k=(MF.categories||[]).find(c=>(c.id||c.label)===it.cat);
+      return k && rawSubs(k).some(s=>s.label===it.label);
+    });
+  });
+}
+function groupOf(cat,label){
+  for(const g of GROUPS) if((g.items||[]).some(x=>x.cat===cat&&x.label===label)) return g;
+  return null;
+}
+function renameGroup(gid,v){ const g=GROUPS.find(x=>x.id===gid); if(g){ g.label=v||'分類'; saveGroups(); renderSettings(); } }
+const saveGroups=()=>{ try{ localStorage.setItem('nimbus_off_groups',JSON.stringify(GROUPS)); }catch(e){} };
+function addGroup(){ GROUPS.push({id:'g'+Date.now(),label:'新しい分類',items:[]}); saveGroups(); renderSettings(); }
+function delGroup(gid){
+  const g=GROUPS.find(x=>x.id===gid); if(!g) return;
+  if((g.items||[]).length){ alert('項目が入っている分類は削除できません。先に他の分類へ移動してください。'); return; }
+  if(!confirm('分類「'+g.label+'」を削除します。よろしいですか？')) return;
+  GROUPS=GROUPS.filter(x=>x.id!==gid); saveGroups(); renderSettings();
+}
+function moveToGroup(cat,label,gid,index){
+  GROUPS.forEach(g=>{ g.items=(g.items||[]).filter(x=>!(x.cat===cat&&x.label===label)); });
+  const g=GROUPS.find(x=>x.id===gid); if(!g) return;
+  if(index==null||index<0||index>g.items.length) g.items.push({cat,label});
+  else g.items.splice(index,0,{cat,label});
+  saveGroups(); clickSound(false); renderSettings();
+}
+
+function renderSource(){
+  syncGroups();
+  let h='<div class="set-tabs"><button class="btn add" onclick="addGroup()">＋分類を追加</button>'
+      + '<span class="set-hint">≡ をつかんで別の分類へ移せます。名称は直接編集できます。</span></div>'
+      + '<div id="src-wrap">';
+  GROUPS.forEach(g=>{
+    h+='<div class="src-group" data-gid="'+g.id+'">'
+     + '<div class="src-head"><input class="grp-name" value="'+esc(g.label)+'" onchange="renameGroup(\''+g.id+'\',this.value)">'
+     + '<span class="set-cnt">'+(g.items||[]).length+'枚</span>'
+     + '<button class="grp-del" onclick="delGroup(\''+g.id+'\')">分類を削除</button></div>'
+     + '<div class="src-items">'
+     + (g.items||[]).map(it=>
+         '<div class="src-item" data-cat="'+esc(it.cat)+'" data-label="'+esc(it.label)+'">'
+         + '<span class="grip">≡</span>'
+         + '<input class="src-name" value="'+esc(disp(it.cat,it.label))+'" '
+         + 'onchange="renameItem(\''+it.cat.replace(/'/g,"\\'")+'\',\''+it.label.replace(/'/g,"\\'")+'\',this.value)">'
+         + '<span class="src-org">'+esc(it.label)+'</span></div>').join('')
+     + (!(g.items||[]).length?'<div class="src-empty">ここへドロップ</div>':'')
+     + '</div></div>';
+  });
+  h+='</div>';
+  $('settings').innerHTML=h;
+  enableSourceDrag();
+}
+
+function enableSourceDrag(){
+  const wrap=$('src-wrap'); if(!wrap) return;
+  let src=null,moved=false;
+  wrap.addEventListener('pointerdown',e=>{
+    if(!e.target.closest('.grip')) return;
+    src=e.target.closest('.src-item'); moved=false;
+    if(src) src.setPointerCapture&&src.setPointerCapture(e.pointerId);
+  });
+  wrap.addEventListener('pointermove',e=>{
+    if(!src) return;
+    if(!moved){ if(Math.abs(e.movementX)+Math.abs(e.movementY)<2) return; moved=true; src.classList.add('dragging'); clickSound(true); }
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const grp=el&&el.closest('.src-group');
+    wrap.querySelectorAll('.src-group').forEach(x=>x.classList.toggle('dropzone',x===grp));
+  });
+  const fin=e=>{
+    if(!src) return;
+    const s=src, was=moved; src=null; moved=false;
+    wrap.querySelectorAll('.src-group').forEach(x=>x.classList.remove('dropzone'));
+    s.classList.remove('dragging');
+    if(!was) return;
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const grp=el&&el.closest('.src-group');
+    if(!grp) return;
+    const over=el&&el.closest('.src-item');
+    let idx=null;
+    if(over&&over!==s){ const list=[...grp.querySelectorAll('.src-item')]; idx=list.indexOf(over); }
+    moveToGroup(s.dataset.cat, s.dataset.label, grp.dataset.gid, idx);
+  };
+  wrap.addEventListener('pointerup',fin);
+  wrap.addEventListener('pointercancel',()=>{ if(src){src.classList.remove('dragging');} src=null; moved=false;
+    wrap.querySelectorAll('.src-group').forEach(x=>x.classList.remove('dropzone')); });
+}
+
 function moveSel(i,d){
   const t2=tabsAll().find(x=>x.key===selEdit); if(!t2) return;
   const list=tabItems(t2); const to=i+d;
@@ -1069,6 +1202,11 @@ function delSel(tabKey,cat,label){
 
 function renderSettings(){
   const el=$('settings'); if(!el) return;
+  const modeBar='<div class="set-mode">'
+    + '<button class="'+(setMode==='page'?'active':'')+'" onclick="setMode=\'page\';renderSettings()">ページ設定</button>'
+    + '<button class="'+(setMode==='source'?'active':'')+'" onclick="setMode=\'source\';renderSettings()">情報ソース</button>'
+    + '</div>';
+  if(setMode==='source'){ renderSource(); el.innerHTML=modeBar+el.innerHTML; return; }
   const T=tabsAll();
   const imgs=allImages();
   if(!selEdit || !T.some(t=>t.key===selEdit)) selEdit=(T[0]&&T[0].key)||null;
@@ -1101,8 +1239,7 @@ function renderSettings(){
       if(picked.length){
         h+='<div class="sel-head">選択中（ドラッグで並べ替え／名称は直接編集できます）</div><div id="sel-list">'
          + picked.map((x,n)=>'<div class="sel-row"><span class="grip">≡</span><span class="sel-no">'+(n+1)+'</span>'
-             + '<input class="sel-name" value="'+esc(disp(x.cat,x.label))+'" '
-             + 'onchange="renameItem(\''+x.cat.replace(/'/g,"\\'")+'\',\''+x.label.replace(/'/g,"\\'")+'\',this.value)">'
+             + '<span class="sel-name ro">'+esc(disp(x.cat,x.label))+'</span>'
              + '<button class="sel-mv" onclick="moveSel('+n+',-1)">&#9650;</button>'
              + '<button class="sel-mv" onclick="moveSel('+n+',1)">&#9660;</button>'
              + '<button class="sel-del" onclick="delSel(\''+tb.key+'\',\''+x.cat.replace(/'/g,"\\'")+'\',\''+x.label.replace(/'/g,"\\'")+'\')">削除</button></div>').join('')
@@ -1123,7 +1260,7 @@ function renderSettings(){
     }
   }
   h+='</div>';
-  el.innerHTML=h;
+  el.innerHTML=modeBar+h;
   if($('sel-list')){
     enableDrag($('sel-list'),'.sel-row',(from,to)=>{
       const t2=tabsAll().find(x=>x.key===selEdit); if(!t2) return;
