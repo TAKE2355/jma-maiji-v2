@@ -424,8 +424,13 @@ def get_imoc_thunder(time_idx):
     ページから画像URLと対象期間を抽出する"""
     import re as _re
     try:
-        t = int(time_idx)
-        url = f"https://www.imocwx.com/guid.php?Type=3&Area=0&Time={t}"
+        s = str(time_idx).strip()
+        if "-" in s:
+            area_s, t_s = s.split("-", 1)
+            area, t = int(area_s), int(t_s)
+        else:
+            area, t = 0, int(s)
+        url = f"https://www.imocwx.com/guid.php?Type=3&Area={area}&Time={t}"
         r = requests.get(url, headers=IMOC_HDR, timeout=20)
         if r.status_code != 200:
             print(f"    発雷確率: ページHTTP {r.status_code}")
