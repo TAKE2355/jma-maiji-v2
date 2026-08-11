@@ -725,6 +725,44 @@ def _cb_url(dt):
     d = dt.replace(minute=(dt.minute // 5) * 5, second=0, microsecond=0)
     return CB_BASE + d.strftime("%Y%m%d%H%M00") + ".jpg"
 
+WV_BASE = "https://www3.metair.go.jp/pict/satellite/ea/ir3_h/ENJP26_RJTD_"
+
+def _wv_url(dt):
+    """東アジア水蒸気画像(ENJP26)のURL。10分刻み。"""
+    d = dt.replace(minute=(dt.minute // 10) * 10, second=0, microsecond=0)
+    return WV_BASE + d.strftime("%Y%m%d%H%M00") + ".jpg"
+
+def get_wv_image(code, overlay=False):
+    """MetAir 東アジア水蒸気画像。code は遡る分数(0=最新, 60=1時間前, 120=2時間前)。"""
+    try:
+        try:
+            offset = int(str(code))
+        except Exception:
+            offset = 0
+        base_dt = datetime.datetime.utcnow() - datetime.timedelta(minutes=offset)
+        im, ts = None, None
+        for back in range(0, 12):
+            dt = base_dt - datetime.timedelta(minutes=10 * back)
+            url = _wv_url(dt)
+            try:
+                rr = requests.get(url, headers=METAIR_HEADERS, timeout=20)
+                if rr.status_code == 200 and len(rr.content) > 2000:
+                    im = Image.open(io.BytesIO(rr.content)).convert("RGB")
+                    ts = url[-18:-4]
+                    break
+            except Exception:
+                continue
+        if im is None:
+            print(f"    水蒸気: 取得失敗 offset={offset}min")
+            return None, None
+        print(f"  水蒸気取得: offset={offset}min {im.size} ts={ts}")
+        if overlay and ts:
+            im = apply_overlay_layers(im, ts, lambda d: [_wv_url(d)])
+        return im, ts
+    except Exception as e:
+        print(f"  水蒸気エラー[{code}]: {e}")
+        return None, None
+
 def get_cb_image(code, overlay=False):
     """MetAir 積乱雲情報。code は遡る分数(0=最新, 60=1時間前, 120=2時間前)。"""
     try:
@@ -964,6 +1002,9 @@ def fetch_slot_image(slot, jma_ts, akuten_ts):
         im, period = get_imoc_thunder(code)
         return im, (f"{label}  {period}" if period else label)
 
+    elif chart_type == "metair_wv":
+        im, ts = get_wv_image(code, overlay=want_ov)
+        return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
     elif chart_type == "metair_cb":
         im, ts = get_cb_image(code, overlay=want_ov)
         return im, (f"{label}  {ts_to_label(ts)}" if ts else label)
