@@ -576,6 +576,21 @@ nav.cats button.pg{border-style:dashed;}
 .set-body{padding:0 4px;}
 .set-body .set-row{padding:0 0 10px;}
 #gear{font-size:15px;margin-left:auto;flex:0 0 auto;}
+
+.sel-head{color:var(--sub);font-size:11.5px;margin:4px 0 6px;}
+#sel-list{margin-bottom:14px;}
+.sel-row{display:flex;align-items:center;gap:8px;background:#101315;border:1px solid var(--line);
+ border-radius:5px;padding:5px 8px;margin-bottom:4px;}
+.sel-row .grip{color:var(--sub);cursor:grab;font-size:14px;user-select:none;}
+.sel-no{color:var(--sub);font-size:11px;min-width:20px;text-align:right;font-variant-numeric:tabular-nums;}
+.sel-name{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;
+ color:var(--text);font-size:13px;font-family:inherit;padding:3px 2px;}
+.sel-name:focus{outline:none;border-bottom-color:var(--danger);}
+.sel-del{background:transparent;border:1px solid var(--line);color:var(--sub);border-radius:4px;
+ width:24px;height:22px;font-size:12px;cursor:pointer;font-family:inherit;padding:0;}
+.sel-del:hover{border-color:var(--danger);color:var(--danger);}
+.sel-row.dragging{opacity:.5;outline:2px dashed var(--danger);}
+.sel-row.dropzone{outline:2px solid var(--ok);}
 </style>
 </head>
 <body>
@@ -910,16 +925,25 @@ async function calcCacheSize(){
 
 
 // ══ タブ構成（既存カテゴリ＋ユーザーページ） ══════════════════════
-let PAGES=[], TABORD=[], HIDDEN={}, CATITEMS={}, selKey=null, selEdit=null, settingsOpen=false;
+let PAGES=[], TABORD=[], HIDDEN={}, CATITEMS={}, LABELS={}, selKey=null, selEdit=null, settingsOpen=false;
 try{ PAGES=JSON.parse(localStorage.getItem('nimbus_off_pages')||'[]')||[]; }catch(e){}
 try{ TABORD=JSON.parse(localStorage.getItem('nimbus_off_taborder')||'[]')||[]; }catch(e){}
 try{ HIDDEN=JSON.parse(localStorage.getItem('nimbus_off_hidden')||'{}')||{}; }catch(e){}
 try{ CATITEMS=JSON.parse(localStorage.getItem('nimbus_off_catitems')||'{}')||{}; }catch(e){}
+try{ LABELS=JSON.parse(localStorage.getItem('nimbus_off_labels')||'{}')||{}; }catch(e){}
+const lkey=(c,l)=>c+'\u0001'+l;
+function disp(c,l){ return LABELS[lkey(c,l)] || l; }
+function renameItem(c,l,v){
+  const k=lkey(c,l);
+  if(!v || v===l) delete LABELS[k]; else LABELS[k]=v;
+  savePages(); renderSettings(); render();
+}
 const savePages=()=>{ try{
   localStorage.setItem('nimbus_off_pages',JSON.stringify(PAGES));
   localStorage.setItem('nimbus_off_taborder',JSON.stringify(TABORD));
   localStorage.setItem('nimbus_off_hidden',JSON.stringify(HIDDEN));
   localStorage.setItem('nimbus_off_catitems',JSON.stringify(CATITEMS));
+  localStorage.setItem('nimbus_off_labels',JSON.stringify(LABELS));
 }catch(e){} };
 
 function tabsAll(){
@@ -975,7 +999,7 @@ function resolveItems(list){
     const k=(MF?MF.categories:[]).find(c=>(c.id||c.label)===it.cat);
     if(!k) return;
     const s=rawSubs(k).find(x=>x.label===it.label);
-    if(s) res.push(s);
+    if(s) res.push(Object.assign({},s,{label:disp(it.cat,it.label)}));
   });
   return res;
 }
@@ -1044,8 +1068,14 @@ function renderSettings(){
     if(tb.t==='c' && tb.cat.mode==='text'){
       h+='<p class="empty">METAR/TAF は表示項目の設定がありません。</p>';
     }else{
-      if(picked.length)
-        h+='<div class="set-order">'+picked.map((x,n)=>'<span class="ord">'+(n+1)+'. '+esc(x.label)+'</span>').join('')+'</div>';
+      if(picked.length){
+        h+='<div class="sel-head">選択中（ドラッグで並べ替え／名称は直接編集できます）</div><div id="sel-list">'
+         + picked.map((x,n)=>'<div class="sel-row"><span class="grip">≡</span><span class="sel-no">'+(n+1)+'</span>'
+             + '<input class="sel-name" value="'+esc(disp(x.cat,x.label))+'" '
+             + 'onchange="renameItem(\''+x.cat.replace(/'/g,"\\'")+'\',\''+x.label.replace(/'/g,"\\'")+'\',this.value)">'
+             + '<button class="sel-del" onclick="toggleItem(\''+tb.key+'\',\''+x.cat.replace(/'/g,"\\'")+'\',\''+x.label.replace(/'/g,"\\'")+'\')">×</button></div>').join('')
+         + '</div>';
+      }
       const list=imgs;
       let cur='';
       h+='<div class="set-list">';
@@ -1054,7 +1084,7 @@ function renderSettings(){
         const on=cursel.some(x=>x.cat===im.cat&&x.label===im.label);
         h+='<label class="set-item'+(on?' on':'')+'">'
          + '<input type="checkbox" '+(on?'checked':'')+' onchange="toggleItem(\''+tb.key+'\',\''+im.cat.replace(/'/g,"\\'")+'\',\''+im.label.replace(/'/g,"\\'")+'\')">'
-         + '<span>'+esc(im.label)+'</span></label>';
+         + '<span>'+esc(disp(im.cat,im.label))+'</span></label>';
       });
       h+='</div>';
       h+='<p class="empty">チェックした順番が下位タブの並びになります。あとからタブをドラッグして変更できます。</p>';
@@ -1062,6 +1092,13 @@ function renderSettings(){
   }
   h+='</div>';
   el.innerHTML=h;
+  if($('sel-list')){
+    enableDrag($('sel-list'),'.sel-row',(from,to)=>{
+      const t2=tabsAll().find(x=>x.key===selEdit); if(!t2) return;
+      setTabItems(t2, moveItem(tabItems(t2),from,to));
+      renderSettings(); render();
+    });
+  }
 }
 
 function render(){
