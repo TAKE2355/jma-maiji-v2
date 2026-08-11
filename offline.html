@@ -619,6 +619,48 @@ async function boot(){
   }catch(e){}
 }
 
+
+// 取得済みデータの経過分数
+function dataAgeMin(ts){
+  if(!ts||ts.length<12) return 9999;
+  const d=Date.UTC(+ts.slice(0,4),+ts.slice(4,6)-1,+ts.slice(6,8),+ts.slice(8,10),+ts.slice(10,12),+(ts.slice(12,14)||0));
+  return (Date.now()-d)/60000;
+}
+// サーバ側の収集ワークフローを起動して完了まで待つ
+async function runCollection(b){
+  let cfg={};
+  try{ cfg=JSON.parse(localStorage.getItem('metair_v2')||'{}'); }catch(e){}
+  if(!cfg.pat||!cfg.repo) return false;
+  const H={'Authorization':'token '+cfg.pat,'Content-Type':'application/json'};
+  const API='https://api.github.com/repos/'+cfg.repo+'/actions/workflows/offline_cache.yml/runs';
+  try{
+    let prev=0;
+    try{ const p=await (await fetch(API+'?per_page=1',{headers:H})).json();
+         prev=(p.workflow_runs&&p.workflow_runs[0])?p.workflow_runs[0].id:0; }catch(e){}
+    const d=await fetch('https://api.github.com/repos/'+cfg.repo+
+      '/actions/workflows/offline_cache.yml/dispatches',
+      {method:'POST',headers:H,body:JSON.stringify({ref:cfg.branch||'main'})});
+    if(!d.ok) return false;
+    let runId=0;
+    for(let i=0;i<20 && !runId;i++){
+      await new Promise(r=>setTimeout(r,3000));
+      const p=await (await fetch(API+'?per_page=1',{headers:H})).json();
+      const r0=p.workflow_runs&&p.workflow_runs[0];
+      if(r0 && r0.id!==prev) runId=r0.id;
+    }
+    if(!runId) return false;
+    const t0=Date.now();
+    for(let i=0;i<120;i++){
+      await new Promise(r=>setTimeout(r,10000));
+      const p=await (await fetch('https://api.github.com/repos/'+cfg.repo+'/actions/runs/'+runId,{headers:H})).json();
+      const sec=Math.round((Date.now()-t0)/1000);
+      if(b) b.textContent='COLLECTING '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+      if(p.status==='completed') return p.conclusion==='success';
+    }
+  }catch(e){}
+  return false;
+}
+
 async function update(){
   const b=$('btn-update'), pr=$('prog'), bar=pr.firstElementChild;
   b.disabled=true; b.textContent='SYNCING…'; pr.style.display='block'; bar.style.width='0';
@@ -665,7 +707,7 @@ async function update(){
     await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
     MF=mf; render();
     b.textContent='SYNC NOW';
-  }catch(e){ b.textContent='SYNC FAILED'; }
+  }catch(e){ b.textContent='SYNC FAILED'; console.error('sync',e); }
   finally{ b.disabled=false; setTimeout(()=>{pr.style.display='none';},900); }
 }
 
