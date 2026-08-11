@@ -60,6 +60,16 @@ def frames_kumo(step, n):
         out.append((ts, "https://www3.metair.go.jp/pict/satellite/hf/alt/ENJP64_RJTD_" + ts + ".jpg", None))
     return out
 
+def frames_cb(step, n):
+    base = datetime.datetime.utcnow()
+    base = base.replace(minute=(base.minute // step) * step, second=0, microsecond=0)
+    out = []
+    for i in range(n):
+        dt = base - datetime.timedelta(minutes=step * i)
+        ts = dt.strftime("%Y%m%d%H%M00")
+        out.append((ts, "https://www3.metair.go.jp/pict/satellite/hf/cov/ENJP61_RJTD_" + ts + ".jpg", None))
+    return out
+
 def frames_echotop(step, n):
     base = datetime.datetime.utcnow()
     base = base.replace(minute=(base.minute // step) * step, second=0, microsecond=0)
@@ -150,6 +160,7 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
     n    = int(s.get("frames", 12))
     view = None
     if kind == "kumo":     specs = frames_kumo(step, n)
+    elif kind == "cb":     specs = frames_cb(step, n)
     elif kind == "echotop":specs = frames_echotop(step, n)
     elif kind == "cwa":    specs = frames_cwa(s.get("code"), step, n)
     elif kind == "hko":    specs = frames_hko(s.get("code"), step, n)
