@@ -791,8 +791,8 @@ def _nowc_stamp(im, validtime):
         bb = (0, 0, tw0, th0)
     tw, th = bb[2] - bb[0], bb[3] - bb[1]
     pad = max(8, fs // 4)
-    x = pad * 2
-    y = H - th - pad * 3
+    x = W - tw - pad * 3
+    y = pad * 2
     d.rectangle([x - pad, y - pad, x + tw + pad, y + th + pad],
                 fill=(255, 255, 255), outline=(30, 30, 30), width=3)
     d.text((x - bb[0], y - bb[1]), txt, font=f, fill=(10, 10, 10))
