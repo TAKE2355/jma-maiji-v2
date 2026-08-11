@@ -343,22 +343,77 @@ def get_qyya86_latest():
         print(f"  QYYA86エラー: {e}")
         return None, None
 
-def get_ashfall_latest(idx):
-    """降灰予報(VAFALLR)を火山番号で取得。ファイル名の秒位=火山番号"""
+_ASHFALL_CACHE = {}
+
+def _ashfall_batch():
+    """最新発表の降灰予報PDFを全て取得し、PDF内の火山名で対応表を作る。
+    ファイル名末尾の2桁は火山番号ではなく発表内の連番なので、
+    毎回中身を読んで判定しないと別の火山を掴んでしまう。"""
+    if _ASHFALL_CACHE:
+        return _ASHFALL_CACHE
     try:
-        idx = int(idx)
         r = requests.get(METAIR_BASE + "/metair/ajax/CSA019/ajaxUpdate",
             params={"contentsType": "2", "dbKey": "RJTD,VAFALLR", "lastDate": ""},
             headers=METAIR_HEADERS, timeout=20)
         ds = r.json().get("dataSet") or []
-        cands = [d for d in ds if len(d.get("date","")) == 14 and int(d["date"][12:]) == idx]
-        if not cands:
-            print(f"    降灰予報: 火山[{idx}]のデータなし")
-            return None, None
-        latest = max(cands, key=lambda x: x["date"])
-        return METAIR_BASE + latest["fname"], latest["date"]
+        if isinstance(ds, str):
+            ds = json.loads(ds)
+        ds = [d for d in ds if len(d.get("date", "")) == 14]
+        if not ds:
+            return {}
+        newest = max(d["date"][:12] for d in ds)          # 最新の発表時刻
+        batch  = [d for d in ds if d["date"][:12] == newest]
+        import fitz
+        for d in batch:
+            url = METAIR_BASE + d["fname"]
+            try:
+                rr = requests.get(url, headers=METAIR_HEADERS, timeout=30)
+                if rr.status_code != 200:
+                    continue
+                doc  = fitz.open(stream=rr.content, filetype="pdf")
+                text = doc[0].get_text() or ""
+                doc.close()
+                name = None
+                for v in ("阿蘇山", "桜島", "霧島山", "諏訪之瀬島", "浅間山", "十勝岳",
+                          "口永良部島", "新燃岳", "雌阿寒岳", "吾妻山", "草津白根山",
+                          "那須岳", "焼岳", "御嶽山", "三宅島", "薩摩硫黄島", "阿蘇"):
+                    if v in text:
+                        name = v
+                        break
+                if name:
+                    _ASHFALL_CACHE[name] = (url, d["date"], rr.content)
+                    print(f"    降灰予報: {d['date'][-2:]} → {name}")
+            except Exception as ex:
+                print(f"    降灰PDF読取失敗: {str(ex)[:60]}")
     except Exception as e:
-        print(f"    降灰予報エラー[{idx}]: {e}")
+        print(f"    降灰予報一覧エラー: {e}")
+    return _ASHFALL_CACHE
+
+def get_ashfall_latest(code):
+    """降灰予報(VAFALLR)を火山名で取得。数字が来た場合は旧仕様の連番として扱う。"""
+    try:
+        key = str(code).strip()
+        table = _ashfall_batch()
+        if key.isdigit():
+            # 旧設定との互換（連番指定）: 番号→名前の対応は保証されない
+            print(f"    降灰予報: 番号指定[{key}]は非推奨（火山名で指定してください）")
+            for name, v in table.items():
+                if v[1][-2:] == key.zfill(2):
+                    return v[0], v[1]
+            return None, None
+        hit = table.get(key)
+        if not hit:
+            # 「霧島山」と「新燃岳」など表記ゆれを吸収
+            for name, v in table.items():
+                if key in name or name in key:
+                    hit = v
+                    break
+        if not hit:
+            print(f"    降灰予報: {key} のデータなし（発表中: {', '.join(table.keys()) or 'なし'}）")
+            return None, None
+        return hit[0], hit[1]
+    except Exception as e:
+        print(f"    降灰予報エラー[{code}]: {e}")
         return None, None
 
 IMOC_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
