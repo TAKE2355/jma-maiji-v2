@@ -929,6 +929,8 @@ function enableDrag(container, selector, onDrop, handle){
 function moveItem(arr,from,to){ if(from<0||to<0||from===to) return arr; const a=arr.slice(); const [x]=a.splice(from,1); a.splice(to,0,x); return a; }
 
 const ICO={
+  prev:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 5v14L3 12z"/><path d="M21 5v14l-9-7z"/></svg>',
+  next:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 5v14l9-7z"/><path d="M3 5v14l9-7z"/></svg>',
   first:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h2v14H7z"/><path d="M20 5v14L9.5 12z"/></svg>',
   last:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg>',
   play:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
@@ -1331,7 +1333,9 @@ function render(){
   $('subs').innerHTML =
     '<span class="tools left">'
     + '<button id="b-first" title="全画像を最古へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h2v14H7z"/><path d="M20 5v14L9.5 12z"/></svg></button>'
+    + '<button id="b-prev" title="全画像を1コマ戻す">'+ICO.prev+'</button>'
     + '<button id="bulk" title="全画像を再生／停止" class="'+(bulkPlaying?'playing':'')+'">'+(bulkPlaying?ICO.pause:ICO.play)+'</button>'
+    + '<button id="b-next" title="全画像を1コマ送る">'+ICO.next+'</button>'
     + '<button id="b-last" title="全画像を最新へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg></button>'
     + '</span>'
     + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
@@ -1345,7 +1349,10 @@ function render(){
     render();
   });
   $('bulk').onclick=toggleBulk;
-  $('b-first').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});
+  const bulkStop=()=>{ bulkPlaying=false; $('bulk').innerHTML=ICO.play; $('bulk').classList.remove('playing'); };
+  $('b-first').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});};
+  $('b-prev').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); step(t,-1); flash(t);});};
+  $('b-next').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); step(t,1); flash(t);});};
   $('b-last').onclick=()=>TILES.forEach(t=>{stop(t); t.idx=Math.max(0,((t.s.frames||[]).length-1)); show(t); flash(t);});
   $('ly-c').onchange=e=>{LAY().cols=+e.target.value;saveLay();render();};
 
@@ -1369,8 +1376,11 @@ function buildGrid(subs){
     + '<div class="tag">'+esc(s.label)+'</div>'
     + '<img alt="">'
     + (s.kind==='series' && (s.frames||[]).length>1
-       ? '<div class="ovl"><button class="fs">'+ICO.first+'</button><button class="p">'+ICO.play+'</button>'
-         +'<button class="ls">'+ICO.last+'</button><span class="cap"></span></div>' : '')
+       ? '<div class="ovl"><button class="fs" title="最古">'+ICO.first+'</button>'
+         +'<button class="pv" title="1コマ戻す">'+ICO.prev+'</button>'
+         +'<button class="p" title="再生／停止">'+ICO.play+'</button>'
+         +'<button class="nx" title="1コマ送る">'+ICO.next+'</button>'
+         +'<button class="ls" title="最新">'+ICO.last+'</button><span class="cap"></span></div>' : '')
     + '</div>').join('');
 
   [...g.children].forEach((el,i)=>{
@@ -1391,6 +1401,8 @@ function buildGrid(subs){
     if(t.play){
       t.play.onclick=e=>{e.stopPropagation(); togglePlay(t); flash(t);};
       el.querySelector('.fs').onclick=e=>{e.stopPropagation(); stop(t); t.idx=0; show(t); flash(t);};
+      el.querySelector('.pv').onclick=e=>{e.stopPropagation(); stop(t); step(t,-1); flash(t);};
+      el.querySelector('.nx').onclick=e=>{e.stopPropagation(); stop(t); step(t,1); flash(t);};
       el.querySelector('.ls').onclick=e=>{e.stopPropagation(); stop(t); t.idx=Math.max(0,(t.s.frames||[]).length-1); show(t); flash(t);};
       if(bulkPlaying) play(t);
     }
