@@ -678,12 +678,12 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='pt6orl-260811';
+const APP_VER='1fht1gs-260811';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
   try{
-    const r=await fetch('offline.html?cb='+Date.now(),{cache:'no-store'});
+    const r=await fetch(location.pathname.split('/').pop()+'?cb='+Date.now(),{cache:'no-store'});
     if(!r.ok) return;
     const t=await r.text();
     const m=t.match(/const APP_VER='([^']+)'/);
@@ -740,9 +740,9 @@ async function boot(){
     if(r.ok){
       const mf=await r.json();
       if(!MF || mf.generated_utc!==MF.generated_utc){
-        MF=mf; render();
-        const c=await caches.open(CACHE);
-        await c.put(BASE+'manifest.json', new Response(JSON.stringify(mf),{headers:{'Content-Type':'application/json'}}));
+        // manifestだけ新しくして画像が古いままになるのを防ぐため、
+        // 差分ダウンロード（数秒）をそのまま実行する
+        await update(true);
       }
     }
   }catch(e){}
@@ -790,9 +790,9 @@ async function runCollection(b){
   return false;
 }
 
-async function update(){
+async function update(quiet){
   const b=$('btn-update'), pr=$('prog'), bar=pr.firstElementChild;
-  b.disabled=true; b.textContent='SYNCING…'; pr.style.display='block'; bar.style.width='0';
+  b.disabled=true; b.textContent=quiet?'AUTO SYNC…':'SYNCING…'; pr.style.display='block'; bar.style.width='0';
   try{
     const c=await caches.open(CACHE);
     let SRC=await freshBase();
@@ -800,7 +800,7 @@ async function update(){
     if(!r.ok) throw new Error('manifest '+r.status);
     let mf=await r.json();
     // サーバ側のデータが40分以上古ければ、先に収集を走らせてから取り込む
-    if(dataAgeMin(mf.generated_utc) > 35){
+    if(!quiet && dataAgeMin(mf.generated_utc) > 35){
       b.textContent='COLLECTING…';
       const ok=await runCollection(b);
       if(ok){
@@ -838,7 +838,7 @@ async function update(){
         }
         done++; if(skip) skipped++;
         bar.style.width=(done/files.length*100).toFixed(1)+'%';
-        b.textContent='SYNC '+done+'/'+files.length;
+        b.textContent=(quiet?'AUTO ':'SYNC ')+done+'/'+files.length;
       }
     }
     await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
