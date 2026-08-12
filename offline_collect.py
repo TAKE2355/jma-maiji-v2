@@ -80,16 +80,6 @@ def frames_wv(step, n):
         out.append((ts, "https://www3.metair.go.jp/pict/satellite/ea/ir3_h/ENJP26_RJTD_" + ts + ".jpg", None))
     return out
 
-def frames_echotop(step, n):
-    base = datetime.datetime.utcnow()
-    base = base.replace(minute=(base.minute // step) * step, second=0, microsecond=0)
-    out = []
-    for i in range(n):
-        dt = base - datetime.timedelta(minutes=step * i)
-        ts = dt.strftime("%Y%m%d%H%M00")
-        out.append((ts, "https://www3.metair.go.jp/pict/radar/rectp99/RECTP99_RJTD_" + ts + ".png", None))
-    return out
-
 def frames_cwa(code, step, n):
     stem = "CV1_TW_1000" if str(code) == "TW" else "CV1_1000"
     base = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
@@ -172,7 +162,6 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
     if kind == "kumo":     specs = frames_kumo(step, n)
     elif kind == "cb":     specs = frames_cb(step, n)
     elif kind == "wv":     specs = frames_wv(step, n)
-    elif kind == "echotop":specs = frames_echotop(step, n)
     elif kind == "cwa":    specs = frames_cwa(s.get("code"), step, n)
     elif kind == "hko":    specs = frames_hko(s.get("code"), step, n)
     elif kind == "jma":    specs = frames_jma(s.get("prefix"), s.get("code"), step, n, jma_ts)
