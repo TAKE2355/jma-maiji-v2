@@ -767,7 +767,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='backbtn-260812';
+const APP_VER='zoomnav-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2137,7 +2137,33 @@ function toggleBulk(){
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
 }
 
-function setZoom(i){ zoomIdx=(zoomIdx===i? -1 : i); render(); }
+let _gridScroll=null;   // 全体表示に戻ったときのスクロール位置
+function resetZoom(){
+  GZ=1;
+  const g=$("grid"); if(g) g.style.width="100%";
+  try{ applySingleSize(); }catch(e){}
+}
+function setZoom(i){
+  const w=$("gwrap");
+  // 全体表示から個別表示へ入るとき、戻り先のスクロール位置を覚えておく
+  if(zoomIdx<0 && zoomIdx!==i && w) _gridScroll={l:w.scrollLeft, t:w.scrollTop};
+  zoomIdx=(zoomIdx===i ? -1 : i);
+  resetZoom();          // 出入りのたびにズームは等倍に戻す
+  render();
+  setTimeout(function(){
+    const v=$("gwrap"); if(!v) return;
+    if(zoomIdx>=0){
+      // 個別表示は画像の中央から
+      v.scrollLeft=Math.max(0,(v.scrollWidth -v.clientWidth )/2);
+      v.scrollTop =Math.max(0,(v.scrollHeight-v.clientHeight)/2);
+    }else if(_gridScroll){
+      v.scrollLeft=_gridScroll.l;
+      v.scrollTop =_gridScroll.t;
+      _gridScroll=null;
+    }
+    try{ placeOvls(); }catch(e){}
+  },0);
+}
 
 // 画面の残り高さにグリッドを収める
 function fitArea(){
