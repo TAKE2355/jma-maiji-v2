@@ -56,7 +56,7 @@ main{padding:2px;}
  display:block;line-height:0;cursor:zoom-in;}
 #grid.zoom .tile{cursor:zoom-out;}
 .tile img{width:100%;height:auto;display:block;}
-#grid.zoom .tile img{width:auto;max-width:100%;max-height:100%;margin:0 auto;}
+#grid.zoom .tile img{width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;margin:0 auto;}
 #grid.zoom .tile{display:flex;align-items:center;justify-content:center;}
 .tile .tag{position:absolute;left:0;top:0;background:rgba(0,0,0,.72);color:#ffd76a;font-weight:800;
  font-size:16px;line-height:1.5;letter-spacing:.04em;padding:6px 12px 6px;border-bottom-right-radius:8px;
@@ -699,7 +699,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='zoom1-260811';
+const APP_VER='zoom2-260811';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
