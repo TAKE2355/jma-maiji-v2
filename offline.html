@@ -720,7 +720,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='sun1-260812';
+const APP_VER='sun2-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1461,18 +1461,22 @@ const AP_POS = {
 };
 // 日の出・日の入り（NOAAの近似式・誤差1分程度）
 function sunTimes(lat, lon, when){
-  const rad=Math.PI/180, J1970=2440588, J2000=2451545;
-  const d0=Math.floor((Date.UTC(when.getUTCFullYear(),when.getUTCMonth(),when.getUTCDate())/86400000)+J1970-J2000)+0.0009-lon/360;
-  const M=rad*(357.5291+0.98560028*d0);
-  const C=rad*(1.9148*Math.sin(M)+0.0200*Math.sin(2*M)+0.0003*Math.sin(3*M));
-  const L=M+C+rad*102.9372+Math.PI;
+  const rad=Math.PI/180, J1970=2440588, J2000=2451545, dayMs=86400000, J0=0.0009;
+  const lw=rad*-lon, phi=rad*lat;
+  const d=when.getTime()/dayMs - 0.5 + J1970 - J2000;
+  const n=Math.round(d - J0 - lw/(2*Math.PI));
+  const ds=J0 + lw/(2*Math.PI) + n;
+  const M=rad*(357.5291 + 0.98560028*ds);
+  const C=rad*(1.9148*Math.sin(M) + 0.02*Math.sin(2*M) + 0.0003*Math.sin(3*M));
+  const L=M + C + rad*102.9372 + Math.PI;
   const dec=Math.asin(Math.sin(rad*23.4397)*Math.sin(L));
-  const Jt=J2000+d0+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
-  const cw=(Math.sin(rad*-0.833)-Math.sin(rad*lat)*Math.sin(dec))/(Math.cos(rad*lat)*Math.cos(dec));
+  const Jnoon=J2000 + ds + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);
+  const cw=(Math.sin(rad*-0.833) - Math.sin(phi)*Math.sin(dec))/(Math.cos(phi)*Math.cos(dec));
   if(cw>1||cw<-1) return null;
-  const w=Math.acos(cw)/(2*Math.PI);
-  const toMs=J=>(J-J1970)*86400000;
-  return {rise:toMs(Jt-w), set:toMs(Jt+w)};
+  const a=J0 + (Math.acos(cw) + lw)/(2*Math.PI) + n;
+  const Jset=J2000 + a + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);
+  const fromJ=j=>(j + 0.5 - J1970)*dayMs;
+  return {rise:fromJ(Jnoon-(Jset-Jnoon)), set:fromJ(Jset)};
 }
 function hhmm(ms, off){
   const d=new Date(ms+off*3600000), p=n=>("0"+n).slice(-2);
