@@ -63,8 +63,10 @@ main{padding:2px;}
  pointer-events:none;opacity:0;transition:opacity .45s;text-shadow:0 1px 3px #000;white-space:nowrap;}
 .tile.tagon .tag{opacity:1;}
 @media (max-width:640px){ .tile .tag{font-size:13px;padding:2px 8px;} }
-.ovl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;
- padding:5px 7px;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,0));
+.ovl{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ display:flex;align-items:center;gap:8px;
+ padding:8px 12px;background:rgba(0,0,0,.60);border:1px solid rgba(255,255,255,.18);
+ border-radius:10px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
  opacity:0;transition:opacity .35s;pointer-events:none;}
 .tile.act .ovl{opacity:1;pointer-events:auto;}
 .ovl button{background:rgba(30,34,39,.9);border:1px solid #3a4048;color:#fff;border-radius:4px;
@@ -697,7 +699,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='hlog3-260811';
+const APP_VER='zoom1-260811';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1603,6 +1605,19 @@ function fitArea(){
   [...$('grid').children].forEach(el=>{ el.style.height = (zoomIdx>=0)? h+'px' : ''; });
 }
 window.addEventListener('resize',fitArea);
+// 単独表示（ズーム表示）中は高さもGZ倍にして画像を実際に拡大させる
+function applySingleSize(){
+  const w=$('gwrap'), g=$('grid');
+  if(!w||!g) return;
+  if(typeof zoomIdx==='undefined'||zoomIdx<0) return;
+  const base=parseFloat(w.style.height)||w.clientHeight;
+  if(!base) return;
+  const hh=Math.round(base*(typeof GZ==='number'?GZ:1));
+  g.style.height=hh+'px';
+  [...g.children].forEach(el=>{ el.style.height=hh+'px'; });
+}
+(function(){ const _f=fitArea; fitArea=function(){ _f.apply(this,arguments); try{ applySingleSize(); }catch(e){} }; })();
+
 
 // ── 画像エリアのみピンチズーム（ヘッダ・タブは固定） ──
 let GZ=1;
@@ -1615,6 +1630,7 @@ function applyZoom(cx,cy,prev){
   const x=w.scrollLeft+px, y=w.scrollTop+py;
   const k=GZ/(prev||1);
   g.style.width=(GZ*100)+'%';
+  applySingleSize();
   w.scrollLeft=x*k-px;
   w.scrollTop =y*k-py;
   showTags(); TILES.forEach(t=>flash(t));
