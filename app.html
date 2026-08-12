@@ -767,7 +767,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='scrollkeep-260812';
+const APP_VER='scrollfrac-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2146,7 +2146,12 @@ function resetZoom(){
 function setZoom(i){
   const w=$("gwrap");
   // 全体表示から個別表示へ入るとき、戻り先のスクロール位置を覚えておく
-  if(zoomIdx<0 && zoomIdx!==i && w) _gridScroll={l:w.scrollLeft, t:w.scrollTop};
+  // 見ていた縦位置を「全体の高さに対する割合」で覚える
+  // （拡大中と等倍とでは全体の長さが違うため、量ではなく割合で持つ）
+  if(zoomIdx<0 && zoomIdx!==i && w){
+    const sh=w.scrollHeight, ch=w.clientHeight;
+    _gridScroll={ frac: sh>0 ? (w.scrollTop + ch/2)/sh : 0 };
+  }
   zoomIdx=(zoomIdx===i ? -1 : i);
   resetZoom();          // 出入りのたびにズームは等倍に戻す
   render();
@@ -2165,15 +2170,18 @@ function setZoom(i){
 function restoreGridScroll(){
   const pos=_gridScroll;
   if(!pos) return;
-  let n=0;
+  let n=0, lastH=-1;
   (function tick(){
     const v=$("gwrap");
-    if(!v || zoomIdx>=0){ return; }
-    v.scrollTop =pos.t;
-    v.scrollLeft=pos.l;
+    if(!v || zoomIdx>=0) return;
+    const sh=v.scrollHeight, ch=v.clientHeight;
+    // 覚えた割合の位置が画面の中央に来るように合わせる
+    v.scrollTop=Math.max(0, Math.min(Math.max(0,sh-ch), pos.frac*sh - ch/2));
+    v.scrollLeft=0;
     try{ placeOvls(); }catch(e){}
     n++;
-    if(n<16 && Math.abs(v.scrollTop-pos.t)>1) setTimeout(tick,60);
+    // 画像の読み込みで高さが変わるので、落ち着くまで繰り返す
+    if(n<16 && sh!==lastH){ lastH=sh; setTimeout(tick,60); }
     else _gridScroll=null;
   })();
 }
