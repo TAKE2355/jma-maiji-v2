@@ -1,37 +1,39 @@
 import re, requests
-import metair_all_mail_v2 as M
 Q, E, A = chr(63), chr(61), chr(38)
 def san(s):
     s = re.sub(r"\s+", " ", str(s))
     for a, b in (("https://","HX"),("http://","HX"),(Q,"~"),(A,"~"),(E,"~"),(";","~")):
         s = s.replace(a, b)
     return s
-B = "https://www3.metair.go.jp"
-s = requests.Session(); s.headers.update(M.METAIR_HEADERS)
-r0 = s.get(M.METAIR_LOGIN_URL, timeout=20)
-vs = re.search(r'name="javax\.faces\.ViewState"[^>]+value="([^"]+)"', r0.text)
-s.post(M.METAIR_LOGIN_URL, data={"loginForm":"loginForm","loginForm:username":M.METAIR_USER,
-   "loginForm:password":M.METAIR_PASS,"loginForm:doLogin":"\u30ed\u30b0\u30a4\u30f3",
-   "loginForm:forceflg":"true","javax.faces.ViewState":vs.group(1)}, timeout=25)
-for u in ["/metair/view/header/header.html", "/metair/view/menu/menu.html",
-          "/metair/view/start/XS002.html", "/metair/view/infoShow/nowLoading.html"]:
+HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+IDS = ["RJTH", "RJTA", "RJAH", "RJAA"]
+print("=== AWC metar ===")
+for i in IDS:
     try:
-        t = s.get(B + u, timeout=20)
-        ti = re.search(r"<title>([^<]*)</title>", t.text)
-        print("PG", san(u)[-34:], t.status_code, len(t.text), san(ti.group(1)) if ti else "")
-        for m in re.finditer(r"(CSA\d{3}|CSB\d{3}|XS\d{3})", t.text):
-            pass
-        ids = sorted(set(re.findall(r"(CSA\d{3}|CSB\d{3})", t.text)))
-        if ids: print("   IDS", ids[:40])
+        r = requests.get("https://aviationweather.gov/api/data/metar",
+                         params={"ids": i, "format": "raw", "hours": 12}, timeout=25, headers=HDR)
+        print(" AWC", i, r.status_code, len(r.text.strip()), san(r.text.strip()[:90]))
     except Exception as e:
-        print("PGERR", san(u)[-30:], e)
-for n in range(1, 31):
-    u = B + "/metair/view/winKobetsu/CSA%03d.html" % n
+        print(" AWCERR", i, e)
+print("=== NOAA tgftp ===")
+for i in IDS:
+    for base in ["https://tgftp.nws.noaa.gov/data/observations/metar/stations/%s.TXT",
+                 "https://tgftp.nws.noaa.gov/data/forecasts/taf/stations/%s.TXT"]:
+        try:
+            r = requests.get(base % i, timeout=20, headers=HDR)
+            print(" TG", i, base.split("/")[-2], r.status_code, len(r.text.strip()), san(r.text.strip().replace(chr(10)," ")[:90]))
+        except Exception as e:
+            print(" TGERR", i, e)
+print("=== ogimet ===")
+for i in ["RJTH", "RJTA"]:
     try:
-        r = s.get(u, timeout=15)
-        ti = re.search(r"<title>([^<]*)</title>", r.text)
-        t2 = san(ti.group(1)) if ti else ""
-        if r.status_code == 200 and t2 and "MetAir" not in t2:
-            print("KOB CSA%03d" % n, r.status_code, len(r.text), t2)
+        u = ("https://www.ogimet.com/display_metars2.php" + Q + "lang" + E + "en" + A + "lugar" + E + i
+             + A + "tipo" + E + "SA" + A + "ord" + E + "REV" + A + "nil" + E + "NO" + A + "fmt" + E + "txt"
+             + A + "ano" + E + "2026" + A + "mes" + E + "08" + A + "day" + E + "12" + A + "hora" + E + "00"
+             + A + "anof" + E + "2026" + A + "mesf" + E + "08" + A + "dayf" + E + "12" + A + "horaf" + E + "23" + A + "minf" + E + "59" + A + "send" + E + "send")
+        r = requests.get(u, timeout=30, headers=HDR)
+        body = re.sub(r"<[^>]+>", " ", r.text)
+        hit = [l for l in body.split(chr(10)) if i in l][:3]
+        print(" OGI", i, r.status_code, len(r.text), [san(x.strip())[:110] for x in hit])
     except Exception as e:
-        print("KOBERR", n, e)
+        print(" OGIERR", i, e)
