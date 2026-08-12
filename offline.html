@@ -765,7 +765,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='tsage-260813';
+const APP_VER='tsage01-260813';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1086,8 +1086,8 @@ function tsAge(ts){
   let m=Math.round((Date.now()-t)/60000);
   if(m<0) m=0;
   if(m<60) return 'T-'+m;
-  const h=Math.round(m/30)/2;
-  return 'T-'+(h%1===0 ? h.toFixed(0) : h.toFixed(1))+'h';
+  const h=Math.round(m/6)/10;      // 0.1時間（6分）刻み
+  return 'T-'+h.toFixed(1)+'h';
 }
 function tsShort(ts){
   if(!ts||ts.length<12) return '';
