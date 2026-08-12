@@ -239,31 +239,69 @@ def collect_static(cat, jma_ts, akuten_ts):
             items.append({"file": fn, "label": it.get("label", ""), "caption": label or ""})
     return items
 
+def _split_by_station(lines, icaos):
+    """AWCのraw出力を空港ごとに振り分ける（TAFの継続行は直前のブロックに属する）"""
+    want = set(icaos)
+    out, cur = {}, None
+    for ln in lines:
+        s = ln.strip()
+        if not s:
+            continue
+        head = s.split()
+        if ln[:1] not in (" ", "\t") and head:
+            code = None
+            if head[0] in ("METAR", "SPECI", "TAF"):
+                for tok in head[1:4]:
+                    if tok in want:
+                        code = tok
+                        break
+            elif head[0] in want:
+                code = head[0]
+            if code:
+                cur = code
+                out.setdefault(cur, []).append(ln.rstrip())
+                continue
+        if cur:
+            out[cur].append(ln.rstrip())
+    return {k: "\n".join(v) for k, v in out.items()}
+
 def collect_text(cat):
-    """METAR/TAFを空港ごとに順番に取得（AWCは同時接続に弱く502を返すため直列＋リトライ）"""
+    """METAR/TAFをまとめて取得（12空港ずつの一括リクエスト＋欠けた分だけ個別再取得）"""
     items = []
     for it in cat.get("items", []):
         icaos = [s.strip().upper() for s in str(it.get("ids", "")).split(",") if s.strip()]
-        groups, ok = [], 0
-        for icao in icaos:
-            row = {"ids": icao, "hours": it.get("hours", 3),
-                   "metar": it.get("metar", True), "taf": it.get("taf", True)}
-            lines = []
-            for attempt in range(4):
+        hours = it.get("hours", 3)
+        wm, wt = it.get("metar", True), it.get("taf", True)
+        texts = {}
+
+        def grab(ids):
+            for attempt in range(3):
                 try:
-                    lines = M.fetch_metar_text(row)
+                    lines = M.fetch_metar_text({"ids": ",".join(ids), "hours": hours,
+                                                "metar": wm, "taf": wt})
                 except Exception:
                     lines = []
                 bad = (not lines) or any("取得失敗" in l or "取得エラー" in l for l in lines)
                 if not bad:
-                    break
+                    return _split_by_station(lines, ids)
                 time.sleep(1.2 * (attempt + 1))
-            if lines and not any("取得失敗" in l or "取得エラー" in l for l in lines):
-                ok += 1
-            groups.append({"icao": icao, "text": "\n".join(lines)})
-            time.sleep(0.35)
+            return {}
+
+        CH = 12
+        for i in range(0, len(icaos), CH):
+            chunk = icaos[i:i + CH]
+            texts.update(grab(chunk))
+
+        missing = [c for c in icaos if not texts.get(c)]
+        for c in missing:
+            d = grab([c])
+            if d.get(c):
+                texts[c] = d[c]
+
+        ok = sum(1 for c in icaos if texts.get(c))
         print("    METAR/TAF %d/%d 空港" % (ok, len(icaos)))
-        items.append({"label": it.get("label", ""), "groups": groups})
+        items.append({"label": it.get("label", ""),
+                      "groups": [{"icao": c, "text": texts.get(c, "")} for c in icaos]})
     return items
 
 def main():
