@@ -70,7 +70,7 @@ main{padding:2px;}
  opacity:0;transition:opacity .35s;pointer-events:none;}
 .tile.act .ovl, .tile.actcap .ovl{opacity:1;pointer-events:auto;}
 .tile:not(.act) .ovl button{display:none}
-.tile:not(.actcap) .ovl .cap{display:none}
+.tile:not(.actcap) > .cap{visibility:hidden}
 .ovl button{background:rgba(30,34,39,.9);border:1px solid #3a4048;color:#fff;border-radius:4px;
  width:28px;height:24px;font-size:11px;font-family:inherit;cursor:pointer;padding:0;}
 /* 再生UI（テスラ調：フラット・細い枠・余計な装飾なし） */
@@ -85,9 +85,13 @@ main{padding:2px;}
 .ovl button:active, .tools.left button:active{ background:rgba(255,255,255,.14); }
 .ovl button.p, .tools.left button#bulk{ color:var(--danger); }
 .ovl button.p.playing, .tools.left button#bulk.playing{ background:#000; border-color:rgba(255,255,255,.35); color:#fff; }
-.ovl .cap{color:#fff;font-size:21px;line-height:26px;font-weight:600;letter-spacing:.02em;
- font-variant-numeric:tabular-nums;margin-left:auto;
- white-space:nowrap;text-shadow:0 1px 2px #000;}
+.tile > .cap{position:absolute;left:0;top:0;transform:translate(-50%,-50%);
+ color:#fff;font-size:31px;line-height:1;font-weight:600;letter-spacing:.02em;
+ font-variant-numeric:tabular-nums;white-space:nowrap;padding:6px 11px;
+ background:rgba(0,0,0,.60);border:1px solid rgba(255,255,255,.18);border-radius:9px;
+ -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+ opacity:0;transition:opacity .35s;pointer-events:none;}
+.tile.actcap > .cap{opacity:1;}
 
 /* METAR/TAF */
 #textview{display:none;white-space:pre-wrap;word-break:break-word;background:#000;color:#e8eaed;
@@ -698,11 +702,9 @@ nav.cats button.pg{border-style:dashed;}
  border-bottom:1px solid #000;letter-spacing:.03em}
 
 .ovl.mini{padding:4px 6px;gap:4px;border-radius:8px}
-.tile.act .ovl.mini .cap{display:none}
 .ovl.mini button{width:26px;height:20px}
 
 .ovl.micro{padding:3px 4px;gap:0;border-radius:6px}
-.tile.act .ovl.micro .cap{display:none}
 .ovl.micro button{width:24px;height:20px}
 .ovl.micro button:not(.p){display:none}
 </style>
@@ -748,7 +750,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='ovlbr-260812';
+const APP_VER='capsplit-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1895,7 +1897,7 @@ function buildGrid(subs){
          +'<button class="pv" title="1コマ戻す">'+ICO.prev+'</button>'
          +'<button class="p" title="再生／停止">'+ICO.play+'</button>'
          +'<button class="nx" title="1コマ送る">'+ICO.next+'</button>'
-         +'<button class="ls" title="最新">'+ICO.last+'</button><span class="cap"></span></div>' : '')
+         +'<button class="ls" title="最新">'+ICO.last+'</button></div><span class="cap"></span>' : '')
     + '</div>').join('');
 
   [...g.children].forEach((el,i)=>{
@@ -1973,6 +1975,19 @@ function placeOvls(){
       y=Math.min(Math.max(y,loY),hiY);
       ov.style.left=x+"px";
       ov.style.top =y+"px";
+      // 時刻は見えている範囲の右上へ
+      const cp=el.querySelector(":scope > .cap");
+      if(cp){
+        const cw=cp.offsetWidth, ch=cp.offsetHeight;
+        if(cw && ch){
+          const cpd=Math.max(0, Math.min(4, Math.floor(Math.min(iw-cw, ih-ch)/2)));
+          let cx=R-tr.left-cw/2-cpd, cy=T-tr.top+ch/2+cpd;
+          const cloX=cw/2+cpd, chiX=Math.max(cloX, tr.width -cw/2-cpd);
+          const cloY=ch/2+cpd, chiY=Math.max(cloY, tr.height-ch/2-cpd);
+          cp.style.left=Math.min(Math.max(cx,cloX),chiX)+"px";
+          cp.style.top =Math.min(Math.max(cy,cloY),chiY)+"px";
+        }
+      }
     });
   },0);
 }
