@@ -677,6 +677,13 @@ nav.cats button.pg{border-style:dashed;}
  font-size:.78em;opacity:.95}
 #moon{display:inline-block;vertical-align:middle;margin-left:12px;line-height:0}
 #moon svg{display:block}
+
+#moon{cursor:pointer;-webkit-tap-highlight-color:transparent}
+#moontip{position:fixed;z-index:99;background:rgba(10,12,14,.94);border:1px solid rgba(255,255,255,.22);
+ color:#f2e6bf;border-radius:8px;padding:7px 12px;font-size:12.5px;letter-spacing:.02em;
+ opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap;
+ -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#moontip.on{opacity:1}
 </style>
 </head>
 <body>
@@ -720,7 +727,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='sun3-260812';
+const APP_VER='moon4-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1497,6 +1504,35 @@ function hhmmz(ms){
   return p(d.getUTCHours())+p(d.getUTCMinutes())+"z";
 }
 // 月齢（0=新月, 0.5=満月）
+
+function moonName(p){
+  if(p<0.033||p>=0.967) return "新月";
+  if(p<0.217) return "三日月";
+  if(p<0.283) return "上弦";
+  if(p<0.467) return "十三夜月";
+  if(p<0.533) return "満月";
+  if(p<0.717) return "寝待月";
+  if(p<0.783) return "下弦";
+  return "有明月";
+}
+function moonInfo(){
+  const p=moonPhase(new Date());
+  const age=(p*29.530588853).toFixed(1);
+  const ill=Math.round((1-Math.cos(2*Math.PI*p))/2*100);
+  return moonName(p)+"　月齢 "+age+"　輝面比 "+ill+"%";
+}
+function showMoonTip(){
+  const mo=$("moon"); if(!mo) return;
+  let e=document.getElementById("moontip");
+  if(!e){ e=document.createElement("div"); e.id="moontip"; document.body.appendChild(e); }
+  e.textContent=moonInfo();
+  const r=mo.getBoundingClientRect();
+  e.style.left=Math.max(8, Math.min(window.innerWidth-250, r.left-30))+"px";
+  e.style.top=(r.bottom+8)+"px";
+  e.classList.add("on");
+  clearTimeout(window.__moonT);
+  window.__moonT=setTimeout(()=>e.classList.remove("on"), 4000);
+}
 function moonPhase(when){
   const SYN=29.530588853;
   const known=Date.UTC(2000,0,6,18,14);
@@ -1519,7 +1555,7 @@ function moonSVG(size){
     + '<path d="'+lit+'" fill="#f2e6bf"/>'
     + '<title>月齢 '+age+'　輝面比 '+ill+'%</title></svg>';
 }
-function drawMoon(){ const e=$("moon"); if(e) e.innerHTML=moonSVG(26); }
+function drawMoon(){ const e=$("moon"); if(!e) return; e.innerHTML=moonSVG(26); e.onclick=showMoonTip; }
 setInterval(drawMoon, 30*60*1000);
 
 function renderSettings(){
