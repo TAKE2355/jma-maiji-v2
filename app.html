@@ -765,7 +765,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='capalways-260813';
+const APP_VER='tsage-260813';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1079,9 +1079,19 @@ const ICO={
   pause:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z"/></svg>'
 };
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// 画像時刻からの経過。60分未満は分、それ以上は0.5時間刻みで h 表記
+function tsAge(ts){
+  if(!ts||ts.length<12) return '';
+  const t=Date.UTC(+ts.slice(0,4), +ts.slice(4,6)-1, +ts.slice(6,8), +ts.slice(8,10), +ts.slice(10,12));
+  let m=Math.round((Date.now()-t)/60000);
+  if(m<0) m=0;
+  if(m<60) return 'T-'+m;
+  const h=Math.round(m/30)/2;
+  return 'T-'+(h%1===0 ? h.toFixed(0) : h.toFixed(1))+'h';
+}
 function tsShort(ts){
   if(!ts||ts.length<12) return '';
-  return ts.slice(8,10)+ts.slice(10,12)+'Z';
+  return ts.slice(8,10)+ts.slice(10,12)+'z '+tsAge(ts);
 }
 function tsLabel(ts){
   if(!ts||ts.length<12) return '';
@@ -2039,6 +2049,17 @@ function placeOvls(){
   if(w) w.addEventListener("scroll", placeOvls, {passive:true});
   window.addEventListener("resize", placeOvls);
 })();
+// 経過時間は時間とともに変わるので定期的に書き換える
+setInterval(function(){
+  if(typeof TILES==="undefined"||!TILES) return;
+  TILES.forEach(function(t){
+    if(t.cap && t.s && t.s.kind==="series"){
+      const f=(t.s.frames||[])[t.idx];
+      if(f) t.cap.textContent=tsShort(f.ts);
+    }
+  });
+  try{ placeOvls(); }catch(e){}
+}, 30000);
 
 function showTags(){
   clearTimeout(showTags._t);
