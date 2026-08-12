@@ -68,7 +68,9 @@ main{padding:2px;}
  padding:8px 12px;background:rgba(0,0,0,.60);border:1px solid rgba(255,255,255,.18);
  border-radius:10px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
  opacity:0;transition:opacity .35s;pointer-events:none;}
-.tile.act .ovl{opacity:1;pointer-events:auto;}
+.tile.act .ovl, .tile.actcap .ovl{opacity:1;pointer-events:auto;}
+.tile:not(.act) .ovl button{display:none}
+.tile:not(.actcap) .ovl .cap{display:none}
 .ovl button{background:rgba(30,34,39,.9);border:1px solid #3a4048;color:#fff;border-radius:4px;
  width:28px;height:24px;font-size:11px;font-family:inherit;cursor:pointer;padding:0;}
 /* 再生UI（テスラ調：フラット・細い枠・余計な装飾なし） */
@@ -83,7 +85,8 @@ main{padding:2px;}
 .ovl button:active, .tools.left button:active{ background:rgba(255,255,255,.14); }
 .ovl button.p, .tools.left button#bulk{ color:var(--danger); }
 .ovl button.p.playing, .tools.left button#bulk.playing{ background:#000; border-color:rgba(255,255,255,.35); color:#fff; }
-.ovl .cap{color:#dfe3e7;font-size:10.5px;font-variant-numeric:tabular-nums;margin-left:auto;
+.ovl .cap{color:#fff;font-size:21px;line-height:26px;font-weight:600;letter-spacing:.02em;
+ font-variant-numeric:tabular-nums;margin-left:auto;
  white-space:nowrap;text-shadow:0 1px 2px #000;}
 
 /* METAR/TAF */
@@ -695,11 +698,11 @@ nav.cats button.pg{border-style:dashed;}
  border-bottom:1px solid #000;letter-spacing:.03em}
 
 .ovl.mini{padding:4px 6px;gap:4px;border-radius:8px}
-.ovl.mini .cap{display:none}
+.tile.act .ovl.mini .cap{display:none}
 .ovl.mini button{width:26px;height:20px}
 
 .ovl.micro{padding:3px 4px;gap:0;border-radius:6px}
-.ovl.micro .cap{display:none}
+.tile.act .ovl.micro .cap{display:none}
 .ovl.micro button{width:24px;height:20px}
 .ovl.micro button:not(.p){display:none}
 </style>
@@ -745,7 +748,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='ovlfit3-260812';
+const APP_VER='ovlbr-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1056,6 +1059,10 @@ const ICO={
   pause:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z"/></svg>'
 };
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function tsShort(ts){
+  if(!ts||ts.length<12) return '';
+  return ts.slice(8,10)+ts.slice(10,12)+'Z';
+}
 function tsLabel(ts){
   if(!ts||ts.length<12) return '';
   const M=ts.slice(4,6),D=ts.slice(6,8),h=ts.slice(8,10),m=ts.slice(10,12);
@@ -1921,7 +1928,7 @@ function show(t){
   if(t.s.kind==='series'){
     const f=(t.s.frames||[])[t.idx];
     if(f){ t.img.src=BASE+f.file;
-           if(t.cap) t.cap.textContent=tsLabel(f.ts)+' ['+(t.idx+1)+'/'+t.s.frames.length+']'; }
+           if(t.cap) t.cap.textContent=tsShort(f.ts); }
   }else{
     t.img.src=BASE+t.s.file;
   }
@@ -1958,8 +1965,8 @@ function placeOvls(){
         }
       }
       const pad=Math.max(0, Math.min(4, Math.floor(Math.min(iw-ow, ih-oh)/2)));
-      // 見えている範囲の中心を狙い、タイルからはみ出さない位置に寄せる
-      let x=(L+R)/2-tr.left, y=(T+B)/2-tr.top;
+      // 見えている範囲の右下を狙い、タイルからはみ出さない位置に寄せる
+      let x=R-tr.left-ow/2-pad, y=B-tr.top-oh/2-pad;
       const loX=ow/2+pad, hiX=Math.max(loX, tr.width -ow/2-pad);
       const loY=oh/2+pad, hiY=Math.max(loY, tr.height-oh/2-pad);
       x=Math.min(Math.max(x,loX),hiX);
@@ -1985,9 +1992,13 @@ function showTags(){
 
 function flash(t){
   t.el.classList.add('act');
+  t.el.classList.add('actcap');
   placeOvls();
-  if(t.hideT) clearTimeout(t.hideT);
-  t.hideT=setTimeout(()=>t.el.classList.remove('act'),1000);
+  if(t.hideT)  clearTimeout(t.hideT);
+  if(t.hideT2) clearTimeout(t.hideT2);
+  // ボタンは2秒、時刻は10秒で消す
+  t.hideT =setTimeout(()=>{ t.el.classList.remove('act');    placeOvls(); }, 2000);
+  t.hideT2=setTimeout(()=>{ t.el.classList.remove('actcap'); placeOvls(); }, 10000);
 }
 function step(t,d){
   const n=(t.s.frames||[]).length; if(!n) return;
