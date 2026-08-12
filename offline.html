@@ -690,6 +690,9 @@ nav.cats button.pg{border-style:dashed;}
  border-radius:8px;padding:9px 14px;font-size:12.5px;max-width:92%;text-align:center;
  opacity:0;pointer-events:none;transition:opacity .2s}
 #diag.on{opacity:1}
+
+.mt-when{background:#1b1e22;color:#9fd6ff;font-size:12px;padding:5px 9px;
+ border-bottom:1px solid #000;letter-spacing:.03em}
 </style>
 </head>
 <body>
@@ -733,7 +736,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='autocol-260812';
+const APP_VER='metaronly-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1581,6 +1584,70 @@ function moonSVG(size){
 function drawMoon(){ const e=$("moon"); if(!e) return; e.innerHTML=moonSVG(26); e.onclick=showMoonTip; }
 setInterval(drawMoon, 30*60*1000);
 
+
+// ══ METAR/TAF だけを取り直す（軽量・約1分）════════════════════
+let MTDATA=null;
+try{ MTDATA=JSON.parse(localStorage.getItem("nimbus_off_metarjson")||"null"); }catch(e){}
+async function loadMetarJson(){
+  try{
+    const r=await fetch("metar.json?cb="+Date.now(),{cache:"no-store"});
+    if(r.ok){
+      const j=await r.json();
+      if(j && j.groups && j.groups.length){
+        MTDATA=j;
+        try{ localStorage.setItem("nimbus_off_metarjson",JSON.stringify(j)); }catch(e){}
+        return j;
+      }
+    }
+  }catch(e){}
+  return null;
+}
+function mtGroupsNow(it){
+  const base=(it&&it.groups)||[];
+  if(MTDATA && MTDATA.groups && MTDATA.groups.length){
+    if(!MF || !MF.generated_utc || String(MTDATA.generated_utc) >= String(MF.generated_utc)) return MTDATA.groups;
+  }
+  return base;
+}
+function mtWhen(){
+  if(!MTDATA || !MTDATA.generated_utc) return "";
+  const s=String(MTDATA.generated_utc);
+  try{
+    const d=new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8),+s.slice(8,10),+s.slice(10,12)));
+    const p=n=>("0"+n).slice(-2), j=new Date(d.getTime()+9*3600000);
+    return p(j.getUTCMonth()+1)+"/"+p(j.getUTCDate())+" "+p(j.getUTCHours())+":"+p(j.getUTCMinutes());
+  }catch(e){ return ""; }
+}
+async function mtSync(){
+  const b=$("btn-update");
+  let cfg={}; try{ cfg=JSON.parse(localStorage.getItem("metair_v2")||"{}"); }catch(e){}
+  if(!cfg.pat || !cfg.repo){ diag("トークン未設定：管理ページで登録してください"); return; }
+  const before=(MTDATA&&String(MTDATA.generated_utc))||"";
+  const H={"Authorization":"token "+cfg.pat,"Content-Type":"application/json"};
+  const old=b.textContent;
+  b.disabled=true; b.textContent="METAR取得中…";
+  try{
+    const d=await fetch("https://api.github.com/repos/"+cfg.repo+
+      "/actions/workflows/metar_only.yml/dispatches",
+      {method:"POST",headers:H,body:JSON.stringify({ref:cfg.branch||"main"})});
+    if(!d.ok){
+      let m=""; try{ m=(await d.json()).message||""; }catch(e){}
+      diag("METAR収集の起動に失敗 HTTP "+d.status+(m?"："+m:""));
+      return;
+    }
+    for(let i=0;i<40;i++){
+      await new Promise(r=>setTimeout(r,4000));
+      const j=await loadMetarJson();
+      if(j && String(j.generated_utc)!==before){ render(); diag("METAR/TAF を更新しました（"+mtWhen()+" JST）"); return; }
+    }
+    diag("METARの更新待ちがタイムアウトしました。少し待って再度お試しください");
+  }catch(e){
+    diag("METAR収集でエラー: "+String(e).slice(0,60));
+  }finally{
+    b.disabled=false; b.textContent=old;
+  }
+}
+
 function renderSettings(){
   const el=$('settings'); if(!el) return;
   const modeBar='<div class="set-mode">'
@@ -1748,12 +1815,14 @@ function render(){
     const it=subs[0]||{};
     const tv=$('textview');
     tv.style.fontSize=MTCFG.fs+'px';
-    let gs=(it.groups||[]).filter(g=>MTCFG.hide.indexOf(g.icao)<0);
+    let gs=mtGroupsNow(it).filter(g=>MTCFG.hide.indexOf(g.icao)<0);
     if(MTCFG.order&&MTCFG.order.length) gs=applyOrder(gs, gs.map(g=>g.icao), MTCFG.order);
-    tv.innerHTML=gs.length
+    const when=mtWhen();
+    const whenHTML=when?'<div class="mt-when">METAR/TAF 取得 '+when+' JST</div>':'';
+    tv.innerHTML=whenHTML+(gs.length
       ? gs.map(g=>'<div class="mt-h" style="font-size:'+(MTCFG.fs+5)+'px">'+esc(g.icao)+(sunLabel(g.icao)?'<span class="sun">'+sunLabel(g.icao)+'</span>':'')+'</div>'
           +'<div class="mt-b">'+esc(mtFilter(g.text||'—',MTCFG.hours))+'</div>').join('')
-      : esc((it.groups&&it.groups.length)?'（表示する空港が選択されていません）':(it.text||'（データなし）'));
+      : esc((it.groups&&it.groups.length)?'（表示する空港が選択されていません）':(it.text||'（データなし）')));
     fitArea();
     return;
   }
@@ -1968,10 +2037,15 @@ window.addEventListener('scroll',flashAll,{passive:true});
 
 
 
-$('btn-update').onclick=function(){ update(false); };
+$('btn-update').onclick=function(){
+  const cur=curTab();
+  if(cur && cur.t==='c' && cur.cat && cur.cat.mode==='text') mtSync();
+  else update(false);
+};
 if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
 { const v=$('ver'); if(v) v.textContent='v'+APP_VER; }
 boot().then(()=>calcCacheSize());
+loadMetarJson().then(j=>{ if(j) render(); });
 setTimeout(fitArea,300);
 </script>
 <script>
