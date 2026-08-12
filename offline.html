@@ -736,7 +736,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='sunwhite-260812';
+const APP_VER='ovlfit-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1917,6 +1917,42 @@ function show(t){
     t.img.src=BASE+t.s.file;
   }
 }
+
+// ── 再生UIを「そのタイルの見えている範囲」の中央に置く ──
+//    ズームやスクロールで画像の中心が画面外へ出ても、UIが隠れないようにする。
+let _ovlRAF=0;
+function placeOvls(){
+  if(_ovlRAF) return;
+  _ovlRAF=requestAnimationFrame(function(){
+    _ovlRAF=0;
+    const w=$("gwrap");
+    if(!w || typeof TILES==="undefined" || !TILES || !TILES.length) return;
+    const vr=w.getBoundingClientRect();
+    TILES.forEach(function(t){
+      const el=t&&t.el; if(!el) return;
+      const ov=el.querySelector(".ovl"); if(!ov) return;
+      const tr=el.getBoundingClientRect();
+      const L=Math.max(tr.left,vr.left),  R=Math.min(tr.right,vr.right);
+      const T=Math.max(tr.top,vr.top),    B=Math.min(tr.bottom,vr.bottom);
+      if(R<=L || B<=T){ ov.style.visibility="hidden"; return; }
+      ov.style.visibility="";
+      const ow=ov.offsetWidth||130, oh=ov.offsetHeight||42, pad=6;
+      let x=(L+R)/2-tr.left, y=(T+B)/2-tr.top;
+      const loX=ow/2+pad, hiX=Math.max(loX, tr.width-ow/2-pad);
+      const loY=oh/2+pad, hiY=Math.max(loY, tr.height-oh/2-pad);
+      x=Math.min(Math.max(x,loX),hiX);
+      y=Math.min(Math.max(y,loY),hiY);
+      ov.style.left=x+"px";
+      ov.style.top =y+"px";
+    });
+  });
+}
+(function(){
+  const w=$("gwrap");
+  if(w) w.addEventListener("scroll", placeOvls, {passive:true});
+  window.addEventListener("resize", placeOvls);
+})();
+
 function showTags(){
   clearTimeout(showTags._t);
   TILES.forEach(t=>t.el.classList.add('tagon'));
@@ -1927,6 +1963,7 @@ function showTags(){
 
 function flash(t){
   t.el.classList.add('act');
+  placeOvls();
   if(t.hideT) clearTimeout(t.hideT);
   t.hideT=setTimeout(()=>t.el.classList.remove('act'),1000);
 }
@@ -1980,7 +2017,7 @@ function applySingleSize(){
   g.style.height=hh+'px';
   [...g.children].forEach(el=>{ el.style.height=hh+'px'; });
 }
-(function(){ const _f=fitArea; fitArea=function(){ _f.apply(this,arguments); try{ applySingleSize(); }catch(e){} }; })();
+(function(){ const _f=fitArea; fitArea=function(){ _f.apply(this,arguments); try{ applySingleSize(); }catch(e){} try{ placeOvls(); }catch(e){} }; })();
 
 
 // ── 画像エリアのみピンチズーム（ヘッダ・タブは固定） ──
@@ -1998,6 +2035,7 @@ function applyZoom(cx,cy,prev){
   w.scrollLeft=x*k-px;
   w.scrollTop =y*k-py;
   showTags(); TILES.forEach(t=>flash(t));
+  placeOvls();
 }
 function setZoomLevel(z,cx,cy){
   const prev=GZ;
