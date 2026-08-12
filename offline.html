@@ -710,6 +710,10 @@ nav.cats button.pg{border-style:dashed;}
 
 .tile > .cap.cs{font-size:20px;padding:4px 8px;border-radius:7px}
 .tile > .cap.cxs{font-size:13px;padding:2px 5px;border-radius:5px}
+
+.ovl button.sp, .tools.left button#b-spd{width:auto;min-width:36px;padding:0 7px;
+ font-size:11.5px;font-weight:600;letter-spacing:.02em}
+.ovl.mini button.sp{min-width:30px;padding:0 5px;font-size:10.5px}
 </style>
 </head>
 <body>
@@ -753,7 +757,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='capfit-260812';
+const APP_VER='speed-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1852,6 +1856,7 @@ function render(){
   $('subs').style.display='flex';
   $('subs').innerHTML =
     '<span class="tools left">'
+    + '<button id="b-spd" title="再生速度">'+spdLabel()+'</button>'
     + '<button id="b-first" title="全画像を最古へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h2v14H7z"/><path d="M20 5v14L9.5 12z"/></svg></button>'
     + '<button id="b-prev" title="全画像を1コマ戻す">'+ICO.prev+'</button>'
     + '<button id="bulk" title="全画像を再生／停止" class="'+(bulkPlaying?'playing':'')+'">'+(bulkPlaying?ICO.pause:ICO.play)+'</button>'
@@ -1869,6 +1874,7 @@ function render(){
     render();
   });
   $('bulk').onclick=toggleBulk;
+  $('b-spd').onclick=toggleSpd;
   const bulkStop=()=>{ bulkPlaying=false; $('bulk').innerHTML=ICO.play; $('bulk').classList.remove('playing'); };
   $('b-first').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});};
   $('b-prev').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); step(t,-1); flash(t);});};
@@ -1896,7 +1902,8 @@ function buildGrid(subs){
     + '<div class="tag">'+esc(s.label)+'</div>'
     + '<img alt="">'
     + (s.kind==='series' && (s.frames||[]).length>1
-       ? '<div class="ovl"><button class="fs" title="最古">'+ICO.first+'</button>'
+       ? '<div class="ovl"><button class="sp" title="再生速度">'+spdLabel()+'</button>'
+         +'<button class="fs" title="最古">'+ICO.first+'</button>'
          +'<button class="pv" title="1コマ戻す">'+ICO.prev+'</button>'
          +'<button class="p" title="再生／停止">'+ICO.play+'</button>'
          +'<button class="nx" title="1コマ送る">'+ICO.next+'</button>'
@@ -1920,6 +1927,7 @@ function buildGrid(subs){
     });
     if(t.play){
       t.play.onclick=e=>{e.stopPropagation(); togglePlay(t); flash(t);};
+      el.querySelector('.sp').onclick=e=>{e.stopPropagation(); toggleSpd(); flash(t);};
       el.querySelector('.fs').onclick=e=>{e.stopPropagation(); stop(t); t.idx=0; show(t); flash(t);};
       el.querySelector('.pv').onclick=e=>{e.stopPropagation(); stop(t); step(t,-1); flash(t);};
       el.querySelector('.nx').onclick=e=>{e.stopPropagation(); stop(t); step(t,1); flash(t);};
@@ -2030,13 +2038,27 @@ function step(t,d){
   const n=(t.s.frames||[]).length; if(!n) return;
   t.idx=(t.idx+d+n)%n; show(t);
 }
+// ══ 再生速度（×1＝3秒で1周／×0.5＝6秒で1周）══════════════
+let SPD=1;
+try{ const _v=parseFloat(localStorage.getItem("nimbus_off_spd")); if(_v===0.5||_v===1) SPD=_v; }catch(e){}
+function spdLabel(){ return SPD===1 ? "×1" : "×0.5"; }
+function setSpd(v){
+  SPD=v;
+  try{ localStorage.setItem("nimbus_off_spd", String(v)); }catch(e){}
+  document.querySelectorAll(".sp,#b-spd").forEach(function(b){ b.textContent=spdLabel(); });
+  TILES.forEach(function(t){ if(t.timer){ stop(t); play(t); } });
+  placeOvls();
+}
+function toggleSpd(){ setSpd(SPD===1?0.5:1); try{ clickSound(SPD===1); }catch(e){} }
+
 function play(t){
   if(t.timer||t.s.kind!=='series') return;
   const n=(t.s.frames||[]).length; if(n<2) return;
   if(t.idx>=n-1) t.idx=0;
   show(t);
   if(t.play){ t.play.innerHTML=ICO.pause; t.play.classList.add('playing'); }
-  t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },220);
+  const iv=Math.max(40, Math.round(3000/n/SPD));   // n枚で1周3秒（×0.5は6秒）
+  t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },iv);
 }
 function stop(t){
   if(t.timer){clearInterval(t.timer);t.timer=null;}
