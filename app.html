@@ -70,7 +70,6 @@ main{padding:2px;}
  opacity:0;transition:opacity .35s;pointer-events:none;}
 .tile.act .ovl, .tile.actcap .ovl{opacity:1;pointer-events:auto;}
 .tile:not(.act) .ovl button{display:none}
-.tile:not(.actcap) > .cap{visibility:hidden}
 .ovl button{background:rgba(30,34,39,.9);border:1px solid #3a4048;color:#fff;border-radius:4px;
  width:28px;height:24px;font-size:11px;font-family:inherit;cursor:pointer;padding:0;}
 /* 再生UI（テスラ調：フラット・細い枠・余計な装飾なし） */
@@ -90,8 +89,7 @@ main{padding:2px;}
  font-variant-numeric:tabular-nums;white-space:nowrap;padding:6px 11px;
  background:rgba(0,0,0,.60);border:1px solid rgba(255,255,255,.18);border-radius:9px;
  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
- opacity:0;transition:opacity .35s;pointer-events:none;}
-.tile.actcap > .cap{opacity:1;}
+ opacity:1;transition:opacity .35s;pointer-events:none;}
 
 /* METAR/TAF */
 #textview{display:none;white-space:pre-wrap;word-break:break-word;background:#000;color:#e8eaed;
@@ -767,7 +765,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='center-260813';
+const APP_VER='capalways-260813';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
