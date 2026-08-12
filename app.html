@@ -714,6 +714,15 @@ nav.cats button.pg{border-style:dashed;}
 .ovl button.sp, .tools.left button#b-spd{width:auto;min-width:36px;padding:0 7px;
  font-size:11.5px;font-weight:600;letter-spacing:.02em}
 .ovl.mini button.sp{min-width:30px;padding:0 5px;font-size:10.5px}
+
+#backgrid{position:fixed;z-index:40;display:none;align-items:center;justify-content:center;
+ background:rgba(10,12,14,.72);border:1px solid rgba(255,255,255,.20);color:#eceff2;
+ border-radius:3px;width:40px;height:30px;padding:0;cursor:pointer;font-family:inherit;
+ -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+ transition:background .15s, border-color .15s, color .15s}
+#backgrid:hover{border-color:rgba(255,255,255,.45);background:rgba(20,24,28,.85)}
+#backgrid:active{background:rgba(255,255,255,.14)}
+#backgrid.on{display:inline-flex}
 </style>
 </head>
 <body>
@@ -752,12 +761,13 @@ nav.cats button.pg{border-style:dashed;}
   <pre id="textview"></pre>
   <div id="settings"></div>
   <div id="gwrap"><div id="grid"></div></div>
+  <button id="backgrid" title="全体表示に戻る"></button>
   <div class="empty" id="empty">「GET IT NOW!!」を押すと画像を端末に保存します。<br>
   一度取得すれば、通信が無い環境でも表示できます。</div>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='spdtile-260812';
+const APP_VER='backbtn-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1060,6 +1070,9 @@ function enableDrag(container, selector, onDrop, handle){
 function moveItem(arr,from,to){ if(from<0||to<0||from===to) return arr; const a=arr.slice(); const [x]=a.splice(from,1); a.splice(to,0,x); return a; }
 
 const ICO={
+  back:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"'
+      +' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+      +'<path d="M9 14L5 10l4-4"/><path d="M5 10h9a5 5 0 0 1 0 10h-1"/></svg>',
   prev:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 5v14L3 12z"/><path d="M21 5v14l-9-7z"/></svg>',
   next:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 5v14l9-7z"/><path d="M3 5v14l9-7z"/></svg>',
   first:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M7 5h2v14H7z"/><path d="M20 5v14L9.5 12z"/></svg>',
@@ -1897,6 +1910,11 @@ function buildGrid(subs){
   const cols = (zoomIdx>=0)?1:LAY().cols;
   g.style.gridTemplateColumns='repeat('+cols+',minmax(0,1fr))';
   g.className = (zoomIdx>=0)?'zoom':'';
+  { const bg=document.getElementById("backgrid");
+    if(bg){ bg.classList.toggle("on", zoomIdx>=0);
+            if(!bg.innerHTML) bg.innerHTML=ICO.back;
+            bg.onclick=function(){ setZoom(zoomIdx); };
+            setTimeout(placeBack,0); } }
   g.innerHTML = list.map((s,i)=>
     '<div class="tile" data-i="'+i+'">'
     + '<div class="tag">'+esc(s.label)+'</div>'
@@ -1950,6 +1968,13 @@ function show(t){
 // ── 再生UIを「そのタイルの見えている範囲」の中央に置く ──
 //    ズームやスクロールで画像の中心が画面外へ出ても、UIが隠れないようにする。
 let _ovlRAF=0;
+function placeBack(){
+  const b=document.getElementById("backgrid"), w=$("gwrap");
+  if(!b||!w) return;
+  const r=w.getBoundingClientRect();
+  b.style.left=(r.left+10)+"px";
+  b.style.top =(r.bottom-10-(b.offsetHeight||30))+"px";
+}
 function placeOvls(){
   if(_ovlRAF) return;
   _ovlRAF=setTimeout(function(){
@@ -1986,6 +2011,7 @@ function placeOvls(){
       y=Math.min(Math.max(y,loY),hiY);
       ov.style.left=x+"px";
       ov.style.top =y+"px";
+      placeBack();
       // 時刻は見えている範囲の右上へ
       const cp=el.querySelector(":scope > .cap");
       if(cp){
