@@ -635,13 +635,6 @@
           "frames": 36
         },
         {
-          "key": "echotop",
-          "label": "エコー頂高度",
-          "kind": "echotop",
-          "step": 10,
-          "frames": 18
-        },
-        {
           "key": "hrpns",
           "label": "高解像度降水・全国",
           "kind": "nowc",
