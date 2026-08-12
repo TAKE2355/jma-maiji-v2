@@ -13,17 +13,25 @@ vs = re.search(r'name="javax\.faces\.ViewState"[^>]+value="([^"]+)"', r0.text)
 s.post(M.METAIR_LOGIN_URL, data={"loginForm":"loginForm","loginForm:username":M.METAIR_USER,
    "loginForm:password":M.METAIR_PASS,"loginForm:doLogin":"\u30ed\u30b0\u30a4\u30f3",
    "loginForm:forceflg":"true","javax.faces.ViewState":vs.group(1)}, timeout=25)
-seen = set()
-pages = ["/metair/view/start/XS001.html"]
-for u in pages:
-    t = s.get(B + u, timeout=25).text
-    print("PAGE", san(u)[-30:], len(t))
-    for m in re.finditer(r"(CSA\d{3})[^\s\"\']{0,40}", t):
-        seen.add(m.group(0)[:44])
-    for m in re.finditer(r"[A-Za-z0-9_/\.]+\.html", t):
-        seen.add("P:" + m.group(0))
-    for kw in ("METAR", "TAF", "実況電文", "飛行場実況", "電文"):
-        for mm in re.finditer(kw, t):
-            print("  KW", kw, san(t[max(0,mm.start()-160):mm.start()+160])[:320])
-            break
-print("SEEN", sorted(san(x) for x in seen)[:80])
+for u in ["/metair/view/header/header.html", "/metair/view/menu/menu.html",
+          "/metair/view/start/XS002.html", "/metair/view/infoShow/nowLoading.html"]:
+    try:
+        t = s.get(B + u, timeout=20)
+        ti = re.search(r"<title>([^<]*)</title>", t.text)
+        print("PG", san(u)[-34:], t.status_code, len(t.text), san(ti.group(1)) if ti else "")
+        for m in re.finditer(r"(CSA\d{3}|CSB\d{3}|XS\d{3})", t.text):
+            pass
+        ids = sorted(set(re.findall(r"(CSA\d{3}|CSB\d{3})", t.text)))
+        if ids: print("   IDS", ids[:40])
+    except Exception as e:
+        print("PGERR", san(u)[-30:], e)
+for n in range(1, 31):
+    u = B + "/metair/view/winKobetsu/CSA%03d.html" % n
+    try:
+        r = s.get(u, timeout=15)
+        ti = re.search(r"<title>([^<]*)</title>", r.text)
+        t2 = san(ti.group(1)) if ti else ""
+        if r.status_code == 200 and t2 and "MetAir" not in t2:
+            print("KOB CSA%03d" % n, r.status_code, len(r.text), t2)
+    except Exception as e:
+        print("KOBERR", n, e)
