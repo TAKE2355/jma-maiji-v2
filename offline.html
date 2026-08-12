@@ -767,7 +767,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='zoomnav-260812';
+const APP_VER='scrollkeep-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2150,19 +2150,32 @@ function setZoom(i){
   zoomIdx=(zoomIdx===i ? -1 : i);
   resetZoom();          // 出入りのたびにズームは等倍に戻す
   render();
-  setTimeout(function(){
-    const v=$("gwrap"); if(!v) return;
-    if(zoomIdx>=0){
-      // 個別表示は画像の中央から
+  if(zoomIdx>=0){
+    setTimeout(function(){
+      const v=$("gwrap"); if(!v) return;
       v.scrollLeft=Math.max(0,(v.scrollWidth -v.clientWidth )/2);
       v.scrollTop =Math.max(0,(v.scrollHeight-v.clientHeight)/2);
-    }else if(_gridScroll){
-      v.scrollLeft=_gridScroll.l;
-      v.scrollTop =_gridScroll.t;
-      _gridScroll=null;
-    }
+      try{ placeOvls(); }catch(e){}
+    },0);
+  }else{
+    // 画像の読み込みで高さが変わるため、戻る位置は何度か入れ直す
+    restoreGridScroll();
+  }
+}
+function restoreGridScroll(){
+  const pos=_gridScroll;
+  if(!pos) return;
+  let n=0;
+  (function tick(){
+    const v=$("gwrap");
+    if(!v || zoomIdx>=0){ return; }
+    v.scrollTop =pos.t;
+    v.scrollLeft=pos.l;
     try{ placeOvls(); }catch(e){}
-  },0);
+    n++;
+    if(n<16 && Math.abs(v.scrollTop-pos.t)>1) setTimeout(tick,60);
+    else _gridScroll=null;
+  })();
 }
 
 // 画面の残り高さにグリッドを収める
