@@ -757,7 +757,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='speed0-260812';
+const APP_VER='spdtile-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1927,7 +1927,7 @@ function buildGrid(subs){
     });
     if(t.play){
       t.play.onclick=e=>{e.stopPropagation(); togglePlay(t); flash(t);};
-      el.querySelector('.sp').onclick=e=>{e.stopPropagation(); toggleSpd(); flash(t);};
+      el.querySelector('.sp').onclick=e=>{e.stopPropagation(); toggleTileSpd(t); flash(t);};
       el.querySelector('.fs').onclick=e=>{e.stopPropagation(); stop(t); t.idx=0; show(t); flash(t);};
       el.querySelector('.pv').onclick=e=>{e.stopPropagation(); stop(t); step(t,-1); flash(t);};
       el.querySelector('.nx').onclick=e=>{e.stopPropagation(); stop(t); step(t,1); flash(t);};
@@ -2038,41 +2038,67 @@ function step(t,d){
   const n=(t.s.frames||[]).length; if(!n) return;
   t.idx=(t.idx+d+n)%n; show(t);
 }
-// ══ 再生速度（×1＝3秒で1周／×0.5＝6秒で1周）══════════════
-let SPD=1;
+// ══ 再生速度（×1＝3秒で1周／×0.5＝6秒で1周／×0＝停止）════════
+//   ・各画像のボタンはその画像だけに効く
+//   ・全体再生UIのボタンは全画像に反映する
+let SPD=1;   // 全体（新しく作られる画像の既定値）
+let _bulkWas=false;
 try{ const _v=parseFloat(localStorage.getItem("nimbus_off_spd")); if(_v===0||_v===0.5||_v===1) SPD=_v; }catch(e){}
-function spdLabel(){ return SPD===1 ? "×1" : (SPD===0.5 ? "×0.5" : "×0"); }
+function spdText(v){ return v===1 ? "×1" : (v===0.5 ? "×0.5" : "×0"); }
+function nextSpd(v){ return v===1 ? 0.5 : (v===0.5 ? 0 : 1); }
+function spdLabel(){ return spdText(SPD); }
+function tileSpd(t){ return (typeof t.spd==="number") ? t.spd : SPD; }
+function setTileSpd(t,v){
+  const prev=tileSpd(t);
+  t.spd=v;
+  const b=t.el && t.el.querySelector(".sp");
+  if(b) b.textContent=spdText(v);
+  if(v<=0){
+    if(prev>0) t.wasPlaying=!!t.timer;
+    stop(t);
+  }else if(prev<=0){
+    if(t.wasPlaying){ t.wasPlaying=false; play(t); }
+  }else if(t.timer){
+    stop(t); play(t);
+  }
+}
+function toggleTileSpd(t){
+  setTileSpd(t, nextSpd(tileSpd(t)));
+  try{ clickSound(tileSpd(t)===1); }catch(e){}
+  placeOvls();
+}
 function setSpd(v){
+  const prev=SPD;
   SPD=v;
   try{ localStorage.setItem("nimbus_off_spd", String(v)); }catch(e){}
-  document.querySelectorAll(".sp,#b-spd").forEach(function(b){ b.textContent=spdLabel(); });
-  if(SPD<=0){
-    // ×0 は再生停止
-    TILES.forEach(function(t){ stop(t); });
+  const sb=$("b-spd"); if(sb) sb.textContent=spdText(v);
+  TILES.forEach(function(t){ setTileSpd(t, v); });
+  const bb=$("bulk");
+  if(v<=0){
+    if(prev>0) _bulkWas=bulkPlaying;
     bulkPlaying=false;
-    const bb=$("bulk");
     if(bb){ bb.innerHTML=ICO.play; bb.classList.remove("playing"); }
-  }else{
-    TILES.forEach(function(t){ if(t.timer){ stop(t); play(t); } });
+  }else if(prev<=0 && _bulkWas){
+    _bulkWas=false;
+    bulkPlaying=true;
+    if(bb){ bb.innerHTML=ICO.pause; bb.classList.add("playing"); }
   }
   placeOvls();
 }
 // ×1 → ×0.5 → ×0 → ×1
-function toggleSpd(){
-  setSpd(SPD===1 ? 0.5 : (SPD===0.5 ? 0 : 1));
-  try{ clickSound(SPD===1); }catch(e){}
-}
+function toggleSpd(){ setSpd(nextSpd(SPD)); try{ clickSound(SPD===1); }catch(e){} }
 
 function play(t){
-  if(SPD<=0) return;             // ×0 は再生しない
+  if(tileSpd(t)<=0) return;      // ×0 の画像は再生しない
   if(t.timer||t.s.kind!=='series') return;
   const n=(t.s.frames||[]).length; if(n<2) return;
   if(t.idx>=n-1) t.idx=0;
   show(t);
   if(t.play){ t.play.innerHTML=ICO.pause; t.play.classList.add('playing'); }
-  const iv=Math.max(40, Math.round(3000/n/SPD));   // n枚で1周3秒（×0.5は6秒）
+  const iv=Math.max(40, Math.round(3000/n/tileSpd(t)));   // n枚で1周3秒（×0.5は6秒）
   t.timer=setInterval(()=>{ t.idx=(t.idx>=n-1)?0:t.idx+1; show(t); },iv);
 }
+
 function stop(t){
   if(t.timer){clearInterval(t.timer);t.timer=null;}
   if(t.play){ t.play.innerHTML=ICO.play; t.play.classList.remove('playing'); }
@@ -2080,7 +2106,6 @@ function stop(t){
 function togglePlay(t){ t.timer?stop(t):play(t); }
 function toggleBulk(){
   bulkPlaying=!bulkPlaying;
-  if(SPD<=0) bulkPlaying=false;   // ×0 のときは再生しない
   $('bulk').innerHTML=bulkPlaying?ICO.pause:ICO.play;
   $('bulk').classList.toggle('playing',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
