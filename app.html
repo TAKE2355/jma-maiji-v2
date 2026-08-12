@@ -733,7 +733,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='fixbtn-260812';
+const APP_VER='autocol-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -805,6 +805,11 @@ async function boot(){
         // 差分ダウンロード（数秒）をそのまま実行する
         await update(true);
       }
+      // サーバのデータが古ければ収集そのものを起動する（トークン登録済みの端末のみ）
+      try{
+        let cfg={}; try{ cfg=JSON.parse(localStorage.getItem("metair_v2")||"{}"); }catch(e){}
+        if(cfg.pat && cfg.repo && dataAgeMin(mf.generated_utc) > 35) update(false);
+      }catch(e){}
     }
   }catch(e){}
 }
