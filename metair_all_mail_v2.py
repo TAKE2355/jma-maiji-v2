@@ -734,8 +734,30 @@ def _cb_url(dt):
 NOWC_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": "https://www.jma.go.jp/bosai/nowc/"}
 NOWC_BASE = "https://www.jma.go.jp/bosai/jmatile/data"
-NOWC_Z, NOWC_X0, NOWC_X1, NOWC_Y0, NOWC_Y1 = 6, 53, 58, 22, 27   # 日本全域
+# (経度west, 緯度south, 経度east, 緯度north, ズーム)
+NOWC_REGIONS = {
+    "JP":       (118.2, 22.0, 151.8, 48.9, 6),   # 日本全域
+    "HOKKAIDO": (139.0, 41.0, 146.6, 46.1, 7),
+    "KANTO":    (138.2, 34.6, 141.4, 37.3, 8),
+    "CHUBU":    (135.6, 34.1, 138.7, 36.7, 8),
+    "KANSAI":   (133.9, 33.2, 137.0, 35.9, 8),
+    "SHIKOKU":  (131.7, 32.5, 135.0, 34.9, 8),
+    "KYUSHU":   (129.1, 30.7, 132.5, 34.3, 8),
+    "OKINAWA":  (126.1, 25.5, 129.3, 27.9, 8),
+}
 _NOWC_MAP = {}
+
+def _nowc_geom(region="JP"):
+    """地域コードからタイル範囲 (z, x0, x1, y0, y1) を求める"""
+    import math
+    r = NOWC_REGIONS.get(str(region or "JP").upper()) or NOWC_REGIONS["JP"]
+    lon0, lat0, lon1, lat1, z = r
+    n = 2 ** z
+    def xt(lon): return int((lon + 180.0) / 360.0 * n)
+    def yt(lat):
+        rad = math.radians(lat)
+        return int((1 - math.log(math.tan(rad) + 1 / math.cos(rad)) / math.pi) / 2 * n)
+    return z, xt(lon0), xt(lon1), yt(lat1), yt(lat0)
 
 def _nowc_tile(url):
     try:
@@ -746,19 +768,19 @@ def _nowc_tile(url):
         pass
     return None
 
-def _nowc_basemap():
-    """日本全域の淡色地図（国土地理院タイル）を1枚に合成してキャッシュ"""
-    if "map" in _NOWC_MAP:
-        return _NOWC_MAP["map"].copy()
-    w = (NOWC_X1 - NOWC_X0 + 1) * 256
-    h = (NOWC_Y1 - NOWC_Y0 + 1) * 256
-    cv = Image.new("RGBA", (w, h), (255, 255, 255, 255))
-    for x in range(NOWC_X0, NOWC_X1 + 1):
-        for y in range(NOWC_Y0, NOWC_Y1 + 1):
-            tl = _nowc_tile("https://cyberjapandata.gsi.go.jp/xyz/pale/%d/%d/%d.png" % (NOWC_Z, x, y))
+def _nowc_basemap(region="JP"):
+    """指定地域の淡色地図（国土地理院タイル）を1枚に合成してキャッシュ"""
+    key = str(region or "JP").upper()
+    if key in _NOWC_MAP:
+        return _NOWC_MAP[key].copy()
+    z, x0, x1, y0, y1 = _nowc_geom(key)
+    cv = Image.new("RGBA", ((x1 - x0 + 1) * 256, (y1 - y0 + 1) * 256), (255, 255, 255, 255))
+    for x in range(x0, x1 + 1):
+        for y in range(y0, y1 + 1):
+            tl = _nowc_tile("https://cyberjapandata.gsi.go.jp/xyz/pale/%d/%d/%d.png" % (z, x, y))
             if tl is not None:
-                cv.paste(tl, ((x - NOWC_X0) * 256, (y - NOWC_Y0) * 256), tl)
-    _NOWC_MAP["map"] = cv.copy()
+                cv.paste(tl, ((x - x0) * 256, (y - y0) * 256), tl)
+    _NOWC_MAP[key] = cv.copy()
     return cv
 
 def nowc_times():
@@ -798,35 +820,37 @@ def _nowc_stamp(im, validtime):
     d.text((x - bb[0], y - bb[1]), txt, font=f, fill=(10, 10, 10))
     return im
 
-def get_nowc_hrpns(basetime, validtime):
-    """高解像度降水ナウキャスト（日本全域）をタイルから1枚に合成"""
+def get_nowc_hrpns(basetime, validtime, region="JP"):
+    """高解像度降水ナウキャストを指定地域でタイルから1枚に合成"""
     try:
-        cv = _nowc_basemap()
+        cv = _nowc_basemap(region)
+        z, x0, x1, y0, y1 = _nowc_geom(region)
         tpl = (NOWC_BASE + "/nowc/" + str(basetime) + "/none/" + str(validtime)
                + "/surf/hrpns/%d/%d/%d.png")
         got = 0
-        for x in range(NOWC_X0, NOWC_X1 + 1):
-            for y in range(NOWC_Y0, NOWC_Y1 + 1):
-                tl = _nowc_tile(tpl % (NOWC_Z, x, y))
+        for x in range(x0, x1 + 1):
+            for y in range(y0, y1 + 1):
+                tl = _nowc_tile(tpl % (z, x, y))
                 if tl is not None:
-                    cv.paste(tl, ((x - NOWC_X0) * 256, (y - NOWC_Y0) * 256), tl)
+                    cv.paste(tl, ((x - x0) * 256, (y - y0) * 256), tl)
                     got += 1
         if got == 0:
             return None, None
         return _nowc_stamp(cv.convert("RGB"), validtime), str(validtime)
     except Exception as e:
-        print(f"  高解像度降水エラー: {e}")
+        print(f"  高解像度降水エラー[{region}]: {e}")
         return None, None
 
-def _nowc_lonlat_to_xy(lon, lat, W, H):
+def _nowc_lonlat_to_xy(lon, lat, W, H, region="JP"):
     import math
-    step = 360.0 / (2 ** NOWC_Z)
-    lon0 = -180.0 + NOWC_X0 * step
-    span = (NOWC_X1 - NOWC_X0 + 1) * step
+    z, X0, X1, Y0, Y1 = _nowc_geom(region)
+    step = 360.0 / (2 ** z)
+    lon0 = -180.0 + X0 * step
+    span = (X1 - X0 + 1) * step
     x = (lon - lon0) / span * W
     r = math.radians(lat)
-    yt = (1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * (2 ** NOWC_Z)
-    y = (yt - NOWC_Y0) * 256
+    yt = (1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * (2 ** z)
+    y = (yt - Y0) * 256
     return x, y
 
 def nowc_times_n3():
@@ -872,15 +896,16 @@ def _nowc_draw_liden(im, basetime, validtime):
 def get_nowc_thunder(basetime, validtime, liden_bt=None, liden_vt=None):
     """雷活動度（雷ナウキャスト実況）＋前5分の落雷を日本全域で1枚に合成"""
     try:
-        cv = _nowc_basemap()
+        cv = _nowc_basemap("JP")
+        z, x0, x1, y0, y1 = _nowc_geom("JP")
         tpl = (NOWC_BASE + "/nowc/" + str(basetime) + "/none/" + str(validtime)
                + "/surf/thns/%d/%d/%d.png")
         got = 0
-        for x in range(NOWC_X0, NOWC_X1 + 1):
-            for y in range(NOWC_Y0, NOWC_Y1 + 1):
-                tl = _nowc_tile(tpl % (NOWC_Z, x, y))
+        for x in range(x0, x1 + 1):
+            for y in range(y0, y1 + 1):
+                tl = _nowc_tile(tpl % (z, x, y))
                 if tl is not None:
-                    cv.paste(tl, ((x - NOWC_X0) * 256, (y - NOWC_Y0) * 256), tl)
+                    cv.paste(tl, ((x - x0) * 256, (y - y0) * 256), tl)
                     got += 1
         if got == 0:
             return None, None
