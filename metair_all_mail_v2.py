@@ -734,30 +734,31 @@ def _cb_url(dt):
 NOWC_HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": "https://www.jma.go.jp/bosai/nowc/"}
 NOWC_BASE = "https://www.jma.go.jp/bosai/jmatile/data"
-# (経度west, 緯度south, 経度east, 緯度north, ズーム)
+# (中心経度, 中心緯度, ズーム, 横タイル数, 縦タイル数)
 NOWC_REGIONS = {
-    "JP":       (118.2, 22.0, 151.8, 48.9, 6),   # 日本全域
-    "HOKKAIDO": (139.0, 41.0, 146.6, 46.1, 7),
-    "KANTO":    (138.2, 34.6, 141.4, 37.3, 8),
-    "CHUBU":    (135.6, 34.1, 138.7, 36.7, 8),
-    "KANSAI":   (133.9, 33.2, 137.0, 35.9, 8),
-    "SHIKOKU":  (131.7, 32.5, 135.0, 34.9, 8),
-    "KYUSHU":   (129.1, 30.7, 132.5, 34.3, 8),
-    "OKINAWA":  (126.1, 25.5, 129.3, 27.9, 8),
+    "JP":       (135.000, 36.60, 6, 6, 6),   # 日本全域
+    "HOKKAIDO": (141.692, 42.775, 8, 4, 3),  # 新千歳空港
+    "KANTO":    (139.920, 36.04, 8, 3, 3),
+    "CHUBU":    (136.805, 34.858, 8, 3, 3),  # 中部国際空港
+    "KANSAI":   (135.244, 34.427, 8, 3, 3),  # 関西国際空港
+    "SHIKOKU":  (133.669, 33.546, 8, 4, 3),  # 高知空港
+    "KYUSHU":   (130.855, 32.837, 9, 4, 4),  # 熊本空港
+    "OKINAWA":  (127.646, 26.196, 8, 3, 3),  # 那覇空港
 }
 _NOWC_MAP = {}
 
 def _nowc_geom(region="JP"):
-    """地域コードからタイル範囲 (z, x0, x1, y0, y1) を求める"""
+    """地域コード（中心＋ズーム＋タイル数）からタイル範囲 (z, x0, x1, y0, y1) を求める"""
     import math
     r = NOWC_REGIONS.get(str(region or "JP").upper()) or NOWC_REGIONS["JP"]
-    lon0, lat0, lon1, lat1, z = r
+    lon, lat, z, nx, ny = r
     n = 2 ** z
-    def xt(lon): return int((lon + 180.0) / 360.0 * n)
-    def yt(lat):
-        rad = math.radians(lat)
-        return int((1 - math.log(math.tan(rad) + 1 / math.cos(rad)) / math.pi) / 2 * n)
-    return z, xt(lon0), xt(lon1), yt(lat1), yt(lat0)
+    cx = (lon + 180.0) / 360.0 * n
+    rad = math.radians(lat)
+    cy = (1 - math.log(math.tan(rad) + 1 / math.cos(rad)) / math.pi) / 2 * n
+    x0 = int(math.floor(cx - nx / 2.0))
+    y0 = int(math.floor(cy - ny / 2.0))
+    return z, x0, x0 + nx - 1, y0, y0 + ny - 1
 
 def _nowc_tile(url):
     try:
