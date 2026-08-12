@@ -181,7 +181,8 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
     elif kind == "nowc":
         tt = M.nowc_times()[:n]
         specs = [(e.get("validtime"), e.get("basetime"), None) for e in tt]
-        M._nowc_basemap()          # 地図タイルを先に1回だけ作ってスレッド間で共有
+        view = str(s.get("code") or "JP")
+        M._nowc_basemap(view)          # 地図タイルを先に1回だけ作ってスレッド間で共有
     elif kind == "thnc":
         sp = M.nowc_thunder_specs(n)
         specs = [(vt, (bt, vt2, lbt, lvt), None) for vt, bt, vt2, lbt, lvt in sp]
@@ -199,7 +200,7 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
             if kind == "pagasa":
                 im = M._pagasa_compose(url, view)
             elif kind == "nowc":
-                im, _ts = M.get_nowc_hrpns(url, ts)
+                im, _ts = M.get_nowc_hrpns(url, ts, view or "JP")
             elif kind == "thnc":
                 im, _ts = M.get_nowc_thunder(*url)
             else:
