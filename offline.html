@@ -720,7 +720,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='sun2-260812';
+const APP_VER='sun3-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1490,7 +1490,11 @@ function sunLabel(icao){
   const base=new Date(Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate()));
   const s=sunTimes(a[0],a[1],base);
   if(!s) return "";
-  return "↑"+hhmm(s.rise,a[2])+"・↓"+hhmm(s.set,a[2]);
+  return "↑"+hhmmz(s.rise)+"・↓"+hhmmz(s.set);
+}
+function hhmmz(ms){
+  const d=new Date(ms), p=n=>("0"+n).slice(-2);
+  return p(d.getUTCHours())+p(d.getUTCMinutes())+"z";
 }
 // 月齢（0=新月, 0.5=満月）
 function moonPhase(when){
@@ -1504,7 +1508,7 @@ function moonSVG(size){
   const p=moonPhase(new Date()), r=size/2-1, cx=size/2, cy=size/2;
   const t=Math.cos(2*Math.PI*p);
   const so=(p<0.5)?1:0;
-  const si=(t>0)?so:1-so;
+  const si=(t>0)?1-so:so;
   const rx=Math.max(0.001,Math.abs(t)*r);
   const lit="M "+cx+" "+(cy-r)+" A "+r+" "+r+" 0 0 "+so+" "+cx+" "+(cy+r)
           + " A "+rx+" "+r+" 0 0 "+si+" "+cx+" "+(cy-r)+" Z";
