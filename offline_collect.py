@@ -321,30 +321,39 @@ def main():
     akuten_ts = M.get_akuten_latest_ts() if need_akuten else None
 
     manifest = {"generated_utc": datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"), "categories": []}
-    total = 0
-    for cat in cats:
+    def do_cat(cat):
         _t0 = time.time()
-        print("\n=== %s ===" % cat.get("label"))
         entry = {"id": cat["id"], "label": cat.get("label", ""), "mode": cat.get("mode", "static")}
-        if cat.get("mode") == "text":
-            entry["items"] = collect_text(cat)
-            total += len(entry["items"])
-        else:
-            # items(静止画) と series(連続再生) は同じカテゴリに併存できる
-            if cat.get("items"):
-                entry["items"] = collect_static(cat, jma_ts, akuten_ts)
-                total += len(entry["items"])
-            if cat.get("series"):
-                entry["series"] = []
-                for s in cat.get("series", []):
-                    _s0 = time.time()
-                    fr = collect_series(s, jma_ts, akuten_ts)
-                    print("    [TIME] %s %.1fs (%d枚)" % (s.get("label"), time.time() - _s0, len(fr)))
-                    total += len(fr)
-                    entry["series"].append({"key": s["key"], "label": s.get("label", ""), "frames": fr})
-        print("  [TIME] %s %.1fs" % (cat.get("label"), time.time() - _t0))
-        manifest["categories"].append(entry)
+        n = 0
+        try:
+            if cat.get("mode") == "text":
+                entry["items"] = collect_text(cat)
+                n += len(entry["items"])
+            else:
+                # items(静止画) と series(連続再生) は同じカテゴリに併存できる
+                if cat.get("items"):
+                    entry["items"] = collect_static(cat, jma_ts, akuten_ts)
+                    n += len(entry["items"])
+                if cat.get("series"):
+                    entry["series"] = []
+                    for s in cat.get("series", []):
+                        _s0 = time.time()
+                        fr = collect_series(s, jma_ts, akuten_ts)
+                        print("    [TIME] %s %.1fs (%d枚)" % (s.get("label"), time.time() - _s0, len(fr)))
+                        n += len(fr)
+                        entry["series"].append({"key": s["key"], "label": s.get("label", ""), "frames": fr})
+        except Exception as ex:
+            print("  カテゴリ失敗 %s: %s" % (cat.get("label"), str(ex)[:120]))
+        print("=== %s 完了 %.1fs (%d枚) ===" % (cat.get("label"), time.time() - _t0, n))
+        return entry, n
 
+    # カテゴリを並行処理（直列だと合計5分かかるため）。
+    # 各カテゴリの中でさらに16並列で取得するので、外側は3までに抑える。
+    total = 0
+    with _cf.ThreadPoolExecutor(max_workers=3) as ex:
+        for entry, n in ex.map(do_cat, cats):
+            total += n
+            manifest["categories"].append(entry)
     json.dump(manifest, open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
     size = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT))
