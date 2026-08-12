@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     # GitHubのスケジュールは遅延・欠落が多いため15分ごとに設定（実際は間引かれる）
-    - cron: '*/5 * * * *'
+    - cron: '3,18,33,48 * * * *'
 
 concurrency:
   group: offline-cache
