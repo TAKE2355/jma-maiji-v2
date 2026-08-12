@@ -663,7 +663,7 @@ nav.cats button.pg{border-style:dashed;}
 .mt-row b{font-weight:600;color:#eee;min-width:72px}
 .mt-cfg select{background:#1b1e22;color:#eee;border:1px solid #3a4048;border-radius:4px;
  padding:4px 8px;font-family:inherit;font-size:12px}
-#mt-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:4px;margin-top:6px}
+#mt-list{display:grid;grid-template-columns:1fr;gap:4px;margin-top:6px}
 .mt-item{display:flex;align-items:center;gap:6px;background:#1b1e22;border:1px solid #2c3137;
  border-radius:4px;padding:4px 6px}
 .mt-item label{display:flex;align-items:center;gap:6px;flex:1;cursor:pointer;
@@ -714,7 +714,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='metar1-260812';
+const APP_VER='metar2-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
