@@ -693,6 +693,10 @@ nav.cats button.pg{border-style:dashed;}
 
 .mt-when{background:#1b1e22;color:#9fd6ff;font-size:12px;padding:5px 9px;
  border-bottom:1px solid #000;letter-spacing:.03em}
+
+.ovl.mini{padding:4px 6px;gap:4px;border-radius:8px}
+.ovl.mini .cap{display:none}
+.ovl.mini button{width:26px;height:20px}
 </style>
 </head>
 <body>
@@ -736,7 +740,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='ovlfit2-260812';
+const APP_VER='ovlmini-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1936,7 +1940,11 @@ function placeOvls(){
       const T=Math.max(tr.top,vr.top),    B=Math.min(tr.bottom,vr.bottom);
       if(R<=L || B<=T){ ov.style.visibility="hidden"; return; }
       ov.style.visibility="";
-      const ow=ov.offsetWidth||130, oh=ov.offsetHeight||42, pad=6;
+      // 見えている範囲が狭いときはUIを小型化して収める
+      const iw=R-L, ih=B-T;
+      const needMini = (iw < ov.offsetWidth+12) || (ih < ov.offsetHeight+12);
+      if(needMini) ov.classList.add("mini"); else ov.classList.remove("mini");
+      const ow=ov.offsetWidth||130, oh=ov.offsetHeight||42, pad=4;
       let x=(L+R)/2-tr.left, y=(T+B)/2-tr.top;
       const loX=ow/2+pad, hiX=Math.max(loX, tr.width-ow/2-pad);
       const loY=oh/2+pad, hiY=Math.max(loY, tr.height-oh/2-pad);
