@@ -721,6 +721,8 @@ nav.cats button.pg{border-style:dashed;}
 #backgrid:hover{border-color:rgba(255,255,255,.45);background:rgba(20,24,28,.85)}
 #backgrid:active{background:rgba(255,255,255,.14)}
 #backgrid.on{display:inline-flex}
+
+.mt-b b.kw{font-weight:800;color:#fff}
 </style>
 </head>
 <body>
@@ -765,7 +767,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='tsage01-260813';
+const APP_VER='mtbold-260813';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1475,6 +1477,22 @@ function mtAgeH(line){
   if(t-now.getTime() > 6*3600000) t=Date.UTC(now.getUTCFullYear(), now.getUTCMonth()-1, +m[1], +m[2], +m[3]);
   return (now.getTime()-t)/3600000;
 }
+// esc済みの本文に対し、最新METAR行の "METAR" と TAF行の "TAF" だけ太字にする
+function mtHighlight(text){
+  const lines=String(text||"").split("\n");
+  let firstMetar=true;
+  return lines.map(function(l){
+    const e=esc(l);
+    const m=l.match(/^(METAR|SPECI)\b/);
+    if(m){
+      if(!firstMetar) return e;
+      firstMetar=false;
+      return '<b class="kw">'+m[1]+'</b>'+e.slice(m[1].length);
+    }
+    if(/^TAF\b/.test(l)) return '<b class="kw">TAF</b>'+e.slice(3);
+    return e;
+  }).join("\n");
+}
 function mtFilter(text, hours){
   const bs=mtBlocks(text);
   const keep=bs.filter(b=>{
@@ -1867,7 +1885,7 @@ function render(){
     const whenHTML=when?'<div class="mt-when">METAR/TAF 取得 '+when+' JST</div>':'';
     tv.innerHTML=whenHTML+(gs.length
       ? gs.map(g=>'<div class="mt-h" style="font-size:'+(MTCFG.fs+5)+'px">'+esc(g.icao)+(sunLabel(g.icao)?'<span class="sun">'+sunLabel(g.icao)+'</span>':'')+'</div>'
-          +'<div class="mt-b">'+esc(mtFilter(g.text||'—',MTCFG.hours))+'</div>').join('')
+          +'<div class="mt-b">'+mtHighlight(mtFilter(g.text||'—',MTCFG.hours))+'</div>').join('')
       : esc((it.groups&&it.groups.length)?'（表示する空港が選択されていません）':(it.text||'（データなし）')));
     fitArea();
     return;
