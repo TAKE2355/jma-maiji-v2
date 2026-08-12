@@ -756,8 +756,8 @@ def _nowc_geom(region="JP"):
     cx = (lon + 180.0) / 360.0 * n
     rad = math.radians(lat)
     cy = (1 - math.log(math.tan(rad) + 1 / math.cos(rad)) / math.pi) / 2 * n
-    x0 = int(math.floor(cx - nx / 2.0))
-    y0 = int(math.floor(cy - ny / 2.0))
+    x0 = int(math.floor(cx - nx / 2.0 + 0.5))
+    y0 = int(math.floor(cy - ny / 2.0 + 0.5))
     return z, x0, x0 + nx - 1, y0, y0 + ny - 1
 
 def _nowc_tile(url):
