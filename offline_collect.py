@@ -323,6 +323,7 @@ def main():
     manifest = {"generated_utc": datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"), "categories": []}
     total = 0
     for cat in cats:
+        _t0 = time.time()
         print("\n=== %s ===" % cat.get("label"))
         entry = {"id": cat["id"], "label": cat.get("label", ""), "mode": cat.get("mode", "static")}
         if cat.get("mode") == "text":
@@ -336,9 +337,12 @@ def main():
             if cat.get("series"):
                 entry["series"] = []
                 for s in cat.get("series", []):
+                    _s0 = time.time()
                     fr = collect_series(s, jma_ts, akuten_ts)
+                    print("    [TIME] %s %.1fs (%d枚)" % (s.get("label"), time.time() - _s0, len(fr)))
                     total += len(fr)
                     entry["series"].append({"key": s["key"], "label": s.get("label", ""), "frames": fr})
+        print("  [TIME] %s %.1fs" % (cat.get("label"), time.time() - _t0))
         manifest["categories"].append(entry)
 
     json.dump(manifest, open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8"),
