@@ -757,7 +757,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='speed-260812';
+const APP_VER='speed0-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2040,18 +2040,31 @@ function step(t,d){
 }
 // ══ 再生速度（×1＝3秒で1周／×0.5＝6秒で1周）══════════════
 let SPD=1;
-try{ const _v=parseFloat(localStorage.getItem("nimbus_off_spd")); if(_v===0.5||_v===1) SPD=_v; }catch(e){}
-function spdLabel(){ return SPD===1 ? "×1" : "×0.5"; }
+try{ const _v=parseFloat(localStorage.getItem("nimbus_off_spd")); if(_v===0||_v===0.5||_v===1) SPD=_v; }catch(e){}
+function spdLabel(){ return SPD===1 ? "×1" : (SPD===0.5 ? "×0.5" : "×0"); }
 function setSpd(v){
   SPD=v;
   try{ localStorage.setItem("nimbus_off_spd", String(v)); }catch(e){}
   document.querySelectorAll(".sp,#b-spd").forEach(function(b){ b.textContent=spdLabel(); });
-  TILES.forEach(function(t){ if(t.timer){ stop(t); play(t); } });
+  if(SPD<=0){
+    // ×0 は再生停止
+    TILES.forEach(function(t){ stop(t); });
+    bulkPlaying=false;
+    const bb=$("bulk");
+    if(bb){ bb.innerHTML=ICO.play; bb.classList.remove("playing"); }
+  }else{
+    TILES.forEach(function(t){ if(t.timer){ stop(t); play(t); } });
+  }
   placeOvls();
 }
-function toggleSpd(){ setSpd(SPD===1?0.5:1); try{ clickSound(SPD===1); }catch(e){} }
+// ×1 → ×0.5 → ×0 → ×1
+function toggleSpd(){
+  setSpd(SPD===1 ? 0.5 : (SPD===0.5 ? 0 : 1));
+  try{ clickSound(SPD===1); }catch(e){}
+}
 
 function play(t){
+  if(SPD<=0) return;             // ×0 は再生しない
   if(t.timer||t.s.kind!=='series') return;
   const n=(t.s.frames||[]).length; if(n<2) return;
   if(t.idx>=n-1) t.idx=0;
@@ -2067,6 +2080,7 @@ function stop(t){
 function togglePlay(t){ t.timer?stop(t):play(t); }
 function toggleBulk(){
   bulkPlaying=!bulkPlaying;
+  if(SPD<=0) bulkPlaying=false;   // ×0 のときは再生しない
   $('bulk').innerHTML=bulkPlaying?ICO.pause:ICO.play;
   $('bulk').classList.toggle('playing',bulkPlaying);
   TILES.forEach(t=>bulkPlaying?play(t):stop(t));
