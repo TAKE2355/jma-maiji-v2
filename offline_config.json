@@ -649,6 +649,62 @@
           "frames": 24
         },
         {
+          "key": "hrpns_hok",
+          "label": "高解像度降水・北海道",
+          "kind": "nowc",
+          "code": "HOKKAIDO",
+          "step": 5,
+          "frames": 12
+        },
+        {
+          "key": "hrpns_kan",
+          "label": "高解像度降水・関東",
+          "kind": "nowc",
+          "code": "KANTO",
+          "step": 5,
+          "frames": 12
+        },
+        {
+          "key": "hrpns_ngo",
+          "label": "高解像度降水・名古屋",
+          "kind": "nowc",
+          "code": "CHUBU",
+          "step": 5,
+          "frames": 12
+        },
+        {
+          "key": "hrpns_ksi",
+          "label": "高解像度降水・関西",
+          "kind": "nowc",
+          "code": "KANSAI",
+          "step": 5,
+          "frames": 12
+        },
+        {
+          "key": "hrpns_shi",
+          "label": "高解像度降水・四国",
+          "kind": "nowc",
+          "code": "SHIKOKU",
+          "step": 5,
+          "frames": 12
+        },
+        {
+          "key": "hrpns_kyu",
+          "label": "高解像度降水・九州",
+          "kind": "nowc",
+          "code": "KYUSHU",
+          "step": 5,
+          "frames": 12
+        },
+        {
+          "key": "hrpns_okn",
+          "label": "高解像度降水・沖縄",
+          "kind": "nowc",
+          "code": "OKINAWA",
+          "step": 5,
+          "frames": 12
+        },
+        {
           "key": "thnc",
           "label": "雷活動度・全国",
           "kind": "thnc",
