@@ -837,7 +837,7 @@ def get_nowc_hrpns(basetime, validtime, region="JP"):
                     got += 1
         if got == 0:
             return None, None
-        return _nowc_stamp(cv.convert("RGB"), validtime), str(validtime)
+        return cv.convert("RGB"), str(validtime)
     except Exception as e:
         print(f"  高解像度降水エラー[{region}]: {e}")
         return None, None
