@@ -767,7 +767,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='scrollfrac-260812';
+const APP_VER='center-260813';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2003,8 +2003,8 @@ function placeOvls(){
         }
       }
       const pad=Math.max(0, Math.min(4, Math.floor(Math.min(iw-ow, ih-oh)/2)));
-      // 見えている範囲の右下を狙い、タイルからはみ出さない位置に寄せる
-      let x=R-tr.left-ow/2-pad, y=B-tr.top-oh/2-pad;
+      // 再生UIは見えている範囲の中央下へ
+      let x=(L+R)/2-tr.left, y=B-tr.top-oh/2-pad;
       const loX=ow/2+pad, hiX=Math.max(loX, tr.width -ow/2-pad);
       const loY=oh/2+pad, hiY=Math.max(loY, tr.height-oh/2-pad);
       x=Math.min(Math.max(x,loX),hiX);
@@ -2012,7 +2012,7 @@ function placeOvls(){
       ov.style.left=x+"px";
       ov.style.top =y+"px";
       placeBack();
-      // 時刻は見えている範囲の右上へ
+      // 時刻は見えている範囲の中央上へ
       const cp=el.querySelector(":scope > .cap");
       if(cp){
         cp.classList.remove("cs","cxs");
@@ -2026,7 +2026,7 @@ function placeOvls(){
         }
         if(cw && ch){
           const cpd=Math.max(0, Math.min(4, Math.floor(Math.min(iw-cw, ih-ch)/2)));
-          let cx=R-tr.left-cw/2-cpd, cy=T-tr.top+ch/2+cpd;
+          let cx=(L+R)/2-tr.left, cy=T-tr.top+ch/2+cpd;
           const cloX=cw/2+cpd, chiX=Math.max(cloX, tr.width -cw/2-cpd);
           const cloY=ch/2+cpd, chiY=Math.max(cloY, tr.height-ch/2-cpd);
           cp.style.left=Math.min(Math.max(cx,cloX),chiX)+"px";
