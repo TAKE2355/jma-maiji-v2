@@ -699,7 +699,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='zoom2-260811';
+const APP_VER='ordfix-260811';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1416,8 +1416,45 @@ function renderSettings(){
   }
 }
 
+
+// ── サーバ側でラベルが変わった項目に、保存済み設定を追随させる ──
+//   並び順・非表示・表示名・ページ構成・分類はラベル文字列で保存されているため、
+//   配信側で名称を変えると設定が外れてしまう。不変IDで前回名を覚えて置換する。
+function migrateLabels(){
+  if(!MF||!MF.categories) return;
+  let map={}; try{ map=JSON.parse(localStorage.getItem("nimbus_off_idlabel")||"{}")||{}; }catch(e){}
+  const cur={}, renames=[];
+  MF.categories.forEach(c=>{
+    const cid=c.id||c.label;
+    (c.series||[]).forEach(s=>{ if(s.key) cur[cid+"\u0002s:"+s.key]=s.label; });
+    (c.items||[]).forEach(o=>{ if(o.file) cur[cid+"\u0002f:"+o.file]=o.label; });
+  });
+  for(const k in cur){
+    const old=map[k];
+    if(old && old!==cur[k]) renames.push([k.split("\u0002")[0], old, cur[k]]);
+  }
+  if(renames.length){
+    renames.forEach(function(r){
+      const cid=r[0], from=r[1], to=r[2];
+      if(ORD[cid])    ORD[cid]    = ORD[cid].map(l=>l===from?to:l);
+      if(HIDDEN[cid]) HIDDEN[cid] = HIDDEN[cid].map(l=>l===from?to:l);
+      const ok=lkey(cid,from), nk=lkey(cid,to);
+      if(LABELS[ok]!==undefined && LABELS[nk]===undefined){ LABELS[nk]=LABELS[ok]; delete LABELS[ok]; }
+      (PAGES||[]).forEach(p=>(p.items||[]).forEach(it=>{ if(it.cat===cid&&it.label===from) it.label=to; }));
+      (GROUPS||[]).forEach(g=>(g.items||[]).forEach(it=>{ if(it.cat===cid&&it.label===from) it.label=to; }));
+      (CATITEMS&&Object.keys(CATITEMS).forEach(kk=>{
+        const v=CATITEMS[kk];
+        if(Array.isArray(v)) v.forEach(it=>{ if(it&&it.cat===cid&&it.label===from) it.label=to; });
+      }));
+    });
+    try{ saveOrd(); }catch(e){}
+    try{ savePages(); }catch(e){}
+  }
+  try{ localStorage.setItem("nimbus_off_idlabel", JSON.stringify(cur)); }catch(e){}
+}
 function render(){
   if(!MF) return;
+  migrateLabels();
   $('empty').style.display='none';
   $('stamp').innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>'
     + (CACHE_MB? '　<b>'+CACHE_MB+' MB</b>' : '');
@@ -1435,12 +1472,7 @@ function render(){
     if(from>=n||to>=n) return;                   // ⚙(末尾)は固定
     TABORD=moveItem(T.map(x=>x.key),from,to); savePages(); render();
   });
-  enableDrag($('cats'),'button',(from,to)=>{
-    MF.categories=moveItem(MF.categories,from,to);
-    CATORD=MF.categories.map(c=>c.id||c.label);
-    if(catIdx===from) catIdx=to; else if(from<catIdx&&to>=catIdx) catIdx--; else if(from>catIdx&&to<=catIdx) catIdx++;
-    saveOrd(); render();
-  });
+  /* 上位タブの並べ替えは上のTABORD側で一元管理（二重登録を削除） */
   if(settingsOpen){
     $('subs').style.display='none'; $('textview').style.display='none';
     $('gwrap').style.display='none'; $('settings').style.display='block';
