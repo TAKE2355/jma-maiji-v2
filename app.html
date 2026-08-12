@@ -736,7 +736,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='ovlfit-260812';
+const APP_VER='ovlfit2-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1923,7 +1923,7 @@ function show(t){
 let _ovlRAF=0;
 function placeOvls(){
   if(_ovlRAF) return;
-  _ovlRAF=requestAnimationFrame(function(){
+  _ovlRAF=setTimeout(function(){
     _ovlRAF=0;
     const w=$("gwrap");
     if(!w || typeof TILES==="undefined" || !TILES || !TILES.length) return;
@@ -1945,7 +1945,7 @@ function placeOvls(){
       ov.style.left=x+"px";
       ov.style.top =y+"px";
     });
-  });
+  },0);
 }
 (function(){
   const w=$("gwrap");
