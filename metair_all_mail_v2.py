@@ -913,7 +913,7 @@ def get_nowc_thunder(basetime, validtime, liden_bt=None, liden_vt=None):
         out = cv.convert("RGB")
         if liden_bt and liden_vt:
             out = _nowc_draw_liden(out, liden_bt, liden_vt)
-        return _nowc_stamp(out, validtime), str(validtime)
+        return out, str(validtime)
     except Exception as e:
         print(f"  雷活動度エラー: {e}")
         return None, None
