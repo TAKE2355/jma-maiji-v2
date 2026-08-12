@@ -1,0 +1,40 @@
+name: METAR only
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: metar-only
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  metar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python packages
+        run: pip install requests pillow img2pdf
+
+      - name: Collect METAR/TAF
+        env:
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          METAIR_USER: ${{ secrets.METAIR_USER }}
+          METAIR_PASS: ${{ secrets.METAIR_PASS }}
+        run: python metar_only.py
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name  "nimbus-offline"
+          git config user.email "nimbus@local"
+          git pull --rebase -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main || true
+          git add metar.json
+          git commit -q -m "chore: metar $(date -u +%H%MZ)" || exit 0
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
