@@ -684,6 +684,12 @@ nav.cats button.pg{border-style:dashed;}
  opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap;
  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 #moontip.on{opacity:1}
+
+#diag{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:120;
+ background:rgba(10,12,14,.94);border:1px solid rgba(255,255,255,.25);color:#ffd76a;
+ border-radius:8px;padding:9px 14px;font-size:12.5px;max-width:92%;text-align:center;
+ opacity:0;pointer-events:none;transition:opacity .2s}
+#diag.on{opacity:1}
 </style>
 </head>
 <body>
@@ -727,7 +733,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='moon4-260812';
+const APP_VER='diag1-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -811,10 +817,17 @@ function dataAgeMin(ts){
   return (Date.now()-d)/60000;
 }
 // サーバ側の収集ワークフローを起動して完了まで待つ
+function diag(msg){
+  let e=document.getElementById("diag");
+  if(!e){ e=document.createElement("div"); e.id="diag"; document.body.appendChild(e); }
+  e.textContent=msg; e.classList.add("on");
+  clearTimeout(window.__diagT);
+  window.__diagT=setTimeout(()=>e.classList.remove("on"), 8000);
+}
 async function runCollection(b){
   let cfg={};
   try{ cfg=JSON.parse(localStorage.getItem('metair_v2')||'{}'); }catch(e){}
-  if(!cfg.pat||!cfg.repo) return false;
+  if(!cfg.pat||!cfg.repo){ diag("トークン未設定：管理ページで登録してください"); return false; }
   const H={'Authorization':'token '+cfg.pat,'Content-Type':'application/json'};
   const API='https://api.github.com/repos/'+cfg.repo+'/actions/workflows/offline_cache.yml/runs';
   try{
@@ -824,7 +837,12 @@ async function runCollection(b){
     const d=await fetch('https://api.github.com/repos/'+cfg.repo+
       '/actions/workflows/offline_cache.yml/dispatches',
       {method:'POST',headers:H,body:JSON.stringify({ref:cfg.branch||'main'})});
-    if(!d.ok) return false;
+    if(!d.ok){
+      let m="";
+      try{ m=(await d.json()).message||""; }catch(e){}
+      diag("収集の起動に失敗 HTTP "+d.status+(m?"："+m:""));
+      return false;
+    }
     let runId=0;
     for(let i=0;i<20 && !runId;i++){
       await new Promise(r=>setTimeout(r,3000));
