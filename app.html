@@ -707,6 +707,9 @@ nav.cats button.pg{border-style:dashed;}
 .ovl.micro{padding:3px 4px;gap:0;border-radius:6px}
 .ovl.micro button{width:24px;height:20px}
 .ovl.micro button:not(.p){display:none}
+
+.tile > .cap.cs{font-size:20px;padding:4px 8px;border-radius:7px}
+.tile > .cap.cxs{font-size:13px;padding:2px 5px;border-radius:5px}
 </style>
 </head>
 <body>
@@ -750,7 +753,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='capsplit-260812';
+const APP_VER='capfit-260812';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1978,7 +1981,15 @@ function placeOvls(){
       // 時刻は見えている範囲の右上へ
       const cp=el.querySelector(":scope > .cap");
       if(cp){
-        const cw=cp.offsetWidth, ch=cp.offsetHeight;
+        cp.classList.remove("cs","cxs");
+        let cw=cp.offsetWidth, ch=cp.offsetHeight;
+        if(iw<cw+6 || ih<ch+6){
+          cp.classList.add("cs"); cw=cp.offsetWidth; ch=cp.offsetHeight;
+          if(iw<cw+6 || ih<ch+6){
+            cp.classList.remove("cs"); cp.classList.add("cxs");
+            cw=cp.offsetWidth; ch=cp.offsetHeight;
+          }
+        }
         if(cw && ch){
           const cpd=Math.max(0, Math.min(4, Math.floor(Math.min(iw-cw, ih-ch)/2)));
           let cx=R-tr.left-cw/2-cpd, cy=T-tr.top+ch/2+cpd;
