@@ -767,7 +767,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='capload-260814';
+const APP_VER='dur-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -891,13 +891,17 @@ async function runCollection(b){
     }
     if(!runId) return false;
     const t0=Date.now();
-    for(let i=0;i<120;i++){
-      await new Promise(r=>setTimeout(r,10000));
-      const p=await (await fetch('https://api.github.com/repos/'+cfg.repo+'/actions/runs/'+runId,{headers:H})).json();
+    const tick=setInterval(function(){
       const sec=Math.round((Date.now()-t0)/1000);
       if(b) b.textContent='COLLECTING '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
-      if(p.status==='completed') return p.conclusion==='success';
-    }
+    },1000);
+    try{
+      for(let i=0;i<240;i++){
+        await new Promise(r=>setTimeout(r,5000));
+        const p=await (await fetch('https://api.github.com/repos/'+cfg.repo+'/actions/runs/'+runId,{headers:H})).json();
+        if(p.status==='completed') return p.conclusion==='success';
+      }
+    }finally{ clearInterval(tick); }
   }catch(e){}
   return false;
 }
@@ -1140,7 +1144,7 @@ async function calcCacheSize(){
       n+=b.byteLength;
     }
     CACHE_MB=(n/1024/1024).toFixed(1);
-    const s=$('stamp'); if(s&&MF) s.innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>　<b>'+CACHE_MB+' MB</b>';
+    const s=$('stamp'); if(s&&MF) s.innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>　<b>'+CACHE_MB+' MB</b>'+durLabel();
   }catch(e){}
 }
 
@@ -1389,6 +1393,11 @@ async function loadHLog(force){
 function jstStr(sec){ const d=new Date(sec*1000+9*3600000), p=n=>("0"+n).slice(-2);
   return p(d.getUTCMonth()+1)+"/"+p(d.getUTCDate())+" "+p(d.getUTCHours())+":"+p(d.getUTCMinutes()); }
 function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
+function durLabel(){
+  const L=lastRun();
+  if(!L || !L.d) return "";
+  return "　<b>収集 "+L.d+"秒</b>";
+}
 function updBeat(){ const e=$("hbeat"); if(!e) return; const L=lastRun();
   if(!L){ e.style.background="#666"; e.title="収集状況"; return; }
   const m=(Date.now()/1000-L.t)/60;
@@ -1437,7 +1446,7 @@ async function renderHealth(){
   h+=rows;
   h+='<h4>最近の実行</h4><div class="hlist">';
   for(const e of L.slice(-12).reverse())
-    h+='<div><span>'+jstStr(e.t)+'</span><span>'+(e.n||0)+'件</span><span>'+(e.e==="schedule"?"定期":"手動")+'</span><span>'+(e.s||"")+'</span></div>';
+    h+='<div><span>'+jstStr(e.t)+'</span><span>'+(e.n||0)+'件</span><span>'+(e.e==="schedule"?"定期":"手動")+'</span><span>'+(e.d?e.d+"秒":"—")+'</span></div>';
   h+='</div>';
   h+='<h4>&nbsp;</h4><button class="btn" onclick="renderHealth()">再読み込み</button>';
   el.innerHTML=h; updBeat();
@@ -1593,7 +1602,7 @@ function sunLabel(icao){
   const base=new Date(Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate()));
   const s=sunTimes(a[0],a[1],base);
   if(!s) return "";
-  return "↑"+hhmmz(s.rise)+"・↓"+hhmmz(s.set);
+  return "☀️"+hhmmz(s.rise)+"　🌘"+hhmmz(s.set);
 }
 function hhmmz(ms){
   const d=new Date(ms), p=n=>("0"+n).slice(-2);
@@ -1852,7 +1861,7 @@ function render(){
   migrateLabels();
   $('empty').style.display='none';
   $('stamp').innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>'
-    + (CACHE_MB? '　<b>'+CACHE_MB+' MB</b>' : '');
+    + (CACHE_MB? '　<b>'+CACHE_MB+' MB</b>' : '') + durLabel();
   const cs=MF.categories;
   const ordered=applyOrder(cs, cs.map(c=>c.id||c.label), CATORD);
   if(ordered.some((c,i)=>c!==cs[i])) MF.categories=ordered;
