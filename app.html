@@ -723,6 +723,8 @@ nav.cats button.pg{border-style:dashed;}
 #backgrid.on{display:inline-flex}
 
 .mt-b b.kw{font-weight:800;color:#fff}
+
+.mt-h .sun svg.mi{width:1em;height:1em;vertical-align:-0.14em;margin-right:.12em}
 </style>
 </head>
 <body>
@@ -767,7 +769,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='moon2-260814';
+const APP_VER='moonL-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1594,6 +1596,7 @@ function hhmm(ms, off){
   const d=new Date(ms+off*3600000), p=n=>("0"+n).slice(-2);
   return p(d.getUTCHours())+":"+p(d.getUTCMinutes());
 }
+const MOON_SVG="<svg class=\"mi\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><defs><clipPath id=\"mnA\"><circle cx=\"12\" cy=\"12\" r=\"10.5\"/></clipPath><clipPath id=\"mnB\"><path d=\"M12 1.5 A10.5 10.5 0 0 1 12 22.5 A8 10.5 0 0 0 12 1.5 Z\"/></clipPath></defs><circle cx=\"12\" cy=\"12\" r=\"10.5\" fill=\"#6c737c\"/><g clip-path=\"url(#mnA)\" fill=\"#848c95\"><circle cx=\"8\" cy=\"8\" r=\"2.4\"/><circle cx=\"6.5\" cy=\"15\" r=\"1.8\"/><circle cx=\"10\" cy=\"18\" r=\"1.4\"/><circle cx=\"5\" cy=\"10.5\" r=\"1.2\"/></g><path d=\"M12 1.5 A10.5 10.5 0 0 1 12 22.5 A8 10.5 0 0 0 12 1.5 Z\" fill=\"#eef0f2\"/><g clip-path=\"url(#mnB)\" fill=\"#c9ced4\"><circle cx=\"15\" cy=\"8\" r=\"2.2\"/><circle cx=\"16.5\" cy=\"14\" r=\"1.6\"/><circle cx=\"13.5\" cy=\"18\" r=\"1.3\"/><circle cx=\"17.5\" cy=\"10.5\" r=\"1.1\"/></g></svg>";
 function sunLabel(icao){
   const a=AP_POS[String(icao||"").toUpperCase()];
   if(!a) return "";
@@ -1602,7 +1605,7 @@ function sunLabel(icao){
   const base=new Date(Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate()));
   const s=sunTimes(a[0],a[1],base);
   if(!s) return "";
-  return "☀️"+hhmmz(s.rise)+"　🌒"+hhmmz(s.set);
+  return "☀️"+hhmmz(s.rise)+"　"+MOON_SVG+hhmmz(s.set);
 }
 function hhmmz(ms){
   const d=new Date(ms), p=n=>("0"+n).slice(-2);
