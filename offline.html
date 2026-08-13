@@ -767,7 +767,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='capsmall-260814';
+const APP_VER='alwayscol-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -911,8 +911,8 @@ async function update(quiet){
     let r=await fetch(SRC+'manifest.json?t='+Date.now(),{cache:'no-store'});
     if(!r.ok) throw new Error('manifest '+r.status);
     let mf=await r.json();
-    // サーバ側のデータが40分以上古ければ、先に収集を走らせてから取り込む
-    if(!quiet && dataAgeMin(mf.generated_utc) > 35){
+    // ボタン操作のときは、データの新しさに関わらず必ず収集から始める
+    if(!quiet){
       b.textContent='COLLECTING…';
       const ok=await runCollection(b);
       if(ok){
