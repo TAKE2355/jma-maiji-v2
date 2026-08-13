@@ -12,7 +12,7 @@
         {
           "key": "all",
           "label": "ALL",
-          "ids": "RJAA,RJCC,RJEC,RJCB,RJCH,RJSM,RJSS,RJTT,RJGG,RJBB,RJOT,RJOK,RJOM,RJFO,RJFR,RJFF,RJFU,RJFT,RJFM,RJFK,ROAH,RODN,RORS,ROMY,ROIG,ZSSS,ZSPD,RCTP,RCKH,RPLL,RPLC,VHHH,VMMC,RJAH,RJTO,RJOO,RJKA",
+          "ids": "RJAA,RJCC,RJEC,RJCB,RJCH,RJSM,RJSS,RJTT,RJGG,RJBB,RJOT,RJOK,RJOM,RJFO,RJFR,RJFF,RJFU,RJFT,RJFM,RJFK,ROAH,RODN,RORS,ROMY,ROIG,ZSSS,ZSPD,RCTP,RCKH,RPLL,RPLC,VHHH,VMMC,RJOO,RJKA",
           "hours": 12,
           "metar": true,
           "taf": true
@@ -90,56 +90,56 @@
           "label": "UBCK",
           "kind": "csa019",
           "code": "QBCK95",
-          "frames": 8
+          "frames": 1
         },
         {
           "key": "ch_QBSA95",
           "label": "UBSA",
           "kind": "csa019",
           "code": "QBSA95",
-          "frames": 8
+          "frames": 1
         },
         {
           "key": "ch_QBQA95",
           "label": "UBTT",
           "kind": "csa019",
           "code": "QBQA95",
-          "frames": 8
+          "frames": 1
         },
         {
           "key": "ch_QBRA95",
           "label": "UBGG",
           "kind": "csa019",
           "code": "QBRA95",
-          "frames": 8
+          "frames": 1
         },
         {
           "key": "ch_QBUA95",
           "label": "UBBB",
           "kind": "csa019",
           "code": "QBUA95",
-          "frames": 8
+          "frames": 1
         },
         {
           "key": "ch_QBFF95",
           "label": "UBFF",
           "kind": "csa019",
           "code": "QBFF95",
-          "frames": 8
+          "frames": 1
         },
         {
           "key": "ch_QBAH95",
           "label": "UBAH",
           "kind": "csa019",
           "code": "QBAH95",
-          "frames": 8
+          "frames": 1
         },
         {
           "key": "ch_QBIG95",
           "label": "UBIG",
           "kind": "csa019",
           "code": "QBIG95",
-          "frames": 8
+          "frames": 1
         },
         {
           "key": "akuten_FBSN",
@@ -148,7 +148,7 @@
           "prefix": null,
           "code": "FBSN",
           "step": 180,
-          "frames": 6
+          "frames": 1
         },
         {
           "key": "akuten_FBSP",
@@ -157,7 +157,7 @@
           "prefix": null,
           "code": "FBSP",
           "step": 180,
-          "frames": 6
+          "frames": 1
         },
         {
           "key": "akuten_FBOS",
@@ -166,7 +166,7 @@
           "prefix": null,
           "code": "FBOS",
           "step": 180,
-          "frames": 6
+          "frames": 1
         },
         {
           "key": "akuten_FBTK",
@@ -175,7 +175,7 @@
           "prefix": null,
           "code": "FBTK",
           "step": 180,
-          "frames": 6
+          "frames": 1
         },
         {
           "key": "akuten_FBOK",
@@ -184,7 +184,7 @@
           "prefix": null,
           "code": "FBOK",
           "step": 180,
-          "frames": 6
+          "frames": 1
         },
         {
           "key": "akuten_FBKG",
@@ -193,7 +193,7 @@
           "prefix": null,
           "code": "FBKG",
           "step": 180,
-          "frames": 6
+          "frames": 1
         }
       ]
     },
