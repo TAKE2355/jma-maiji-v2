@@ -3,8 +3,8 @@ name: NIMBUS OFFLINE Cache
 on:
   workflow_dispatch:
   schedule:
-    # GitHubのスケジュールは遅延・欠落が多いため15分ごとに設定（実際は間引かれる）
-    - cron: '3,18,33,48 * * * *'
+    # GitHubのスケジュールは遅延・欠落が多い（実際は数時間に1回）
+    - cron: '3,33 * * * *'
 
 concurrency:
   group: offline-cache
@@ -27,12 +27,15 @@ jobs:
 
       - name: Collect images
         env:
+          START_TS: ''
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           METAIR_USER: ${{ secrets.METAIR_USER }}
           METAIR_PASS: ${{ secrets.METAIR_PASS }}
-        run: python offline_collect.py
+        run: |
+          echo "START_TS=$(date +%s)" >> $GITHUB_ENV
+          python offline_collect.py
 
       - name: Force push to orphan branch
         env:
@@ -67,6 +70,7 @@ jobs:
               L = []
           now = int(time.time())
           L.append({"t": now,
+                    "d": (now - int(os.environ.get("START_TS", "0") or 0)) if os.environ.get("START_TS") else 0,
                     "n": int(os.environ.get("NFILES", "0") or 0),
                     "e": os.environ.get("GITHUB_EVENT_NAME", ""),
                     "s": (os.environ.get("SHA", "") or "")[:7]})
