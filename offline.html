@@ -788,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='thtitle-260814';
+const APP_VER='thcap-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1166,6 +1166,15 @@ function tsAge(ts){
   return 'T-'+h.toFixed(1)+'h';
 }
 // 静止画の説明文（例 "NRT\n2026/08/13 21:32Z"）から時刻を取り出す
+function thTitle(s){
+  const L=(s&&s.label)||"";
+  if(L.indexOf("発雷確率")!==0) return "";
+  const c=String((s&&s.caption)||"");
+  const m=c.match(/(\d{1,2})日[^\d]*(\d{1,2})\s*[～~〜]\s*(\d{1,2})\s*時/);
+  if(!m) return "";
+  return L.replace(/\d+h$/,"")+m[1]+"日"+m[2]+"時〜"+m[1]+"日"+m[3]+"時";
+}
+function capText(s){ return thTitle(s)||capTime(s); }
 function capTime(s){
   const m=String((s&&s.caption)||"").match(/(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})Z/);
   if(!m) return "";
@@ -2266,7 +2275,7 @@ function render(){
     + '<button id="b-next" title="全画像を1コマ送る">'+ICO.next+'</button>'
     + '<button id="b-last" title="全画像を最新へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg></button>'
     + '</span>'
-    + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(subDisp(s))+'</button>').join('')
+    + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
     + '<span class="tools right">'
     + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
     + '</span>';
@@ -2316,7 +2325,7 @@ function buildGrid(subs){
          +'<button class="p" title="再生／停止">'+ICO.play+'</button>'
          +'<button class="nx" title="1コマ送る">'+ICO.next+'</button>'
          +'<button class="ls" title="最新">'+ICO.last+'</button></div><span class="cap"></span>'
-       : (capTime(s) ? '<span class="cap"></span>' : ''))
+       : (capText(s) ? '<span class="cap"></span>' : ''))
     + '</div>').join('');
 
   [...g.children].forEach((el,i)=>{
@@ -2353,7 +2362,7 @@ function show(t){
            if(t.cap) t.cap.textContent=tsShort(f.ts); }
   }else{
     t.img.src=(t.s.base||BASE)+t.s.file;
-    if(t.cap) t.cap.textContent=capTime(t.s);
+    if(t.cap) t.cap.textContent=capText(t.s);
   }
 }
 
