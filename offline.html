@@ -725,6 +725,9 @@ nav.cats button.pg{border-style:dashed;}
 .mt-b b.kw{font-weight:800;color:#fff}
 
 .mt-h .sun svg.mi{width:1em;height:1em;vertical-align:-0.14em;margin-right:.12em}
+
+.tools.left button#btn-radar{width:auto;padding:0 9px;font-size:11.5px;font-weight:600;
+ white-space:nowrap}
 </style>
 </head>
 <body>
@@ -769,7 +772,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='moonL-260814';
+const APP_VER='radar-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1115,13 +1118,90 @@ function tsLabel(ts){
 }
 
 // サブ項目（静止画 or 連続再生）を統一形式で取り出す
+
+// ══ 海外レーダー（台湾・香港・マニラ）══════════════════════════
+//   通常の収集とは別に集め、別ブランチ radar-cache に置く。
+//   一度取り込めば通常収集で消えない。
+const BASE_R="https://raw.githubusercontent.com/"+REPO+"/radar-cache/";
+let RADAR=null;
+try{ RADAR=JSON.parse(localStorage.getItem("nimbus_off_radar")||"null"); }catch(e){}
+async function loadRadarManifest(){
+  try{
+    const r=await fetch("radar_manifest.json?cb="+Date.now(),{cache:"no-store"});
+    if(r.ok){ const j=await r.json(); if(j && j.series) return j; }
+  }catch(e){}
+  return null;
+}
+function radarSeries(){
+  if(!RADAR || !RADAR.series) return [];
+  return RADAR.series.map(function(s){
+    return {label:s.label, kind:"series", base:BASE_R,
+            frames:(s.frames||[]).slice().reverse()};
+  });
+}
+async function radarSync(){
+  const b=$("btn-radar"); if(!b) return;
+  let cfg={}; try{ cfg=JSON.parse(localStorage.getItem("metair_v2")||"{}"); }catch(e){}
+  if(!cfg.pat || !cfg.repo){ diag("トークン未設定：管理ページで登録してください"); return; }
+  const before=(RADAR&&String(RADAR.generated_utc))||"";
+  const H={"Authorization":"token "+cfg.pat,"Content-Type":"application/json"};
+  b.disabled=true;
+  const t0=Date.now();
+  const tick=setInterval(function(){
+    const s=Math.round((Date.now()-t0)/1000);
+    b.textContent="海外レーダー取得中 "+Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+  },1000);
+  try{
+    const d=await fetch("https://api.github.com/repos/"+cfg.repo+
+      "/actions/workflows/radar_foreign.yml/dispatches",
+      {method:"POST",headers:H,body:JSON.stringify({ref:cfg.branch||"main"})});
+    if(!d.ok){
+      let m=""; try{ m=(await d.json()).message||""; }catch(e){}
+      diag("海外レーダーの収集起動に失敗 HTTP "+d.status+(m?"："+m:""));
+      return;
+    }
+    let mf=null;
+    for(let i=0;i<45;i++){
+      await new Promise(r=>setTimeout(r,4000));
+      const j=await loadRadarManifest();
+      if(j && String(j.generated_utc)!==before){ mf=j; break; }
+    }
+    if(!mf){ diag("海外レーダーの更新待ちがタイムアウトしました"); return; }
+    // 画像を端末に保存（保存キーはブランチ名で固定、取得はSHA固定URL）
+    const c=await caches.open(CACHE);
+    const SRC="https://raw.githubusercontent.com/"+cfg.repo+"/"+mf.sha+"/";
+    let files=[]; mf.series.forEach(s=>(s.frames||[]).forEach(f=>files.push(f.file)));
+    let done=0;
+    for(const f of files){
+      const key=BASE_R+f;
+      let skip=false;
+      try{ skip=!!(await c.match(key)); }catch(e){}
+      if(!skip){
+        try{ const res=await fetch(SRC+f,{cache:"reload"}); if(res.ok) await c.put(key,res.clone()); }catch(e){}
+      }
+      done++;
+      b.textContent="海外レーダー "+done+"/"+files.length;
+    }
+    RADAR=mf;
+    try{ localStorage.setItem("nimbus_off_radar",JSON.stringify(mf)); }catch(e){}
+    render();
+    diag("海外レーダーを更新しました（"+files.length+"枚）");
+  }catch(e){
+    diag("海外レーダーでエラー: "+String(e).slice(0,60));
+  }finally{
+    clearInterval(tick);
+    b.disabled=false; b.textContent="海外レーダー取得";
+  }
+}
+
 function subsOf(k){
   if(!k) return [];
   const _ord = ORD[k.id||k.label]||[];
   if(k.mode==='text') return (k.items||[]).map(o=>({label:o.label,text:o.text,groups:o.groups,kind:'text'}));
   const list=[].concat(
     (k.items||[]).map(o=>({label:o.label,kind:'still',file:o.file,caption:o.caption})),
-    (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()}))
+    (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()})),
+    (k.id==='nowcast' ? radarSeries() : [])
   );
   const hid=HIDDEN[k.id||k.label]||[];
   const vis=list.filter(x=>hid.indexOf(x.label)<0);
@@ -1919,6 +1999,7 @@ function render(){
     + '<button id="bulk" title="全画像を再生／停止" class="'+(bulkPlaying?'playing':'')+'">'+(bulkPlaying?ICO.pause:ICO.play)+'</button>'
     + '<button id="b-next" title="全画像を1コマ送る">'+ICO.next+'</button>'
     + '<button id="b-last" title="全画像を最新へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg></button>'
+    + '<button id="btn-radar" title="台湾・香港・マニラのレーダーを取得">海外レーダー取得</button>'
     + '</span>'
     + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
     + '<span class="tools right">'
@@ -1932,6 +2013,7 @@ function render(){
   });
   $('bulk').onclick=toggleBulk;
   $('b-spd').onclick=toggleSpd;
+  if($('btn-radar')) $('btn-radar').onclick=radarSync;
   const bulkStop=()=>{ bulkPlaying=false; $('bulk').innerHTML=ICO.play; $('bulk').classList.remove('playing'); };
   $('b-first').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});};
   $('b-prev').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); step(t,-1); flash(t);});};
@@ -2003,10 +2085,10 @@ function buildGrid(subs){
 function show(t){
   if(t.s.kind==='series'){
     const f=(t.s.frames||[])[t.idx];
-    if(f){ t.img.src=BASE+f.file;
+    if(f){ t.img.src=(t.s.base||BASE)+f.file;
            if(t.cap) t.cap.textContent=tsShort(f.ts); }
   }else{
-    t.img.src=BASE+t.s.file;
+    t.img.src=(t.s.base||BASE)+t.s.file;
     if(t.cap) t.cap.textContent=capTime(t.s);
   }
 }
