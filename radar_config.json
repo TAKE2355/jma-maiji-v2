@@ -1,0 +1,56 @@
+{
+  "series": [
+    {
+      "key": "cwa_tw",
+      "label": "台湾・台湾域",
+      "kind": "cwa",
+      "code": "TW",
+      "step": 10,
+      "frames": 18
+    },
+    {
+      "key": "cwa_wide",
+      "label": "台湾・広域",
+      "kind": "cwa",
+      "code": "WIDE",
+      "step": 10,
+      "frames": 18
+    },
+    {
+      "key": "hko_064",
+      "label": "香港64km",
+      "kind": "hko",
+      "code": "064",
+      "step": 6,
+      "frames": 30
+    },
+    {
+      "key": "hko_128",
+      "label": "香港128km",
+      "kind": "hko",
+      "code": "128",
+      "step": 6,
+      "frames": 30
+    },
+    {
+      "key": "hko_256",
+      "label": "香港256km",
+      "kind": "hko",
+      "code": "256",
+      "step": 6,
+      "frames": 30
+    },
+    {
+      "key": "pagasa_mnl",
+      "label": "マニラ周辺",
+      "kind": "pagasa",
+      "code": "MNL"
+    },
+    {
+      "key": "pagasa_ph",
+      "label": "マニラ全域",
+      "kind": "pagasa",
+      "code": "PH"
+    }
+  ]
+}
