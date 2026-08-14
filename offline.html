@@ -649,8 +649,7 @@ nav.cats button.pg{border-style:dashed;}
 .src-item.dragging{opacity:.5;outline:2px dashed var(--danger);}
 
 /* ── 収集状況 ── */
-#hbslot{display:inline-flex;align-items:center;vertical-align:middle;margin-right:5px}
-#hbslot .hbeat{margin-left:0}
+.s1 .hbeat{margin-left:0;margin-right:5px;vertical-align:middle}
 .hbeat{width:11px;height:11px;border-radius:50%;background:#666;cursor:pointer;flex:0 0 auto;margin-left:6px;box-shadow:0 0 6px rgba(0,0,0,.6)}
 .hz{padding:12px 14px;font-size:12px;color:#ddd;line-height:1.5}
 .hz .big{font-size:16px;font-weight:700;color:#fff}
@@ -774,7 +773,6 @@ nav.cats button.pg{border-style:dashed;}
     <button class="btn int" id="btn-int" title="海外レーダー（台湾・香港・マニラ）も取得する">INT</button>
     <button class="btn" id="btn-update">GET IT NOW!!</button>
     <div class="stamp" id="stamp">未取得</div>
-    <span class="hbeat" id="hbeat" onclick="openHealth()"></span>
   </div>
   <div class="prog" id="prog"><i></i></div>
 </header>
@@ -790,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='lamp-260814';
+const APP_VER='lamp2-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1656,12 +1654,11 @@ async function loadHLogFresh(){
 }
 function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
 function mountLamp(){
-  const s=document.getElementById("hbslot"), h=document.getElementById("hbeat");
-  if(s&&h&&h.parentNode!==s) s.appendChild(h);
+  try{ updBeat(); }catch(e){}
 }
 function stampHTML(){
   if(!MF) return "未取得";
-  let h='<div class="s1"><span id="hbslot"></span><b>'+tsLabel(MF.generated_utc)+'</b></div>';
+  let h='<div class="s1"><span class="hbeat" id="hbeat" onclick="openHealth()"></span><b>'+tsLabel(MF.generated_utc)+'</b></div>';
   const L=lastRun();
   const s=(L&&L.d)?Math.round(Number(L.d)):0;
   const d=s?(Math.floor(s/60)+":"+String(s%60).padStart(2,"0")):"";
