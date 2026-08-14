@@ -80,6 +80,30 @@ def frames_wv(step, n):
         out.append((ts, "https://www3.metair.go.jp/pict/satellite/ea/ir3_h/ENJP26_RJTD_" + ts + ".jpg", None))
     return out
 
+NMC_HDR = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+           "Referer": "http://www.nmc.cn/publish/radar/huadong.html",
+           "Accept": "image/avif,image/webp,image/png,*/*"}
+
+def frames_nmc(code, step, n):
+    """中央気象台の地区レーダー合成。ファイル名はUTC、6分刻み。
+       日付フォルダがUTC基準か北京時間基準か公表されていないため、両方を候補にする。"""
+    stem = str(code or "ECREF_AECN")
+    base = datetime.datetime.utcnow()
+    base = base.replace(minute=(base.minute // step) * step, second=0, microsecond=0)
+    base = base - datetime.timedelta(minutes=18)      # 公開まで15分前後かかる
+    out = []
+    for i in range(n):
+        dt = datetime.datetime.strptime(
+            (base - datetime.timedelta(minutes=step * i)).strftime("%Y%m%d%H%M"), "%Y%m%d%H%M")
+        ts = dt.strftime("%Y%m%d%H%M00")
+        name = "SEVP_AOC_RDCP_SLDAS3_" + stem + "_L88_PI_" + ts + "000.PNG"
+        cand = []
+        for d in (dt, dt + datetime.timedelta(hours=8)):
+            u = "https://image.nmc.cn/product/" + d.strftime("%Y/%m/%d") + "/RDCP/" + name
+            if u not in cand: cand.append(u)
+        out.append((ts, "|".join(cand), NMC_HDR))
+    return out
+
 def frames_cwa(code, step, n):
     stem = "CV1_TW_1000" if str(code) == "TW" else "CV1_1000"
     base = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
@@ -163,6 +187,7 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
     elif kind == "cb":     specs = frames_cb(step, n)
     elif kind == "wv":     specs = frames_wv(step, n)
     elif kind == "cwa":    specs = frames_cwa(s.get("code"), step, n)
+    elif kind == "nmc":    specs = frames_nmc(s.get("code"), step, n)
     elif kind == "hko":    specs = frames_hko(s.get("code"), step, n)
     elif kind == "jma":    specs = frames_jma(s.get("prefix"), s.get("code"), step, n, jma_ts)
     elif kind == "akuten": specs = frames_akuten(s.get("code"), step, n, akuten_ts)
@@ -192,6 +217,12 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
                 im, _ts = M.get_nowc_hrpns(url, ts, view or "JP")
             elif kind == "thnc":
                 im, _ts = M.get_nowc_thunder(*url)
+            elif kind == "nmc":
+                b = None
+                for u in str(url).split("|"):
+                    b = get_bytes(u, hdr)
+                    if b: break
+                im = Image.open(io.BytesIO(b)) if b else None
             else:
                 b = get_bytes(url, hdr)
                 im = Image.open(io.BytesIO(b)) if b else None
