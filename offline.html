@@ -772,7 +772,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='radar-260814';
+const APP_VER='radar2-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1198,11 +1198,14 @@ function subsOf(k){
   if(!k) return [];
   const _ord = ORD[k.id||k.label]||[];
   if(k.mode==='text') return (k.items||[]).map(o=>({label:o.label,text:o.text,groups:o.groups,kind:'text'}));
-  const list=[].concat(
+  const _main=[].concat(
     (k.items||[]).map(o=>({label:o.label,kind:'still',file:o.file,caption:o.caption})),
-    (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()})),
-    (k.id==='nowcast' ? radarSeries() : [])
+    (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()}))
   );
+  // 海外レーダーは別収集。通常収集にまだ残っている間は重複させない
+  const _ext=(k.id==='nowcast')
+    ? radarSeries().filter(r=>!_main.some(m=>m.label===r.label)) : [];
+  const list=_main.concat(_ext);
   const hid=HIDDEN[k.id||k.label]||[];
   const vis=list.filter(x=>hid.indexOf(x.label)<0);
   return applyOrder(vis, vis.map(x=>x.label), _ord);
