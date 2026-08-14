@@ -19,6 +19,8 @@ header{position:sticky;top:0;z-index:20;background:rgba(14,16,18,.96);border-bot
 .btn{background:var(--danger);color:#fff;border:0;border-radius:6px;padding:7px 12px;font-size:12.5px;
  font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.04em;}
 .btn:disabled{opacity:.5;}
+.btn.int{background:transparent;color:#8b9098;border:1px solid #3a4048;padding:6px 10px}
+.btn.int.on{background:var(--danger);color:#fff;border-color:var(--danger)}
 .bar{display:flex;gap:8px;align-items:center;margin-left:auto;}
 .stamp{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;}
 .ver{font-size:10px;color:#5c6268;letter-spacing:.04em;}
@@ -726,8 +728,6 @@ nav.cats button.pg{border-style:dashed;}
 
 .mt-h .sun svg.mi{width:1em;height:1em;vertical-align:-0.14em;margin-right:.12em}
 
-.tools.left button#btn-radar{width:auto;padding:0 9px;font-size:11.5px;font-weight:600;
- white-space:nowrap}
 </style>
 </head>
 <body>
@@ -753,6 +753,7 @@ nav.cats button.pg{border-style:dashed;}
     
   </div>
   <div class="bar">
+    <button class="btn int" id="btn-int" title="海外レーダー（台湾・香港・マニラ）も取得する">INT</button>
     <button class="btn" id="btn-update">GET IT NOW!!</button>
     <div class="stamp" id="stamp">未取得</div>
     <div class="ver" id="ver"></div>
@@ -772,7 +773,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='radar2-260814';
+const APP_VER='int-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1139,8 +1140,8 @@ function radarSeries(){
             frames:(s.frames||[]).slice().reverse()};
   });
 }
-async function radarSync(){
-  const b=$("btn-radar"); if(!b) return;
+async function radarSync(btnEl){
+  const b=btnEl||$("btn-update"); if(!b) return;
   let cfg={}; try{ cfg=JSON.parse(localStorage.getItem("metair_v2")||"{}"); }catch(e){}
   if(!cfg.pat || !cfg.repo){ diag("トークン未設定：管理ページで登録してください"); return; }
   const before=(RADAR&&String(RADAR.generated_utc))||"";
@@ -1149,7 +1150,7 @@ async function radarSync(){
   const t0=Date.now();
   const tick=setInterval(function(){
     const s=Math.round((Date.now()-t0)/1000);
-    b.textContent="海外レーダー取得中 "+Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+    b.textContent="INT "+Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
   },1000);
   try{
     const d=await fetch("https://api.github.com/repos/"+cfg.repo+
@@ -1190,7 +1191,7 @@ async function radarSync(){
     diag("海外レーダーでエラー: "+String(e).slice(0,60));
   }finally{
     clearInterval(tick);
-    b.disabled=false; b.textContent="海外レーダー取得";
+    b.disabled=false; b.textContent="GET IT NOW!!";
   }
 }
 
@@ -2002,7 +2003,6 @@ function render(){
     + '<button id="bulk" title="全画像を再生／停止" class="'+(bulkPlaying?'playing':'')+'">'+(bulkPlaying?ICO.pause:ICO.play)+'</button>'
     + '<button id="b-next" title="全画像を1コマ送る">'+ICO.next+'</button>'
     + '<button id="b-last" title="全画像を最新へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg></button>'
-    + '<button id="btn-radar" title="台湾・香港・マニラのレーダーを取得">海外レーダー取得</button>'
     + '</span>'
     + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
     + '<span class="tools right">'
@@ -2016,7 +2016,6 @@ function render(){
   });
   $('bulk').onclick=toggleBulk;
   $('b-spd').onclick=toggleSpd;
-  if($('btn-radar')) $('btn-radar').onclick=radarSync;
   const bulkStop=()=>{ bulkPlaying=false; $('bulk').innerHTML=ICO.play; $('bulk').classList.remove('playing'); };
   $('b-first').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); t.idx=0; show(t); flash(t);});};
   $('b-prev').onclick=()=>{bulkStop(); TILES.forEach(t=>{stop(t); step(t,-1); flash(t);});};
@@ -2424,8 +2423,21 @@ window.addEventListener('scroll',flashAll,{passive:true});
 
 
 
-$('btn-update').onclick=function(){
+let INT_ON=false;
+try{ INT_ON=localStorage.getItem('nimbus_off_int')==='1'; }catch(e){}
+{ const ib=$('btn-int');
+  if(ib){
+    ib.classList.toggle('on', INT_ON);
+    ib.onclick=function(){
+      INT_ON=!INT_ON;
+      try{ localStorage.setItem('nimbus_off_int', INT_ON?'1':'0'); }catch(e){}
+      ib.classList.toggle('on', INT_ON);
+      try{ clickSound(INT_ON); }catch(e){}
+    };
+  } }
+$('btn-update').onclick=async function(){
   const cur=curTab();
+  if(INT_ON) await radarSync($('btn-update'));   // INTがONのときだけ海外レーダーも集める
   if(cur && cur.t==='c' && cur.cat && cur.cat.mode==='text') mtSync();
   else update(false);
 };
