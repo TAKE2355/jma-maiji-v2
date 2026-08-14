@@ -51,6 +51,14 @@
       "label": "マニラ全域",
       "kind": "pagasa",
       "code": "PH"
+    },
+    {
+      "key": "nmc_ec",
+      "label": "上海",
+      "kind": "nmc",
+      "code": "ECREF_AECN",
+      "step": 6,
+      "frames": 20
     }
   ]
 }
