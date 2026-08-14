@@ -740,6 +740,7 @@ nav.cats button.pg{border-style:dashed;}
  white-space:nowrap;flex:0 0 auto}
 .btn.cat.on{background:#000;color:var(--danger);border-color:var(--danger)}
 #stamp{line-height:1}
+#btn-update:disabled{opacity:.32;filter:grayscale(1);cursor:default}
 #stamp .s1{font-size:17px;line-height:19px;letter-spacing:-0.5px;white-space:nowrap}
 #stamp .s2{font-size:10.5px;line-height:12px;letter-spacing:-0.2px;white-space:nowrap;opacity:.85}
 </style>
@@ -787,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='selblk-260814';
+const APP_VER='getguard-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -938,6 +939,11 @@ async function runCollection(b){
   return false;
 }
 
+function syncGetEnabled(){
+  const b=document.getElementById("btn-update"); if(!b) return;
+  if(b.dataset.busy==="1") return;
+  b.disabled=(selectedCats().length===0 && !INT_ON);
+}
 let RADARPEND=null;
 async function radarDispatch(){
   try{
@@ -963,7 +969,8 @@ async function radarWait(before){
 
 async function update(quiet){
   const b=$('btn-update'), pr=$('prog'), bar=pr.firstElementChild;
-  b.disabled=true; b.textContent=quiet?'AUTO SYNC…':'SYNCING…'; pr.style.display='block'; bar.style.width='0';
+  const CATN=selectedCats().length;
+  b.dataset.busy='1'; b.disabled=true; b.textContent=quiet?'AUTO SYNC…':'SYNCING…'; pr.style.display='block'; bar.style.width='0';
   try{
     const c=await caches.open(CACHE);
     let SRC=await freshBase();
@@ -974,7 +981,7 @@ async function update(quiet){
     if(!quiet){
       b.textContent='COLLECTING…';
       const _rb=INT_ON?(await radarDispatch()):null;
-      const ok=await runCollection(b);
+      const ok=CATN?(await runCollection(b)):false;
       RADARPEND=INT_ON?(await radarWait(_rb)):null;
       if(ok){
         SRC=(await freshBaseApi())||(await freshBase());
@@ -1026,7 +1033,7 @@ async function update(quiet){
       let del=0;
       for(const k of await c.keys()){
         if(k.url.indexOf(BASE)!==0) continue;              // 自前アセットは対象外
-        if(!keep.has(k.url.split('?')[0])){ await c.delete(k); del++; }
+        if(CATN && !keep.has(k.url.split('?')[0])){ await c.delete(k); del++; }
       }
       if(del) console.log('古いキャッシュを削除:',del,'件');
     }catch(e){}
@@ -1036,7 +1043,7 @@ async function update(quiet){
     b.textContent='GET IT NOW!!';
     calcCacheSize();
   }catch(e){ b.textContent='SYNC FAILED'; console.error('sync',e); }
-  finally{ b.disabled=false; setTimeout(()=>{pr.style.display='none';},900); }
+  finally{ b.dataset.busy=''; b.disabled=false; try{ syncGetEnabled(); }catch(e){} setTimeout(()=>{pr.style.display='none';},900); }
 }
 
 
@@ -1171,7 +1178,7 @@ function tsLabel(ts){
   if(!ts||ts.length<12) return '';
   const M=ts.slice(4,6),D=ts.slice(6,8),h=ts.slice(8,10),m=ts.slice(10,12);
   const j=new Date(Date.UTC(+ts.slice(0,4),+M-1,+D,+h,+m)+9*3600000);
-  return h+m+'Z（'+String(j.getUTCHours()).padStart(2,'0')+String(j.getUTCMinutes()).padStart(2,'0')+'J）';
+  return h+m+'Z';
 }
 
 // サブ項目（静止画 or 連続再生）を統一形式で取り出す
@@ -1347,6 +1354,7 @@ function paintCatButtons(){
   }else{
     Array.prototype.forEach.call(wrap.children,function(b){ b.classList.toggle("on", catOn(b.dataset.cat)); });
   }
+  try{ syncGetEnabled(); }catch(e){}
 }
 function buildCatButtons(){
   const bar=document.querySelector(".bar"); if(!bar) return;
@@ -1361,6 +1369,7 @@ function buildCatButtons(){
     CATSEL[id]=!catOn(id);
     saveCatSel();
     b.classList.toggle("on", catOn(id));
+    try{ syncGetEnabled(); }catch(e){}
     try{ clickSound(catOn(id)); }catch(e2){}
   });
 }
@@ -2591,6 +2600,7 @@ try{ INT_ON=localStorage.getItem('nimbus_off_int')==='1'; }catch(e){}
       try{ localStorage.setItem('nimbus_off_int', INT_ON?'1':'0'); }catch(e){}
       ib.classList.toggle('on', INT_ON);
       try{ clickSound(INT_ON); }catch(e){}
+      try{ syncGetEnabled(); }catch(e){}
     };
   } }
 $('btn-update').onclick=async function(){
