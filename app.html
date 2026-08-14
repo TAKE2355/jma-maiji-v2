@@ -649,7 +649,7 @@ nav.cats button.pg{border-style:dashed;}
 .src-item.dragging{opacity:.5;outline:2px dashed var(--danger);}
 
 /* ── 収集状況 ── */
-.s1 .hbeat{margin-left:0;margin-right:5px;vertical-align:middle}
+.s1 .hbeat{display:inline-block;width:12px;height:12px;margin:0 6px 0 0;vertical-align:middle;position:relative;top:-1px}
 .hbeat{width:11px;height:11px;border-radius:50%;background:#666;cursor:pointer;flex:0 0 auto;margin-left:6px;box-shadow:0 0 6px rgba(0,0,0,.6)}
 .hz{padding:12px 14px;font-size:12px;color:#ddd;line-height:1.5}
 .hz .big{font-size:16px;font-weight:700;color:#fff}
@@ -788,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='lamp2-260814';
+const APP_VER='lamp3-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
