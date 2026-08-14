@@ -733,6 +733,11 @@ nav.cats button.pg{border-style:dashed;}
 
 .src-group.none{opacity:.85}
 .src-head .grp-name.fixed{flex:1;font-weight:600;color:#eee;font-size:13px;padding:4px 2px}
+
+#catsel{display:inline-flex;gap:4px;flex-wrap:wrap;max-width:340px;justify-content:flex-end}
+.btn.cat{background:transparent;color:#7d838b;border:1px solid #343a41;padding:4px 7px;
+ font-size:10.5px;font-weight:600;letter-spacing:0;border-radius:5px}
+.btn.cat.on{background:#2f343a;color:#eceff2;border-color:#4a5058}
 </style>
 </head>
 <body>
@@ -778,7 +783,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='hdr3-260814';
+const APP_VER='catsel-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -886,7 +891,8 @@ async function runCollection(b){
          prev=(p.workflow_runs&&p.workflow_runs[0])?p.workflow_runs[0].id:0; }catch(e){}
     const d=await fetch('https://api.github.com/repos/'+cfg.repo+
       '/actions/workflows/offline_cache.yml/dispatches',
-      {method:'POST',headers:H,body:JSON.stringify({ref:cfg.branch||'main'})});
+      {method:'POST',headers:H,body:JSON.stringify({ref:cfg.branch||'main',
+        inputs:{only:selectedCats().join(',')}})});
     if(!d.ok){
       let m="";
       try{ m=(await d.json()).message||""; }catch(e){}
@@ -939,7 +945,7 @@ async function update(quiet){
     }
     await c.put(BASE+'manifest.json', new Response(JSON.stringify(mf),{headers:{'Content-Type':'application/json'}}));
     const files=[];
-    mf.categories.forEach(k=>{
+    mf.categories.filter(k=>catOn(k.id)).forEach(k=>{
       (k.items||[]).forEach(i=>{ if(i.file) files.push(i.file); });
       (k.series||[]).forEach(s=>(s.frames||[]).forEach(f=>files.push(f.file)));
     });
@@ -1263,12 +1269,44 @@ const savePages=()=>{ try{
   localStorage.setItem('nimbus_off_labels',JSON.stringify(LABELS));
 }catch(e){} };
 
+
+// ══ 上位タブごとの取得選択 ═══════════════════════════════════════
+//   選択したカテゴリだけを収集し、端末にも保存する。
+const CAT_BTN=[["metar","METAR"],["surface","天気図"],["akuten","悪天"],["xsec","断面"],
+               ["flevel","平面"],["thunder","発雷"],["ashfall","降灰"],["alwin","ALWIN"],
+               ["nowcast","ナウ"]];
+let CATSEL=null;
+try{ CATSEL=JSON.parse(localStorage.getItem("nimbus_off_catsel")||"null"); }catch(e){}
+if(!CATSEL || typeof CATSEL!=="object") CATSEL={};
+function catOn(id){ return CATSEL[id]!==false; }   // 既定は全部ON
+function saveCatSel(){ try{ localStorage.setItem("nimbus_off_catsel",JSON.stringify(CATSEL)); }catch(e){} }
+function selectedCats(){ return CAT_BTN.map(x=>x[0]).filter(catOn); }
+function buildCatButtons(){
+  const bar=document.querySelector(".bar"); if(!bar) return;
+  if(document.getElementById("catsel")) return;
+  const wrap=document.createElement("span");
+  wrap.id="catsel";
+  wrap.innerHTML=CAT_BTN.map(function(x){
+    return '<button class="btn cat'+(catOn(x[0])?" on":"")+'" data-cat="'+x[0]+'">'+x[1]+'</button>';
+  }).join("");
+  bar.insertBefore(wrap, document.getElementById("btn-int"));
+  wrap.addEventListener("click", function(e){
+    const b=e.target.closest("button[data-cat]"); if(!b) return;
+    const id=b.dataset.cat;
+    CATSEL[id]=!catOn(id);
+    saveCatSel();
+    b.classList.toggle("on", catOn(id));
+    try{ clickSound(catOn(id)); }catch(e2){}
+    render();
+  });
+}
+
 function tabsAll(){
   const cs=(MF?MF.categories:[]).map(k=>({t:'c',key:'c:'+(k.id||k.label),label:k.label,cat:k}));
   const ps=PAGES.map(p=>({t:'p',key:'p:'+p.id,label:p.label||'ページ',page:p}));
   let all=cs.concat(ps);
   if(TABORD.length) all=applyOrder(all, all.map(x=>x.key), TABORD);
-  return all;
+  return all.filter(x=>x.t!=='c' || catOn(x.cat.id));
 }
 function curTab(){
   const T=tabsAll();
@@ -2496,6 +2534,7 @@ $('btn-update').onclick=async function(){
 };
 if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
 { const v=$('ver'); if(v) v.textContent='v'+APP_VER; }
+buildCatButtons();
 boot().then(()=>calcCacheSize());
 loadMetarJson().then(j=>{ if(j) render(); });
 setTimeout(fitArea,300);
