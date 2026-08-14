@@ -773,7 +773,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='int-260814';
+const APP_VER='radarcfg-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1278,10 +1278,14 @@ function setTab(key){
 // 全画像の一覧（非表示も含む）
 function rawSubs(k){
   if(!k||k.mode==='text') return [];
-  return [].concat(
+  const _m=[].concat(
     (k.items||[]).map(o=>({label:o.label,kind:'still',file:o.file,caption:o.caption})),
     (k.series||[]).map(s=>({label:s.label,kind:'series',frames:(s.frames||[]).slice().reverse()}))
   );
+  // 海外レーダーは別収集だが、設定画面（情報ソース／ページ設定）にも並べる
+  const _e=(k.id==='nowcast')
+    ? radarSeries().filter(r=>!_m.some(m=>m.label===r.label)) : [];
+  return _m.concat(_e);
 }
 function allImages(){
   syncGroups();
