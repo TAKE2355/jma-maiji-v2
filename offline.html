@@ -788,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='lamp3-260814';
+const APP_VER='thtitle-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1656,6 +1656,17 @@ function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
 function mountLamp(){
   try{ updBeat(); }catch(e){}
 }
+function subDisp(s){
+  const L=(s&&s.label)||"";
+  try{
+    const c=(s&&s.caption)||"";
+    if(L.indexOf("発雷確率")===0){
+      const m=c.match(/(\d{1,2})\s*[～~〜]\s*(\d{1,2})\s*時/);
+      if(m) return L+"・"+m[1]+"時〜"+m[2]+"時";
+    }
+  }catch(e){}
+  return L;
+}
 function stampHTML(){
   if(!MF) return "未取得";
   let h='<div class="s1"><span class="hbeat" id="hbeat" onclick="openHealth()"></span><b>'+tsLabel(MF.generated_utc)+'</b></div>';
@@ -2255,7 +2266,7 @@ function render(){
     + '<button id="b-next" title="全画像を1コマ送る">'+ICO.next+'</button>'
     + '<button id="b-last" title="全画像を最新へ"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M15 5h2v14h-2z"/><path d="M4 5v14l10.5-7z"/></svg></button>'
     + '</span>'
-    + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(s.label)+'</button>').join('')
+    + subs.map((s,i)=>'<button class="sb'+(i===zoomIdx?' active':'')+'" onclick="setZoom('+i+')">'+esc(subDisp(s))+'</button>').join('')
     + '<span class="tools right">'
     + '<span class="lbl">列</span><select id="ly-c">'+[1,2,3,4,5,6].map(n=>'<option'+(n===LAY().cols?' selected':'')+'>'+n+'</option>').join('')+'</select>'
     + '</span>';
