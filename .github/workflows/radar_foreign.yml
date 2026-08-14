@@ -1,0 +1,68 @@
+name: Foreign radar
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: radar-foreign
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install fonts
+        run: sudo apt-get install -y fonts-noto-cjk
+
+      - name: Install Python packages
+        run: pip install requests pillow img2pdf pymupdf
+
+      - name: Collect foreign radar
+        env:
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          METAIR_USER: ${{ secrets.METAIR_USER }}
+          METAIR_PASS: ${{ secrets.METAIR_PASS }}
+        run: |
+          echo "RSTART=$(date +%s)" >> $GITHUB_ENV
+          python radar_collect.py
+
+      - name: Force push to radar-cache
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd out_radar
+          git init -q
+          git checkout -q -b radar-cache
+          git add -A
+          git -c user.name="nimbus-offline" -c user.email="nimbus@local" \
+              commit -q -m "radar $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" radar-cache
+          echo "pushed: $(ls | wc -l) files"
+          echo "RSHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Publish radar manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name  "nimbus-offline"
+          git config user.email "nimbus@local"
+          git pull --rebase -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main || true
+          python - <<'PY'
+          import json, os, time
+          m = json.load(open("out_radar/radar_manifest.json", encoding="utf-8"))
+          m["sha"] = os.environ.get("RSHA", "")
+          m["seconds"] = int(time.time()) - int(os.environ.get("RSTART", "0") or 0)
+          with open("radar_manifest.json", "w", encoding="utf-8") as f:
+              json.dump(m, f, ensure_ascii=False)
+          PY
+          git add radar_manifest.json
+          git commit -q -m "chore: radar manifest $RSHA" || exit 0
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
