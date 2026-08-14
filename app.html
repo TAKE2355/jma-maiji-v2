@@ -788,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='thtag-260814';
+const APP_VER='radarpull-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -854,6 +854,32 @@ if('serviceWorker' in navigator){
 }
 
 
+async function radarPull(){
+  if(!INT_ON) return false;
+  try{
+    const mf=await loadRadarManifest();
+    if(!mf||!mf.series||!mf.sha) return false;
+    if(RADAR && String(RADAR.generated_utc)===String(mf.generated_utc)) return false;
+    const c=await caches.open(CACHE);
+    const SRC="https://raw.githubusercontent.com/"+REPO+"/"+mf.sha+"/";
+    const files=[];
+    (mf.series||[]).forEach(function(s){ (s.frames||[]).forEach(function(fr){ files.push(fr.file); }); });
+    const q=files.slice();
+    async function w(){
+      while(q.length){
+        const fn=q.shift(), key=BASE_R+fn;
+        let skip=false;
+        try{ skip=!!(await c.match(key)); }catch(e){}
+        if(!skip){ try{ const r=await fetch(SRC+fn,{cache:"reload"}); if(r.ok) await c.put(key,r.clone()); }catch(e){} }
+      }
+    }
+    await Promise.all([w(),w(),w(),w()]);
+    RADAR=mf;
+    try{ localStorage.setItem("nimbus_off_radar",JSON.stringify(mf)); }catch(e){}
+    render();
+    return true;
+  }catch(e){ return false; }
+}
 async function boot(){
   try{
     const c=await caches.open(CACHE);
@@ -878,6 +904,7 @@ async function boot(){
       }catch(e){}
     }
   }catch(e){}
+  try{ await radarPull(); }catch(e){}
 }
 
 
@@ -2705,6 +2732,7 @@ try{ INT_ON=localStorage.getItem('nimbus_off_int')==='1'; }catch(e){}
       ib.classList.toggle('on', INT_ON);
       try{ clickSound(INT_ON); }catch(e){}
       try{ syncGetEnabled(); }catch(e){}
+      if(INT_ON) radarPull();
     };
   } }
 $('btn-update').onclick=async function(){
