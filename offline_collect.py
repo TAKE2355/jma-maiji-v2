@@ -309,9 +309,30 @@ def main():
     jma_ts = M.find_jma_timestamp() if need_jma else None
     akuten_ts = M.get_akuten_latest_ts() if need_akuten else None
 
+    # ONLY が指定されていれば、そのカテゴリだけを集め直し、
+    # 残りは前回の成果物（out/ に復元済み）の記述をそのまま引き継ぐ
+    ONLY = [s.strip() for s in os.environ.get("ONLY", "").split(",") if s.strip()]
+    prev = {}
+    if ONLY:
+        try:
+            _p = json.load(open(os.path.join(OUT, "manifest.json"), encoding="utf-8"))
+            prev = {c.get("id"): c for c in _p.get("categories", [])}
+            print("前回分の引き継ぎ: %d カテゴリ" % len(prev))
+        except Exception as ex:
+            print("前回分が読めないため全収集に切り替え:", str(ex)[:80])
+            ONLY = []
+
     manifest = {"generated_utc": datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"), "categories": []}
     def do_cat(cat):
         _t0 = time.time()
+        cid = cat.get("id")
+        if ONLY and cid not in ONLY and cid in prev:
+            e = prev[cid]
+            n = len(e.get("items", []) or [])
+            for s in (e.get("series", []) or []):
+                n += len(s.get("frames", []) or [])
+            print("=== %s 前回分を引き継ぎ (%d枚) ===" % (cat.get("label"), n))
+            return e, n
         entry = {"id": cat["id"], "label": cat.get("label", ""), "mode": cat.get("mode", "static")}
         n = 0
         try:
