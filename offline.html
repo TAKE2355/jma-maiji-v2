@@ -21,9 +21,11 @@ header{position:sticky;top:0;z-index:20;background:rgba(14,16,18,.96);border-bot
 .btn:disabled{opacity:.5;}
 .btn.int{background:transparent;color:#8b9098;border:1px solid #3a4048;padding:6px 10px}
 .btn.int.on{background:var(--danger);color:#fff;border-color:var(--danger)}
-.bar{display:flex;gap:8px;align-items:center;margin-left:auto;}
-.stamp{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;}
-.ver{font-size:10px;color:#5c6268;letter-spacing:.04em;}
+.bar{display:flex;gap:10px;align-items:center;margin-left:auto;}
+.stamp{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;
+ display:flex;flex-direction:column;align-items:flex-start;line-height:1.35;
+ text-align:left;white-space:nowrap;}
+.ver{font-size:10px;color:#5c6268;letter-spacing:.04em;margin-top:2px;}
 .stamp b{color:var(--text);}
 .prog{height:3px;background:var(--line);border-radius:2px;overflow:hidden;display:none;width:100%;}
 .prog>i{display:block;height:100%;width:0;background:var(--ok);transition:width .12s;}
@@ -752,6 +754,7 @@ nav.cats button.pg{border-style:dashed;}
     <div>
       <h2 id="nimbus-logo" style="--last:13"><span class="nb-l" style="--i:0">N</span><span class="nb-l" style="--i:1">I</span><span class="nb-l" style="--i:2">M</span><span class="nb-l" style="--i:3">B</span><span class="nb-l" style="--i:4">U</span><span class="nb-l" style="--i:5">S</span><span class="nb-l" style="--i:6">&nbsp;</span><span class="nb-l" style="--i:7">O</span><span class="nb-l" style="--i:8">F</span><span class="nb-l" style="--i:9">F</span><span class="nb-l" style="--i:10">L</span><span class="nb-l" style="--i:11">I</span><span class="nb-l" style="--i:12">N</span><span class="nb-l" style="--i:13">E</span><span class="nb-r">&trade;</span><span id="moon"></span></h2>
       <div class="sub">OFFLINE — CACHED WEATHER BRIEFING</div>
+      <div class="ver" id="ver"></div>
     </div>
     
   </div>
@@ -759,7 +762,6 @@ nav.cats button.pg{border-style:dashed;}
     <button class="btn int" id="btn-int" title="海外レーダー（台湾・香港・マニラ）も取得する">INT</button>
     <button class="btn" id="btn-update">GET IT NOW!!</button>
     <div class="stamp" id="stamp">未取得</div>
-    <div class="ver" id="ver"></div>
     <span class="hbeat" id="hbeat" onclick="openHealth()"></span>
   </div>
   <div class="prog" id="prog"><i></i></div>
@@ -776,7 +778,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='srctab-260814';
+const APP_VER='hdr3-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1233,7 +1235,7 @@ async function calcCacheSize(){
       n+=b.byteLength;
     }
     CACHE_MB=(n/1024/1024).toFixed(1);
-    const s=$('stamp'); if(s&&MF) s.innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>　<b>'+CACHE_MB+' MB</b>'+durLabel();
+    const s=$('stamp'); if(s&&MF) s.innerHTML=stampHTML();
   }catch(e){}
 }
 
@@ -1523,6 +1525,14 @@ async function loadHLog(force){
 function jstStr(sec){ const d=new Date(sec*1000+9*3600000), p=n=>("0"+n).slice(-2);
   return p(d.getUTCMonth()+1)+"/"+p(d.getUTCDate())+" "+p(d.getUTCHours())+":"+p(d.getUTCMinutes()); }
 function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
+function stampHTML(){
+  if(!MF) return "未取得";
+  let h='<div><b>'+tsLabel(MF.generated_utc)+'</b></div>';
+  if(CACHE_MB) h+='<div><b>'+CACHE_MB+' MB</b></div>';
+  const L=lastRun();
+  if(L && L.d) h+='<div><b>収集 '+L.d+'秒</b></div>';
+  return h;
+}
 function durLabel(){
   const L=lastRun();
   if(!L || !L.d) return "";
@@ -1991,8 +2001,7 @@ function render(){
   if(!MF) return;
   migrateLabels();
   $('empty').style.display='none';
-  $('stamp').innerHTML='取得データ時刻 <b>'+tsLabel(MF.generated_utc)+'</b>'
-    + (CACHE_MB? '　<b>'+CACHE_MB+' MB</b>' : '') + durLabel();
+  $('stamp').innerHTML=stampHTML();
   const cs=MF.categories;
   const ordered=applyOrder(cs, cs.map(c=>c.id||c.label), CATORD);
   if(ordered.some((c,i)=>c!==cs[i])) MF.categories=ordered;
