@@ -1,6 +1,8 @@
 name: Foreign radar
 
 on:
+  schedule:
+    - cron: '3,33 * * * *'   # 本体の定期収集と同じ間隔
   workflow_dispatch:
 
 concurrency:
