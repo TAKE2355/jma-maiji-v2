@@ -2,6 +2,11 @@ name: NIMBUS OFFLINE Cache
 
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: "集めるカテゴリID（カンマ区切り。空なら全部）"
+        required: false
+        default: ""
   schedule:
     # GitHubのスケジュールは遅延・欠落が多い（実際は数時間に1回）
     - cron: '3,33 * * * *'
@@ -25,8 +30,17 @@ jobs:
       - name: Install Python packages
         run: pip install requests pillow img2pdf pymupdf
 
+      - name: Restore previous snapshot
+        if: ${{ github.event.inputs.only != '' }}
+        run: |
+          git clone --depth 1 --branch offline-cache \
+            "https://github.com/${GITHUB_REPOSITORY}.git" out 2>/dev/null || true
+          rm -rf out/.git 2>/dev/null || true
+          echo "restored: $(ls out 2>/dev/null | wc -l) files"
+
       - name: Collect images
         env:
+          ONLY: ${{ github.event.inputs.only }}
           START_TS: ''
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
