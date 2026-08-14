@@ -788,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='getguard-260814';
+const APP_VER='hlogfresh-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1037,6 +1037,7 @@ async function update(quiet){
       }
       if(del) console.log('古いキャッシュを削除:',del,'件');
     }catch(e){}
+    if(CATN){ try{ await loadHLogFresh(); }catch(e){} }
     if(RADARPEND){ RADAR=RADARPEND; try{ localStorage.setItem("nimbus_off_radar",JSON.stringify(RADAR)); }catch(e){} RADARPEND=null; }
     MF=mf; render();
     console.log('SYNC 完了: 新規取得 '+(files.length-skipped)+' / スキップ '+skipped);
@@ -1635,6 +1636,22 @@ async function loadHLog(force){
 }
 function jstStr(sec){ const d=new Date(sec*1000+9*3600000), p=n=>("0"+n).slice(-2);
   return p(d.getUTCMonth()+1)+"/"+p(d.getUTCDate())+" "+p(d.getUTCHours())+":"+p(d.getUTCMinutes()); }
+async function loadHLogFresh(){
+  try{
+    const cfg=JSON.parse(localStorage.getItem("metair_v2")||"{}");
+    if(cfg.pat&&cfg.repo){
+      const r=await fetch("https://api.github.com/repos/"+cfg.repo+"/contents/cache-log.json?ref=main",
+        {headers:{Authorization:"token "+cfg.pat,Accept:"application/vnd.github.raw"},cache:"no-store"});
+      if(r.ok){
+        const j=await r.json();
+        if(j&&j.length){ HLOG=j; HLOG_T=Date.now();
+          try{ localStorage.setItem("nimbus_off_hlog",JSON.stringify(HLOG.slice(-200))); }catch(e){}
+          return HLOG; }
+      }
+    }
+  }catch(e){}
+  return await loadHLog(true);
+}
 function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
 function stampHTML(){
   if(!MF) return "未取得";
