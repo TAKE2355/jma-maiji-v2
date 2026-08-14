@@ -734,10 +734,11 @@ nav.cats button.pg{border-style:dashed;}
 .src-group.none{opacity:.85}
 .src-head .grp-name.fixed{flex:1;font-weight:600;color:#eee;font-size:13px;padding:4px 2px}
 
-#catsel{display:inline-flex;gap:4px;flex-wrap:wrap;max-width:340px;justify-content:flex-end}
-.btn.cat{background:transparent;color:#7d838b;border:1px solid #343a41;padding:4px 7px;
- font-size:10.5px;font-weight:600;letter-spacing:0;border-radius:5px}
-.btn.cat.on{background:#2f343a;color:#eceff2;border-color:#4a5058}
+#catsel{display:inline-flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;
+ -webkit-overflow-scrolling:touch;max-width:100%}
+.btn.cat{background:transparent;color:#8b9098;border:1px solid #3a4048;padding:6px 10px;
+ white-space:nowrap;flex:0 0 auto}
+.btn.cat.on{background:var(--danger);color:#fff;border-color:var(--danger)}
 </style>
 </head>
 <body>
@@ -783,7 +784,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='catsel-260814';
+const APP_VER='catsel2-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1306,7 +1307,7 @@ function tabsAll(){
   const ps=PAGES.map(p=>({t:'p',key:'p:'+p.id,label:p.label||'ページ',page:p}));
   let all=cs.concat(ps);
   if(TABORD.length) all=applyOrder(all, all.map(x=>x.key), TABORD);
-  return all.filter(x=>x.t!=='c' || catOn(x.cat.id));
+  return all;
 }
 function curTab(){
   const T=tabsAll();
