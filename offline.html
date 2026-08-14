@@ -739,6 +739,9 @@ nav.cats button.pg{border-style:dashed;}
 .btn.cat{background:transparent;color:#8b9098;border:1px solid #3a4048;padding:6px 10px;
  white-space:nowrap;flex:0 0 auto}
 .btn.cat.on{background:var(--danger);color:#fff;border-color:var(--danger)}
+#stamp{line-height:1}
+#stamp .s1{font-size:17px;line-height:19px;letter-spacing:-0.5px;white-space:nowrap}
+#stamp .s2{font-size:10.5px;line-height:12px;letter-spacing:-0.2px;white-space:nowrap;opacity:.85}
 </style>
 </head>
 <body>
@@ -784,7 +787,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='catord-260814';
+const APP_VER='stampbig-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1596,12 +1599,12 @@ function jstStr(sec){ const d=new Date(sec*1000+9*3600000), p=n=>("0"+n).slice(-
 function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
 function stampHTML(){
   if(!MF) return "未取得";
-  let h='<div><b>'+tsLabel(MF.generated_utc)+'</b></div>';
+  let h='<div class="s1"><b>'+tsLabel(MF.generated_utc)+'</b></div>';
   const L=lastRun();
   const s=(L&&L.d)?Math.round(Number(L.d)):0;
   const d=s?(Math.floor(s/60)+":"+String(s%60).padStart(2,"0")):"";
   const l2=[d, CACHE_MB?(CACHE_MB+" MB"):""].filter(Boolean).join("　");
-  if(l2) h+='<div><b>'+l2+'</b></div>';
+  if(l2) h+='<div class="s2"><b>'+l2+'</b></div>';
   return h;
 }
 function durLabel(){
