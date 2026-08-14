@@ -788,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='hlogfresh-260814';
+const APP_VER='tokenui-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1998,14 +1998,78 @@ async function mtSync(){
   }
 }
 
+// ══ 接続設定（GitHubトークン）══════════════════════════════════
+const TK_IN='width:100%;max-width:430px;padding:9px 10px;border-radius:6px;border:1px solid #3a4048;background:#14181c;color:#eceff2;font-size:13px';
+function tokenCfg(){ try{ return JSON.parse(localStorage.getItem("metair_v2")||"{}"); }catch(e){ return {}; } }
+function tokenMask(p){ if(!p) return "未登録"; const s=String(p); return "••••••••••"+s.slice(-4); }
+function tkMsg(s,col){ const e=document.getElementById("tk-msg"); if(e){ e.style.color=col||"#8b9098"; e.textContent=s; } }
+function tokenPanel(){
+  const c=tokenCfg(), ok=!!(c.pat&&c.repo);
+  return '<div class="hz" style="line-height:1.9">'
+   +'<div style="margin-bottom:10px"><b>接続状態：</b>'+(ok?'<span style="color:#2ecc71">登録済み</span>':'<span style="color:#e74c3c">未登録</span>')+'</div>'
+   +'<div>トークン：'+esc(tokenMask(c.pat))+'</div>'
+   +'<div style="margin-bottom:14px">リポジトリ：'+esc(c.repo||"—")+'　ブランチ：'+esc(c.branch||"main")+'</div>'
+   +'<div style="margin-bottom:7px"><input id="tk-pat" type="password" autocomplete="off" spellcheck="false" placeholder="新しいトークンを貼り付け" style="'+TK_IN+'"></div>'
+   +'<div style="margin-bottom:7px"><input id="tk-repo" type="text" autocomplete="off" spellcheck="false" placeholder="リポジトリ（例 USER/REPO）" value="'+esc(c.repo||"")+'" style="'+TK_IN+'"></div>'
+   +'<div style="margin-bottom:13px"><input id="tk-branch" type="text" autocomplete="off" spellcheck="false" placeholder="ブランチ" value="'+esc(c.branch||"main")+'" style="'+TK_IN+'"></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+   +'<button class="btn" onclick="tokenSave()">保存</button>'
+   +'<button class="btn" onclick="tokenTest()">接続テスト</button>'
+   +'<button class="btn" onclick="tokenClear()">削除</button></div>'
+   +'<div id="tk-msg" style="margin-top:13px;min-height:22px;font-size:12.5px"></div>'
+   +'<div style="margin-top:10px;font-size:11.5px;color:#8b9098;line-height:1.8">'
+   +'トークンはこの端末のブラウザ内にのみ保存され、GitHub以外には送られません。他人と共有しないでください。<br>'
+   +'必要な権限は Actions（読み書き）と Contents（読み取り）です。<br>'
+   +'紛失や流出のおそれがあるときは、GitHub側でトークンを失効させてから新しく発行してください。'
+   +'</div></div>';
+}
+function tokenSave(){
+  const p=(document.getElementById("tk-pat").value||"").trim();
+  const r=(document.getElementById("tk-repo").value||"").trim();
+  const b=(document.getElementById("tk-branch").value||"").trim()||"main";
+  const c=tokenCfg();
+  if(p) c.pat=p;
+  if(r) c.repo=r;
+  c.branch=b;
+  if(!c.pat||!c.repo){ tkMsg("トークンとリポジトリの両方が必要です","#e74c3c"); return; }
+  try{ localStorage.setItem("metair_v2",JSON.stringify(c)); }catch(e){ tkMsg("保存に失敗しました","#e74c3c"); return; }
+  renderSettings();
+  tkMsg("保存しました","#2ecc71");
+  try{ syncGetEnabled(); }catch(e){}
+}
+async function tokenTest(){
+  const c=tokenCfg();
+  if(!c.pat||!c.repo){ tkMsg("未登録です","#e74c3c"); return; }
+  tkMsg("確認中…","#8b9098");
+  try{
+    const r=await fetch("https://api.github.com/repos/"+c.repo+"/actions/workflows",
+      {headers:{Authorization:"token "+c.pat},cache:"no-store"});
+    if(r.status===200){ const j=await r.json(); tkMsg("接続OK（ワークフロー "+((j.workflows||[]).length)+" 件）","#2ecc71"); }
+    else if(r.status===401) tkMsg("トークンが無効です（401）","#e74c3c");
+    else if(r.status===403) tkMsg("権限が足りません（403）","#e74c3c");
+    else if(r.status===404) tkMsg("リポジトリが見つかりません（404）","#e74c3c");
+    else tkMsg("エラー HTTP "+r.status,"#e74c3c");
+  }catch(e){ tkMsg("通信に失敗しました","#e74c3c"); }
+}
+function tokenClear(){
+  if(!confirm("この端末に保存されているトークンを削除します。よろしいですか？")) return;
+  const c=tokenCfg(); delete c.pat;
+  try{ localStorage.setItem("metair_v2",JSON.stringify(c)); }catch(e){}
+  renderSettings();
+  tkMsg("削除しました","#2ecc71");
+  try{ syncGetEnabled(); }catch(e){}
+}
+
 function renderSettings(){
   const el=$('settings'); if(!el) return;
   const modeBar='<div class="set-mode">'
     + '<button class="'+(setMode==='page'?'active':'')+'" onclick="setMode=\'page\';renderSettings()">ページ設定</button>'
     + '<button class="'+(setMode==='source'?'active':'')+'" onclick="setMode=\'source\';renderSettings()">情報ソース</button>'
     + '<button class="'+(setMode==='health'?'active':'')+'" onclick="setMode=\'health\';renderSettings()">収集状況</button>'
-    + '</div>';
-  if(setMode==='health'){ el.innerHTML=modeBar+'<div class="hz" id="hzbody">読み込み中…</div>'; renderHealth(); return; }
+    + '<button class="'+(setMode==='token'?'active':'')+'" onclick="setMode=\'token\';renderSettings()">接続設定</button>'
+      + '</div>';
+    if(setMode==='token'){ el.innerHTML=modeBar+tokenPanel(); return; }
+    if(setMode==='health'){ el.innerHTML=modeBar+'<div class="hz" id="hzbody">読み込み中…</div>'; renderHealth(); return; }
   if(setMode==='source'){ renderSource(); el.innerHTML=modeBar+el.innerHTML; return; }
   const T=tabsAll();
   const imgs=allImages();
