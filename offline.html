@@ -649,6 +649,8 @@ nav.cats button.pg{border-style:dashed;}
 .src-item.dragging{opacity:.5;outline:2px dashed var(--danger);}
 
 /* ── 収集状況 ── */
+#hbslot{display:inline-flex;align-items:center;vertical-align:middle;margin-right:5px}
+#hbslot .hbeat{margin-left:0}
 .hbeat{width:11px;height:11px;border-radius:50%;background:#666;cursor:pointer;flex:0 0 auto;margin-left:6px;box-shadow:0 0 6px rgba(0,0,0,.6)}
 .hz{padding:12px 14px;font-size:12px;color:#ddd;line-height:1.5}
 .hz .big{font-size:16px;font-weight:700;color:#fff}
@@ -788,7 +790,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='tokenui-260814';
+const APP_VER='lamp-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1294,7 +1296,7 @@ async function calcCacheSize(){
       n+=b.byteLength;
     }
     CACHE_MB=(n/1024/1024).toFixed(1);
-    const s=$('stamp'); if(s&&MF) s.innerHTML=stampHTML();
+    const s=$('stamp'); if(s&&MF){ s.innerHTML=stampHTML(); try{ mountLamp(); }catch(e){} }
   }catch(e){}
 }
 
@@ -1653,9 +1655,13 @@ async function loadHLogFresh(){
   return await loadHLog(true);
 }
 function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
+function mountLamp(){
+  const s=document.getElementById("hbslot"), h=document.getElementById("hbeat");
+  if(s&&h&&h.parentNode!==s) s.appendChild(h);
+}
 function stampHTML(){
   if(!MF) return "未取得";
-  let h='<div class="s1"><b>'+tsLabel(MF.generated_utc)+'</b></div>';
+  let h='<div class="s1"><span id="hbslot"></span><b>'+tsLabel(MF.generated_utc)+'</b></div>';
   const L=lastRun();
   const s=(L&&L.d)?Math.round(Number(L.d)):0;
   const d=s?(Math.floor(s/60)+":"+String(s%60).padStart(2,"0")):"";
@@ -2196,7 +2202,7 @@ function render(){
   if(!MF) return;
   migrateLabels();
   $('empty').style.display='none';
-  $('stamp').innerHTML=stampHTML();
+  $('stamp').innerHTML=stampHTML(); try{ mountLamp(); }catch(e){}
   const cs=MF.categories;
   const ordered=applyOrder(cs, cs.map(c=>c.id||c.label), CATORD);
   if(ordered.some((c,i)=>c!==cs[i])) MF.categories=ordered;
