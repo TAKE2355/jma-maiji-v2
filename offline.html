@@ -728,6 +728,9 @@ nav.cats button.pg{border-style:dashed;}
 
 .mt-h .sun svg.mi{width:1em;height:1em;vertical-align:-0.14em;margin-right:.12em}
 
+
+.src-group.none{opacity:.85}
+.src-head .grp-name.fixed{flex:1;font-weight:600;color:#eee;font-size:13px;padding:4px 2px}
 </style>
 </head>
 <body>
@@ -773,7 +776,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='radarcfg-260814';
+const APP_VER='srctab-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1398,29 +1401,66 @@ function moveToGroup(cat,label,gid,index){
   saveGroups(); clickSound(false); renderSettings();
 }
 
+// 情報ソース：ページ設定の上位タブ構成をそのまま映す
+//   分類＝上位タブ（順番も同じ）／名称は上位タブ名を優先（ここでは変更不可）
+function srcGroups(){
+  const T=tabsAll();
+  const gs=T.map(function(tb){
+    return {key:tb.key, label:tb.label, items:tabItems(tb).slice()};
+  });
+  // どのタブにも載っていない項目
+  const used=new Set();
+  gs.forEach(g=>g.items.forEach(it=>used.add(it.cat+"\u0001"+it.label)));
+  const rest=[];
+  (MF && MF.categories || []).forEach(function(k){
+    if(k.mode==="text") return;
+    rawSubs(k).forEach(function(s){
+      if(!used.has((k.id||k.label)+"\u0001"+s.label)) rest.push({cat:(k.id||k.label), label:s.label});
+    });
+  });
+  gs.push({key:"__none__", label:"未分類", items:rest});
+  return gs;
+}
 function renderSource(){
-  syncGroups();
-  let h='<div class="set-tabs"><button class="btn add" onclick="addGroup()">＋分類を追加</button>'
-      + '<span class="set-hint">≡ をつかんで別の分類へ移せます。名称は直接編集できます。</span></div>'
+  const gs=srcGroups();
+  let h='<div class="set-tabs"><span class="set-hint">分類は上位タブと同じ構成です。名称の変更と分類の増減はページ設定から行ってください。≡ をつかむと別のタブへ移せます。</span></div>'
       + '<div id="src-wrap">';
-  GROUPS.forEach(g=>{
-    h+='<div class="src-group" data-gid="'+g.id+'">'
-     + '<div class="src-head"><input class="grp-name" value="'+esc(g.label)+'" onchange="renameGroup(\''+g.id+'\',this.value)">'
-     + '<span class="set-cnt">'+(g.items||[]).length+'枚</span>'
-     + '<button class="grp-del" onclick="delGroup(\''+g.id+'\')">分類を削除</button></div>'
+  gs.forEach(function(g){
+    h+='<div class="src-group'+(g.key==="__none__"?" none":"")+'" data-gid="'+esc(g.key)+'">'
+     + '<div class="src-head"><span class="grp-name fixed">'+esc(g.label)+'</span>'
+     + '<span class="set-cnt">'+g.items.length+'件</span></div>'
      + '<div class="src-items">'
-     + (g.items||[]).map(it=>
-         '<div class="src-item" data-cat="'+esc(it.cat)+'" data-label="'+esc(it.label)+'">'
+     + g.items.map(function(it){
+         return '<div class="src-item" data-cat="'+esc(it.cat)+'" data-label="'+esc(it.label)+'">'
          + '<span class="grip">≡</span>'
          + '<input class="src-name" value="'+esc(disp(it.cat,it.label))+'" '
          + 'onchange="renameItem(\''+it.cat.replace(/'/g,"\\'")+'\',\''+it.label.replace(/'/g,"\\'")+'\',this.value)">'
-         + '<span class="src-org">'+esc(it.label)+'</span></div>').join('')
-     + (!(g.items||[]).length?'<div class="src-empty">ここへドロップ</div>':'')
+         + '<span class="src-org">'+esc(it.label)+'</span></div>';
+       }).join('')
+     + (!g.items.length?'<div class="src-empty">ここへドロップ</div>':'')
      + '</div></div>';
   });
   h+='</div>';
   $('settings').innerHTML=h;
   enableSourceDrag();
+}
+// 項目を別の上位タブへ移す（未分類へ落とすと、どのタブからも外れる）
+function srcMove(cat,label,toKey,idx){
+  const T=tabsAll();
+  T.forEach(function(tb){
+    const list=tabItems(tb).filter(function(x){ return !(x.cat===cat && x.label===label); });
+    if(list.length!==tabItems(tb).length) setTabItems(tb,list);
+  });
+  if(toKey!=="__none__"){
+    const tb=T.find(function(x){ return x.key===toKey; });
+    if(tb){
+      const list=tabItems(tb).slice();
+      const at=(idx==null||idx<0||idx>list.length)?list.length:idx;
+      list.splice(at,0,{cat:cat,label:label});
+      setTabItems(tb,list);
+    }
+  }
+  renderSource(); render();
 }
 
 function enableSourceDrag(){
@@ -1450,7 +1490,7 @@ function enableSourceDrag(){
     const over=el&&el.closest('.src-item');
     let idx=null;
     if(over&&over!==s){ const list=[...grp.querySelectorAll('.src-item')]; idx=list.indexOf(over); }
-    moveToGroup(s.dataset.cat, s.dataset.label, grp.dataset.gid, idx);
+    srcMove(s.dataset.cat, s.dataset.label, grp.dataset.gid, idx);
   };
   wrap.addEventListener('pointerup',fin);
   wrap.addEventListener('pointercancel',()=>{ if(src){src.classList.remove('dragging');} src=null; moved=false;
