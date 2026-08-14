@@ -784,7 +784,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='catsel2-260814';
+const APP_VER='catord-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -810,6 +810,17 @@ const BASE='https://raw.githubusercontent.com/TAKE2355/jma-maiji-v2/offline-cach
 // raw.githubusercontent.com はブランチ名URLだとCDNに数分キャッシュされるため、
 // コミットSHA固定のURLを解決して確実に最新を取得する（キャッシュの保存キーはBASEのまま）
 const REPO='TAKE2355/jma-maiji-v2';
+async function freshBaseApi(){
+  // ② PATがあればGitHub APIで解決
+  try{
+    let h={};
+    try{ const c=JSON.parse(localStorage.getItem('metair_v2')||'{}'); if(c.pat) h={'Authorization':'token '+c.pat}; }catch(e){}
+    const r=await fetch('https://api.github.com/repos/'+REPO+'/branches/offline-cache',{headers:h,cache:'no-store'});
+    if(r.ok){ const b=await r.json(); const sha=b&&b.commit&&b.commit.sha; if(sha) return 'https://raw.githubusercontent.com/'+REPO+'/'+sha+'/'; }
+  }catch(e){}
+  return "";
+}
+
 async function freshBase(){
   // ① 同一オリジンの cache-ver.txt（GitHub Pages）から最新SHAを取得
   //    GitHub APIに依存しないので、未認証の回数制限に引っかからない
@@ -938,7 +949,7 @@ async function update(quiet){
       b.textContent='COLLECTING…';
       const ok=await runCollection(b);
       if(ok){
-        SRC=await freshBase();
+        SRC=(await freshBaseApi())||(await freshBase());
         const r2=await fetch(SRC+'manifest.json?t='+Date.now(),{cache:'no-store'});
         if(r2.ok) mf=await r2.json();
       }
@@ -1127,7 +1138,7 @@ function tsLabel(ts){
   if(!ts||ts.length<12) return '';
   const M=ts.slice(4,6),D=ts.slice(6,8),h=ts.slice(8,10),m=ts.slice(10,12);
   const j=new Date(Date.UTC(+ts.slice(0,4),+M-1,+D,+h,+m)+9*3600000);
-  return h+':'+m+'Z ('+String(j.getUTCHours()).padStart(2,'0')+':'+String(j.getUTCMinutes()).padStart(2,'0')+'J)';
+  return h+m+'Z（'+String(j.getUTCHours()).padStart(2,'0')+String(j.getUTCMinutes()).padStart(2,'0')+'J）';
 }
 
 // サブ項目（静止画 or 連続再生）を統一形式で取り出す
@@ -1275,22 +1286,42 @@ const savePages=()=>{ try{
 //   選択したカテゴリだけを収集し、端末にも保存する。
 const CAT_BTN=[["metar","METAR"],["surface","天気図"],["akuten","悪天"],["xsec","断面"],
                ["flevel","平面"],["thunder","発雷"],["ashfall","降灰"],["alwin","ALWIN"],
-               ["nowcast","ナウ"]];
+               ["nowcast","NOW"]];
 let CATSEL=null;
 try{ CATSEL=JSON.parse(localStorage.getItem("nimbus_off_catsel")||"null"); }catch(e){}
 if(!CATSEL || typeof CATSEL!=="object") CATSEL={};
 function catOn(id){ return CATSEL[id]!==false; }   // 既定は全部ON
 function saveCatSel(){ try{ localStorage.setItem("nimbus_off_catsel",JSON.stringify(CATSEL)); }catch(e){} }
 function selectedCats(){ return CAT_BTN.map(x=>x[0]).filter(catOn); }
+function catBtnOrder(){
+  const nm={}; CAT_BTN.forEach(function(x){ nm[x[0]]=x[1]; });
+  const out=[], seen={};
+  try{ tabsAll().forEach(function(x){
+    if(x.t==="c" && x.cat && nm[x.cat.id] && !seen[x.cat.id]){ seen[x.cat.id]=1; out.push([x.cat.id,nm[x.cat.id]]); }
+  }); }catch(e){}
+  CAT_BTN.forEach(function(x){ if(!seen[x[0]]) out.push(x); });
+  return out;
+}
+let _catOrdKey="";
+function paintCatButtons(){
+  const wrap=document.getElementById("catsel"); if(!wrap) return;
+  const o=catBtnOrder(), key=o.map(function(x){return x[0];}).join(",");
+  if(key!==_catOrdKey){
+    _catOrdKey=key;
+    wrap.innerHTML=o.map(function(x){
+      return '<button class="btn cat'+(catOn(x[0])?" on":"")+'" data-cat="'+x[0]+'">'+x[1]+'</button>';
+    }).join("");
+  }else{
+    Array.prototype.forEach.call(wrap.children,function(b){ b.classList.toggle("on", catOn(b.dataset.cat)); });
+  }
+}
 function buildCatButtons(){
   const bar=document.querySelector(".bar"); if(!bar) return;
-  if(document.getElementById("catsel")) return;
+  if(document.getElementById("catsel")){ paintCatButtons(); return; }
   const wrap=document.createElement("span");
   wrap.id="catsel";
-  wrap.innerHTML=CAT_BTN.map(function(x){
-    return '<button class="btn cat'+(catOn(x[0])?" on":"")+'" data-cat="'+x[0]+'">'+x[1]+'</button>';
-  }).join("");
   bar.insertBefore(wrap, document.getElementById("btn-int"));
+  paintCatButtons();
   wrap.addEventListener("click", function(e){
     const b=e.target.closest("button[data-cat]"); if(!b) return;
     const id=b.dataset.cat;
@@ -1298,7 +1329,6 @@ function buildCatButtons(){
     saveCatSel();
     b.classList.toggle("on", catOn(id));
     try{ clickSound(catOn(id)); }catch(e2){}
-    render();
   });
 }
 
@@ -1567,9 +1597,11 @@ function lastRun(){ return (HLOG&&HLOG.length)?HLOG[HLOG.length-1]:null; }
 function stampHTML(){
   if(!MF) return "未取得";
   let h='<div><b>'+tsLabel(MF.generated_utc)+'</b></div>';
-  if(CACHE_MB) h+='<div><b>'+CACHE_MB+' MB</b></div>';
   const L=lastRun();
-  if(L && L.d) h+='<div><b>収集 '+L.d+'秒</b></div>';
+  const s=(L&&L.d)?Math.round(Number(L.d)):0;
+  const d=s?(Math.floor(s/60)+":"+String(s%60).padStart(2,"0")):"";
+  const l2=[d, CACHE_MB?(CACHE_MB+" MB"):""].filter(Boolean).join("　");
+  if(l2) h+='<div><b>'+l2+'</b></div>';
   return h;
 }
 function durLabel(){
@@ -2037,6 +2069,7 @@ function migrateLabels(){
   try{ localStorage.setItem("nimbus_off_idlabel", JSON.stringify(cur)); }catch(e){}
 }
 function render(){
+  try{ paintCatButtons(); }catch(e){}
   if(!MF) return;
   migrateLabels();
   $('empty').style.display='none';
