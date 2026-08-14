@@ -20,7 +20,7 @@ header{position:sticky;top:0;z-index:20;background:rgba(14,16,18,.96);border-bot
  font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.04em;}
 .btn:disabled{opacity:.5;}
 .btn.int{background:transparent;color:#8b9098;border:1px solid #3a4048;padding:6px 10px}
-.btn.int.on{background:#c3c8ce;color:var(--danger);border-color:var(--danger)}
+.btn.int.on{background:#000;color:var(--danger);border-color:var(--danger)}
 .bar{display:flex;gap:10px;align-items:center;margin-left:auto;}
 .stamp{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;
  display:flex;flex-direction:column;align-items:flex-start;line-height:1.35;
@@ -738,7 +738,7 @@ nav.cats button.pg{border-style:dashed;}
  -webkit-overflow-scrolling:touch;max-width:100%}
 .btn.cat{background:transparent;color:#8b9098;border:1px solid #3a4048;padding:6px 10px;
  white-space:nowrap;flex:0 0 auto}
-.btn.cat.on{background:#c3c8ce;color:var(--danger);border-color:var(--danger)}
+.btn.cat.on{background:#000;color:var(--danger);border-color:var(--danger)}
 #stamp{line-height:1}
 #stamp .s1{font-size:17px;line-height:19px;letter-spacing:-0.5px;white-space:nowrap}
 #stamp .s2{font-size:10.5px;line-height:12px;letter-spacing:-0.2px;white-space:nowrap;opacity:.85}
@@ -787,7 +787,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='metarsel-260814';
+const APP_VER='selblk-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
