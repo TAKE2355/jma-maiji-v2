@@ -787,7 +787,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='intuni-260814';
+const APP_VER='intuni2-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -990,7 +990,7 @@ async function update(quiet){
       (k.series||[]).forEach(s=>(s.frames||[]).forEach(f=>files.push(f.file)));
     });
     if(RADARPEND){ (RADARPEND.series||[]).forEach(function(s){ (s.frames||[]).forEach(function(f){ files.push("#"+f.file); }); }); }
-    const SRC_R="https://raw.githubusercontent.com/"+REPO+"/"+RADARPEND.sha+"/";
+    const SRC_R=!RADARPEND?"":"https://raw.githubusercontent.com/"+REPO+"/"+RADARPEND.sha+"/";
     ['offline.html','sw-offline.js','assets/top-icon-base.png?v=4',
       'assets/top-icon-bolt1.png?v=3','assets/top-icon-bolt2.png?v=3','assets/top-icon-bolt3.png?v=3']
       .forEach(f=>files.push('@'+f));
