@@ -651,7 +651,7 @@ nav.cats button.pg{border-style:dashed;}
 /* ── 収集状況 ── */
 .th1,.th2,.th3{color:#fff;padding:0 2px;border-radius:2px}
 .th1{background:#e8e030;color:#000}
-.th2{background:#e5711f}
+.th2{background:#d5342c}
 .th3{background:#d5342c;animation:thblink 1s steps(1,end) infinite}
 @keyframes thblink{50%{background:transparent}}
 .mt-modes{display:flex;gap:6px;margin-bottom:10px}
@@ -661,7 +661,7 @@ nav.cats button.pg{border-style:dashed;}
 .thr-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .thr-leg{font-size:11.5px;color:#8b9098}
 .thr-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
-.thr-leg i.l1{background:#e8e030}.thr-leg i.l2{background:#e5711f}.thr-leg i.l3{background:#d5342c}
+.thr-leg i.l1{background:#e8e030}.thr-leg i.l2{background:#d5342c}.thr-leg i.l3{background:#d5342c}
 .thr-btns{margin-left:auto;display:flex;align-items:center;gap:6px}
 .thr-btns .dirty{color:#ffd21e;font-size:11.5px;margin-right:4px}
 .thr-btns .save{background:var(--danger);color:#fff;border-color:var(--danger)}
@@ -674,7 +674,7 @@ nav.cats button.pg{border-style:dashed;}
 .thr-knob i{display:block;width:14px;height:14px;border-radius:50%;border:2px solid #14181c}
 .thr-knob b{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;padding:1px 5px;border-radius:3px;color:#14181c;white-space:nowrap}
 .thr-knob.k1 i{background:#e8e030}.thr-knob.k1 b{background:#e8e030}
-.thr-knob.k2 i{background:#e5711f}.thr-knob.k2 b{background:#e5711f;color:#fff}
+.thr-knob.k2 i{background:#d5342c}.thr-knob.k2 b{background:#d5342c;color:#fff}
 .thr-knob.k3 i{background:#d5342c}.thr-knob.k3 b{background:#d5342c;color:#fff}
 .thr-sc{display:flex;justify-content:space-between;font-size:10.5px;color:#7d838b;margin:6px 14px 0}
 .thr-note{font-size:11px;color:#7d838b;margin:2px 0 14px}
@@ -686,7 +686,7 @@ nav.cats button.pg{border-style:dashed;}
 .thr-wx .rd{display:inline-block;width:13px;height:13px;border-radius:50%;border:1px solid #454b53;cursor:pointer}
 .thr-wx .rd.on{border-color:#8b9098;background:#8b9098}
 .thr-wx .rd.L1.on{background:#e8e030;border-color:#e8e030}
-.thr-wx .rd.L2.on{background:#e5711f;border-color:#e5711f}
+.thr-wx .rd.L2.on{background:#d5342c;border-color:#d5342c}
 .thr-wx .rd.L3.on{background:#d5342c;border-color:#d5342c}
 .s1 .hbeat{display:inline-block;width:12px;height:12px;margin:0 6px 0 0;vertical-align:middle;position:relative;top:-1px}
 .hbeat{width:11px;height:11px;border-radius:50%;background:#666;cursor:pointer;flex:0 0 auto;margin-left:6px;box-shadow:0 0 6px rgba(0,0,0,.6)}
@@ -827,7 +827,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='thrbg2-260817';
+const APP_VER='thrred-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2050,7 +2050,7 @@ function thrWxTable(sec){
 }
 function thrPanel(sec){
   let h="<div class=\"thr-head\"><b>"+(sec==="metar"?"METAR":"TAF")+" の閾値</b>";
-  h+="<span class=\"thr-leg\"><i class=\"l1\"></i>LEVEL1 黄　<i class=\"l2\"></i>LEVEL2 橙　<i class=\"l3\"></i>LEVEL3 赤点滅</span>";
+  h+="<span class=\"thr-leg\"><i class=\"l1\"></i>LEVEL1 黄　<i class=\"l2\"></i>LEVEL2 赤　<i class=\"l3\"></i>LEVEL3 赤点滅</span>";
   h+="<span class=\"thr-btns\">"+(thrDirty?"<span class=\"dirty\">未保存</span>":"")
     +"<button class=\"btn\" onclick=\"thrDefaults()\">初期値</button>"
     +"<button class=\"btn\" onclick=\"thrReset()\">DISCARD</button>"
