@@ -826,7 +826,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='thr-260816';
+const APP_VER='thr2-260816';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1936,9 +1936,12 @@ function thrSegs(s, isTaf){
     if(lv) out.push({s:m.index+m[1].length,e:m.index+m[0].length,lv:lv});
   }
   if(T.rvr){
-    re=/\bR\d{2}[LCR]?\/[MP]?(\d{4})(?:V[MP]?\d{4})?(FT)?\b/g;
+    re=/\bR\d{2}[LCR]?\/([MP]?)(\d{4})(?:V([MP]?)(\d{4}))?(FT)?[UDN]?(?![A-Z0-9])/g;
     while((m=re.exec(s))){
-      let v=+m[1]; if(m[2]==="FT") v=Math.round(v*0.3048);
+      if(m[1]==="P" && !m[4]) continue;
+      let v=+m[2];
+      if(m[4]) v=Math.min(v,+m[4]);
+      if(m[5]==="FT") v=Math.round(v*0.3048);
       const lv=thrDn(v,T.rvr); if(lv) out.push({s:m.index,e:m.index+m[0].length,lv:lv});
     }
   }
