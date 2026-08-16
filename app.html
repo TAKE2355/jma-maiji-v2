@@ -788,7 +788,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='radarpull-260814';
+const APP_VER='swipeage-260814';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -854,6 +854,8 @@ if('serviceWorker' in navigator){
 }
 
 
+setInterval(function(){ const s=document.getElementById("stamp"); if(s&&MF){ s.innerHTML=stampHTML(); try{ mountLamp(); }catch(e){} } },60000);
+
 async function radarPull(){
   if(!INT_ON) return false;
   try{
@@ -880,6 +882,41 @@ async function radarPull(){
     return true;
   }catch(e){ return false; }
 }
+// ── 個別表示中の横スワイプで下位タブを送る ──
+function subCount(){
+  try{
+    const cur=curTab(); if(!cur) return 0;
+    if(cur.t==="c" && cur.cat && cur.cat.mode==="text") return 0;
+    return resolveItems(tabItems(cur)).length;
+  }catch(e){ return 0; }
+}
+function swipeSub(dir){
+  const n=subCount(); if(n<2||zoomIdx<0) return;
+  const to=((zoomIdx+dir)%n+n)%n;
+  zoomIdx=to; resetZoom(); render();
+}
+{
+  const w=document.getElementById("gwrap");
+  if(w){
+    let x0=0,y0=0,t0=0,ok=false;
+    w.addEventListener("touchstart",function(e){
+      ok=(e.touches.length===1);
+      if(!ok) return;
+      x0=e.touches[0].clientX; y0=e.touches[0].clientY; t0=Date.now();
+    },{passive:true});
+    w.addEventListener("touchmove",function(e){ if(e.touches.length>1) ok=false; },{passive:true});
+    w.addEventListener("touchend",function(e){
+      if(!ok || zoomIdx<0) return;
+      if(typeof GZ==="number" && GZ>1.02) return;      // 拡大中は移動ではなくスクロール
+      const c=e.changedTouches[0]; if(!c) return;
+      const dx=c.clientX-x0, dy=c.clientY-y0, dt=Date.now()-t0;
+      if(dt>700) return;
+      if(Math.abs(dx)<60 || Math.abs(dx)<Math.abs(dy)*1.8) return;
+      swipeSub(dx>0?-1:1);
+    },{passive:true});
+  }
+}
+
 async function boot(){
   try{
     const c=await caches.open(CACHE);
@@ -1703,9 +1740,16 @@ function subDisp(s){
   }catch(e){}
   return L;
 }
+function ageStr(ts){
+  const m=Math.floor(dataAgeMin(ts));
+  if(!isFinite(m)||m<0||m>=9999) return "";
+  if(m<100) return "（-"+(m<10?("0"+m):m)+"）";
+  const h=Math.round(m/6)/10;
+  return "（-"+(h>=10?Math.round(h):h.toFixed(1))+"h）";
+}
 function stampHTML(){
   if(!MF) return "未取得";
-  let h='<div class="s1"><span class="hbeat" id="hbeat" onclick="openHealth()"></span><b>'+tsLabel(MF.generated_utc)+'</b></div>';
+  let h='<div class="s1"><span class="hbeat" id="hbeat" onclick="openHealth()"></span><b>'+tsLabel(MF.generated_utc)+ageStr(MF.generated_utc)+'</b></div>';
   const L=lastRun();
   const s=(L&&L.d)?Math.round(Number(L.d)):0;
   const d=s?(Math.floor(s/60)+":"+String(s%60).padStart(2,"0")):"";
