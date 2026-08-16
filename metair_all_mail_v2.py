@@ -837,6 +837,7 @@ def get_nowc_hrpns(basetime, validtime, region="JP"):
                     got += 1
         if got == 0:
             return None, None
+        cv = _nowc_draw_aps(cv, region)
         return cv.convert("RGB"), str(validtime)
     except Exception as e:
         print(f"  高解像度降水エラー[{region}]: {e}")
@@ -853,6 +854,46 @@ def _nowc_lonlat_to_xy(lon, lat, W, H, region="JP"):
     yt = (1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * (2 ** z)
     y = (yt - Y0) * 256
     return x, y
+
+NOWC_APS = {
+    "RJAA": (35.7647, 140.3864), "RJCC": (42.7752, 141.6923), "RJEC": (43.6708, 142.4475),
+    "RJCB": (42.7333, 143.2172), "RJCH": (41.7700, 140.8219), "RJSM": (40.7033, 141.3683),
+    "RJSS": (38.1397, 140.9169), "RJTT": (35.5533, 139.7811), "RJGG": (34.8584, 136.8054),
+    "RJBB": (34.4273, 135.2440), "RJOT": (34.2142, 134.0156), "RJOK": (33.5461, 133.6693),
+    "RJOM": (33.8272, 132.6997), "RJFO": (33.4794, 131.7372), "RJFR": (33.8459, 131.0350),
+    "RJFF": (33.5859, 130.4506), "RJFU": (32.9169, 129.9136), "RJFT": (32.8373, 130.8551),
+    "RJFM": (31.8772, 131.4487), "RJFK": (31.8034, 130.7194), "ROAH": (26.1958, 127.6459),
+    "RODN": (26.3556, 127.7678), "RORS": (24.8267, 125.1447), "ROMY": (24.7828, 125.2951),
+    "ROIG": (24.3964, 124.2450), "RJAH": (36.1811, 140.4147), "RJTO": (34.7820, 139.3603),
+    "RJOO": (34.5964, 135.6031), "RJKA": (28.4306, 129.7125),
+}
+
+# 空港マーク（上面図のシルエット）
+_APS_SHAPE = [(0,-13),(2,-9),(2,-2),(14,3),(14,6),(2,4),(2,10),(5,13),(5,15),(0,13),
+              (-5,15),(-5,13),(-2,10),(-2,4),(-14,6),(-14,3),(-2,-2),(-2,-9)]
+
+def _nowc_draw_aps(im, region):
+    """空港の飛行機マークを最前面に半透明で描く（エコーで隠れないように）"""
+    try:
+        if str(region or "JP").upper() == "JP":
+            return im
+        W, H = im.size
+        ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        dr = ImageDraw.Draw(ov)
+        n = 0
+        for lat, lon in NOWC_APS.values():
+            x, y = _nowc_lonlat_to_xy(lon, lat, W, H, region)
+            if x < -20 or y < -20 or x > W + 20 or y > H + 20:
+                continue
+            pts = [(x + a, y + b) for a, b in _APS_SHAPE]
+            dr.polygon(pts, fill=(0, 0, 0, 128), outline=(255, 255, 255, 128))
+            n += 1
+        if n:
+            im = Image.alpha_composite(im.convert("RGBA"), ov)
+        return im
+    except Exception as e:
+        print(f"  空港マーク描画エラー[{region}]: {e}")
+        return im
 
 def nowc_times_n3():
     """雷・竜巻ナウキャストの時刻一覧（新しい順）"""
