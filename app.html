@@ -832,7 +832,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rwy-260817';
+const APP_VER='rwymag-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2055,20 +2055,22 @@ function mtWind(text){
   }
   return null;
 }
+// 磁気偏差（東を正）。WMM-2025 を3点で平面近似（日本国内で誤差±0.5°以内）
+function magVar(lat,lon){ return 0.7086 - 0.27232*lat + 0.007856*lon; }
 function rwyLabel(ic, text){
   const rs=rwyOf(ic).filter(Boolean);
   if(!rs.length) return "";
   const w=mtWind(text);
+  const ap=AP_POS[String(ic||"").toUpperCase()];
+  const dv=ap?magVar(ap[0],ap[1]):0;
   const out=rs.map(function(p){
     if(!w) return '<span class="rwy">RW'+p+' —</span>';
+    const spd=w.g||w.v;                      // 突風があれば突風で計算
     const n=parseInt(p.slice(0,2),10);
-    const hdg=n*10;
-    let d=(w.dir-hdg)*Math.PI/180;
-    const cross=Math.abs(w.v*Math.sin(d));
-    const along=Math.abs(w.v*Math.cos(d));
-    const gx=w.g?Math.abs(w.g*Math.sin(d)):0;
-    const cs=Math.round(cross)+(gx?("G"+Math.round(gx)):"");
-    return '<span class="rwy">RW'+p+' ↔'+cs+'kt・↕'+Math.round(along)+'kt</span>';
+    const d=((w.dir-dv)-n*10)*Math.PI/180;   // 真方位の風を磁方位へ直して比較
+    const cross=Math.abs(spd*Math.sin(d));
+    const along=Math.abs(spd*Math.cos(d));
+    return '<span class="rwy">RW'+p+(w.g?' G':'')+' ↔'+Math.round(cross)+'kt・↕'+Math.round(along)+'kt</span>';
   });
   return out.join("");
 }
