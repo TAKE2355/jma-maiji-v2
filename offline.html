@@ -829,7 +829,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='kwword-260817';
+const APP_VER='kwcb-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1966,9 +1966,9 @@ function thrSegs(s, isTaf){
     const w=String(k.w).toUpperCase(), U=s.toUpperCase();
     let p=0, at;
     while((at=U.indexOf(w,p))>=0){
-      // 直前が英字なら語の一部とみなして対象外（RJCB は対象外、010CB は対象）
+      // CB のみ、直前が英字なら語の一部とみなして対象外（RJCB は対象外、010CB は対象）
       const pv=at>0?U.charAt(at-1):"";
-      if(!/[A-Z]/.test(pv)) out.push({s:at,e:at+w.length,lv:k.lv});
+      if(w!=="CB" || !/[A-Z]/.test(pv)) out.push({s:at,e:at+w.length,lv:k.lv});
       p=at+w.length;
     }
   });
