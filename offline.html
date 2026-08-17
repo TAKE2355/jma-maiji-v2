@@ -683,7 +683,7 @@ nav.cats button.pg{border-style:dashed;}
 .thr-wx th{color:#7d838b;font-weight:600;padding:2px 8px;border-bottom:1px solid #2a3037}
 .thr-wx td{padding:2px 8px;text-align:center}
 .thr-wx td.wx{color:#cfd4da;font-weight:700;text-align:left}
-.rwy{margin-left:12px;font-size:.72em;color:#9fd0ff;font-weight:600;white-space:nowrap}
+.rwy{margin-left:12px;color:#9fd0ff;font-weight:400;letter-spacing:normal;white-space:nowrap}
 .rwy+.rwy{margin-left:10px}
 .rwsel{margin-left:6px;background:#14181c;color:#eceff2;border:1px solid #3a4048;border-radius:4px;font-size:11px;padding:1px 3px}
 .thr-kw input{width:110px;background:#14181c;color:#eceff2;border:1px solid #3a4048;border-radius:4px;padding:3px 6px;font-size:11.5px;font-family:inherit}
@@ -832,7 +832,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rwyt-260817';
+const APP_VER='rwyfont-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2064,7 +2064,7 @@ function rwyLabel(ic, text){
   const ap=AP_POS[String(ic||"").toUpperCase()];
   const dv=ap?magVar(ap[0],ap[1]):0;
   const out=rs.map(function(p){
-    if(!w) return '<span class="rwy">RW'+p+' —</span>';
+    if(!w) return '<span class="rwy" style="font-size:'+MTCFG.fs+'px">RW'+p+' —</span>';
     const spd=w.g||w.v;                       // 突風があれば突風で計算
     let cross, along;
     if(w.vrb){                                // VRBは真横／滑走路方向の最悪値
@@ -2074,8 +2074,8 @@ function rwyLabel(ic, text){
       cross=Math.abs(spd*Math.sin(d));
       along=Math.abs(spd*Math.cos(d));
     }
-    return '<span class="rwy">RW'+p+(w.g?' G':'')+(w.vrb?' VRB':'')
-      +' X'+Math.round(cross)+' T'+Math.round(along)+'</span>';
+    return '<span class="rwy" style="font-size:'+MTCFG.fs+'px">RW'+p+(w.g?' G':'')+(w.vrb?' VRB':'')
+      +' X'+Math.round(cross)+'T'+Math.round(along)+'</span>';
   });
   return out.join("");
 }
