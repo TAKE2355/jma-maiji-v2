@@ -832,7 +832,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rwyfont-260817';
+const APP_VER='rwypad-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2057,6 +2057,7 @@ function mtWind(text){
 }
 // 磁気偏差（東を正）。WMM-2025 を3点で平面近似（日本国内で誤差±0.5°以内）
 function magVar(lat,lon){ return 0.7086 - 0.27232*lat + 0.007856*lon; }
+function rw2(n){ n=Math.round(n); return (n<10?"0":"")+n; }
 function rwyLabel(ic, text){
   const rs=rwyOf(ic).filter(Boolean);
   if(!rs.length) return "";
@@ -2075,7 +2076,7 @@ function rwyLabel(ic, text){
       along=Math.abs(spd*Math.cos(d));
     }
     return '<span class="rwy" style="font-size:'+MTCFG.fs+'px">RW'+p+(w.g?' G':'')+(w.vrb?' VRB':'')
-      +' X'+Math.round(cross)+'T'+Math.round(along)+'</span>';
+      +' X'+rw2(cross)+'T'+rw2(along)+'</span>';
   });
   return out.join("");
 }
