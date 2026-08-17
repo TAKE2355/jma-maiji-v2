@@ -678,6 +678,7 @@ nav.cats button.pg{border-style:dashed;}
 .thr-knob.k3 i{background:#d5342c}.thr-knob.k3 b{background:#d5342c;color:#fff}
 .thr-sc{display:flex;justify-content:space-between;font-size:10.5px;color:#7d838b;margin:6px 14px 0}
 .thr-note{font-size:11px;color:#7d838b;margin:2px 0 14px}
+.thr-sub{margin:22px 0 18px;padding-top:14px;border-top:1px solid #2a3037;font-size:12px;color:#cfd4da;font-weight:700}
 .thr-wxwrap{display:flex;gap:18px;flex-wrap:wrap}
 .thr-wx{border-collapse:collapse;font-size:11.5px}
 .thr-wx th{color:#7d838b;font-weight:600;padding:2px 8px;border-bottom:1px solid #2a3037}
@@ -832,7 +833,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rwypad-260817';
+const APP_VER='rwythr-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1907,9 +1908,12 @@ const THR_WX=["TS","FZ","SN","PL","GR","GS","IC","SG","RA","DZ","PO",
 const THR_RANGE={wind:{min:0,max:99,step:1,unit:"KT",dir:1,label:"WIND / GUST"},
                  vis:{min:0,max:5000,step:100,unit:"M",dir:-1,label:"VIS"},
                  rvr:{min:0,max:2000,step:50,unit:"M",dir:-1,label:"RVR"},
-                 cig:{min:0,max:20,step:1,unit:"x100FT",dir:-1,label:"CIG"}};
+                 cig:{min:0,max:20,step:1,unit:"x100FT",dir:-1,label:"CIG"},
+                 xw:{min:0,max:50,step:1,unit:"KT",dir:1,label:"X 横風"},
+                 tw:{min:0,max:50,step:1,unit:"KT",dir:1,label:"T 正面風"}};
 const THR_DEF={
-  metar:{wind:[22,45,61], vis:[4000,2000,400], rvr:[1500,1000,500], cig:[15,10,5], wx:{}},
+  metar:{wind:[22,45,61], vis:[4000,2000,400], rvr:[1500,1000,500], cig:[15,10,5],
+         xw:[15,25,33], tw:[10,20,30], wx:{}},
   taf:  {wind:[16,27,48], vis:[5000,3000,1500], cig:[15,10,5], wx:{}}
 };
 THR_WX.forEach(function(w){
@@ -1924,6 +1928,8 @@ try{ const _s=JSON.parse(localStorage.getItem("nimbus_off_thr")||"null");
      if(_s&&_s.metar&&_s.taf){ THR.metar=Object.assign(THR.metar,_s.metar); THR.taf=Object.assign(THR.taf,_s.taf); } }catch(e){}
 function thrFix(){
   ["metar","taf"].forEach(function(sec){
+    if(!Array.isArray(THR.metar.xw)) THR.metar.xw=[15,25,33];
+    if(!Array.isArray(THR.metar.tw)) THR.metar.tw=[10,20,30];
     if(!Array.isArray(THR[sec].kw)) THR[sec].kw=[];
     while(THR[sec].kw.length<10) THR[sec].kw.push({w:"",lv:1});
   });
@@ -2057,6 +2063,7 @@ function mtWind(text){
 }
 // 磁気偏差（東を正）。WMM-2025 を3点で平面近似（日本国内で誤差±0.5°以内）
 function magVar(lat,lon){ return 0.7086 - 0.27232*lat + 0.007856*lon; }
+function thrWrap(s,lv){ return lv?('<span class="th'+lv+'">'+s+'</span>'):s; }
 function rw2(n){ n=Math.round(n); return (n<10?"0":"")+n; }
 function rwyLabel(ic, text){
   const rs=rwyOf(ic).filter(Boolean);
@@ -2076,7 +2083,8 @@ function rwyLabel(ic, text){
       along=Math.abs(spd*Math.cos(d));
     }
     return '<span class="rwy" style="font-size:'+MTCFG.fs+'px">RW'+p+(w.g?' G':'')+(w.vrb?' VRB':'')
-      +' X'+rw2(cross)+'T'+rw2(along)+'</span>';
+      +' '+thrWrap('X'+rw2(cross), thrUp(cross, THR.metar.xw))
+      +thrWrap('T'+rw2(along), thrUp(along, THR.metar.tw))+'</span>';
   });
   return out.join("");
 }
@@ -2150,6 +2158,10 @@ function thrPanel(sec){
   h+=thrBar(sec,"wind")+thrBar(sec,"vis")+(sec==="metar"?thrBar(sec,"rvr"):"")+thrBar(sec,"cig");
   h+="<div class=\"thr-note\">レベル3が不要なときは、つまみを重ねてください。</div>";
   h+=thrWxTable(sec);
+  if(sec==="metar"){
+    h+="<div class=\"thr-sub\">ヘッダーの滑走路風成分</div>";
+    h+=thrBar(sec,"xw")+thrBar(sec,"tw");
+  }
   return "<div class=\"thr-panel\">"+h+"</div>";
 }
 function thrBind(){
