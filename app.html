@@ -832,7 +832,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rwymag-260817';
+const APP_VER='rwyx-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2047,11 +2047,11 @@ function mtWind(text){
   const lines=String(text||"").split("\n");
   for(const l of lines){
     if(!/^(METAR|SPECI)\b/.test(l)) continue;
-    const m=l.match(/\b(\d{3})(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)\b/);
+    const m=l.match(/\b(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)\b/);
     if(!m) return null;
     let v=+m[2], g=m[3]?+m[3]:0;
     if(m[4]==="MPS"){ v=Math.round(v*1.94384); g=g?Math.round(g*1.94384):0; }
-    return {dir:+m[1], v:v, g:g};
+    return {dir:(m[1]==="VRB"?null:+m[1]), v:v, g:g, vrb:(m[1]==="VRB")};
   }
   return null;
 }
@@ -2065,12 +2065,17 @@ function rwyLabel(ic, text){
   const dv=ap?magVar(ap[0],ap[1]):0;
   const out=rs.map(function(p){
     if(!w) return '<span class="rwy">RW'+p+' —</span>';
-    const spd=w.g||w.v;                      // 突風があれば突風で計算
-    const n=parseInt(p.slice(0,2),10);
-    const d=((w.dir-dv)-n*10)*Math.PI/180;   // 真方位の風を磁方位へ直して比較
-    const cross=Math.abs(spd*Math.sin(d));
-    const along=Math.abs(spd*Math.cos(d));
-    return '<span class="rwy">RW'+p+(w.g?' G':'')+' ↔'+Math.round(cross)+'kt・↕'+Math.round(along)+'kt</span>';
+    const spd=w.g||w.v;                       // 突風があれば突風で計算
+    let cross, along;
+    if(w.vrb){                                // VRBは真横／滑走路方向の最悪値
+      cross=spd; along=spd;
+    }else{
+      const d=((w.dir-dv)-parseInt(p.slice(0,2),10)*10)*Math.PI/180;
+      cross=Math.abs(spd*Math.sin(d));
+      along=Math.abs(spd*Math.cos(d));
+    }
+    return '<span class="rwy">RW'+p+(w.g?' G':'')+(w.vrb?' VRB':'')
+      +' X'+Math.round(cross)+' ↕'+Math.round(along)+'</span>';
   });
   return out.join("");
 }
