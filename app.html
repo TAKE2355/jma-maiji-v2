@@ -683,6 +683,9 @@ nav.cats button.pg{border-style:dashed;}
 .thr-wx th{color:#7d838b;font-weight:600;padding:2px 8px;border-bottom:1px solid #2a3037}
 .thr-wx td{padding:2px 8px;text-align:center}
 .thr-wx td.wx{color:#cfd4da;font-weight:700;text-align:left}
+.rwy{margin-left:12px;font-size:.72em;color:#9fd0ff;font-weight:600;white-space:nowrap}
+.rwy+.rwy{margin-left:10px}
+.rwsel{margin-left:6px;background:#14181c;color:#eceff2;border:1px solid #3a4048;border-radius:4px;font-size:11px;padding:1px 3px}
 .thr-kw input{width:110px;background:#14181c;color:#eceff2;border:1px solid #3a4048;border-radius:4px;padding:3px 6px;font-size:11.5px;font-family:inherit}
 .thr-kw td{padding:3px 8px}
 .thr-wx .rd{display:inline-block;width:13px;height:13px;border-radius:50%;border:1px solid #454b53;cursor:pointer}
@@ -829,7 +832,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='kwcb-260817';
+const APP_VER='rwy-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2030,6 +2033,45 @@ function mtMove(ic,d){
   if(i<0||j<0||j>=l.length) return;
   MTCFG.order=moveItem(l,i,j); saveMT(); renderSettings(); render(); clickSound(d<0);
 }
+// ── 滑走路の風成分 ──
+const RWY_PAIRS=(function(){ const a=[""]; for(let n=1;n<=18;n++){
+  const p=x=>("0"+x).slice(-2); a.push(p(n)+"/"+p(n+18)); } return a; })();
+function rwySet(ic,i,v){
+  if(!MTCFG.rwy||typeof MTCFG.rwy!=="object") MTCFG.rwy={};
+  const a=MTCFG.rwy[ic]||["",""]; a[i]=v; MTCFG.rwy[ic]=a;
+  saveMT(); render();
+}
+function rwyOf(ic){ const r=(MTCFG.rwy||{})[ic]; return Array.isArray(r)?r:["",""]; }
+// 最新のMETARから風向・風速を取り出す
+function mtWind(text){
+  const lines=String(text||"").split("\n");
+  for(const l of lines){
+    if(!/^(METAR|SPECI)\b/.test(l)) continue;
+    const m=l.match(/\b(\d{3})(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)\b/);
+    if(!m) return null;
+    let v=+m[2], g=m[3]?+m[3]:0;
+    if(m[4]==="MPS"){ v=Math.round(v*1.94384); g=g?Math.round(g*1.94384):0; }
+    return {dir:+m[1], v:v, g:g};
+  }
+  return null;
+}
+function rwyLabel(ic, text){
+  const rs=rwyOf(ic).filter(Boolean);
+  if(!rs.length) return "";
+  const w=mtWind(text);
+  const out=rs.map(function(p){
+    if(!w) return '<span class="rwy">RW'+p+' —</span>';
+    const n=parseInt(p.slice(0,2),10);
+    const hdg=n*10;
+    let d=(w.dir-hdg)*Math.PI/180;
+    const cross=Math.abs(w.v*Math.sin(d));
+    const along=Math.abs(w.v*Math.cos(d));
+    const gx=w.g?Math.abs(w.g*Math.sin(d)):0;
+    const cs=Math.round(cross)+(gx?("G"+Math.round(gx)):"");
+    return '<span class="rwy">RW'+p+' ↔'+cs+'kt・↕'+Math.round(along)+'kt</span>';
+  });
+  return out.join("");
+}
 function mtSet(k,v){ MTCFG[k]=+v; saveMT(); render(); }
 // ── 閾値の設定画面 ──
 let MTMODE="disp", THRW=null, thrDirty=false;
@@ -2151,7 +2193,11 @@ function mtPanel(){
         + '<label><input type="checkbox" '+(MTCFG.hide.indexOf(ic)<0?"checked":"")
         + ' onchange="mtToggle(\''+ic+'\',this.checked)"> '+ic+'</label>'
         + '<button class="mv" onclick="mtMove(\''+ic+'\',-1)">▲</button>'
-        + '<button class="mv" onclick="mtMove(\''+ic+'\',1)">▼</button></div>').join("")
+        + '<button class="mv" onclick="mtMove(\''+ic+'\',1)">▼</button>'
+        + [0,1].map(function(i){ return '<select class="rwsel" onchange="rwySet(\''+ic+'\','+i+',this.value)">'
+            + RWY_PAIRS.map(function(p){ return '<option value="'+p+'"'+(rwyOf(ic)[i]===p?' selected':'')+'>'+(p||'RW—')+'</option>'; }).join('')
+            + '</select>'; }).join('')
+        + '</div>').join("")
     + '</div></div>';
   return h;
 }
@@ -2569,7 +2615,7 @@ function render(){
     const when=mtWhen();
     const whenHTML=when?'<div class="mt-when">METAR/TAF 取得 '+when+' JST</div>':'';
     tv.innerHTML=whenHTML+(gs.length
-      ? gs.map(g=>'<div class="mt-h" style="font-size:'+(MTCFG.fs+5)+'px">'+esc(g.icao)+(sunLabel(g.icao)?'<span class="sun">'+sunLabel(g.icao)+'</span>':'')+'</div>'
+      ? gs.map(g=>'<div class="mt-h" style="font-size:'+(MTCFG.fs+5)+'px">'+esc(g.icao)+rwyLabel(g.icao,g.text)+(sunLabel(g.icao)?'<span class="sun">'+sunLabel(g.icao)+'</span>':'')+'</div>'
           +'<div class="mt-b">'+mtHighlight(mtFilter(g.text||'—',MTCFG.hours))+'</div>').join('')
       : esc((it.groups&&it.groups.length)?'（表示する空港が選択されていません）':(it.text||'（データなし）')));
     fitArea();
