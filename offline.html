@@ -833,7 +833,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rwythr-260817';
+const APP_VER='rwythr2-260817';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1913,7 +1913,7 @@ const THR_RANGE={wind:{min:0,max:99,step:1,unit:"KT",dir:1,label:"WIND / GUST"},
                  tw:{min:0,max:50,step:1,unit:"KT",dir:1,label:"T 正面風"}};
 const THR_DEF={
   metar:{wind:[22,45,61], vis:[4000,2000,400], rvr:[1500,1000,500], cig:[15,10,5],
-         xw:[15,25,33], tw:[10,20,30], wx:{}},
+         xw:[15,30,38], tw:[7,10,15], wx:{}},
   taf:  {wind:[16,27,48], vis:[5000,3000,1500], cig:[15,10,5], wx:{}}
 };
 THR_WX.forEach(function(w){
@@ -1928,8 +1928,17 @@ try{ const _s=JSON.parse(localStorage.getItem("nimbus_off_thr")||"null");
      if(_s&&_s.metar&&_s.taf){ THR.metar=Object.assign(THR.metar,_s.metar); THR.taf=Object.assign(THR.taf,_s.taf); } }catch(e){}
 function thrFix(){
   ["metar","taf"].forEach(function(sec){
-    if(!Array.isArray(THR.metar.xw)) THR.metar.xw=[15,25,33];
-    if(!Array.isArray(THR.metar.tw)) THR.metar.tw=[10,20,30];
+    if(!Array.isArray(THR.metar.xw)) THR.metar.xw=[15,30,38];
+    if(!Array.isArray(THR.metar.tw)) THR.metar.tw=[7,10,15];
+    // 初期値変更（旧既定のままの端末を一度だけ更新）
+    try{
+      if(localStorage.getItem('nimbus_off_thr_v')!=='2'){
+        if(String(THR.metar.xw)==='15,25,33') THR.metar.xw=[15,30,38];
+        if(String(THR.metar.tw)==='10,20,30') THR.metar.tw=[7,10,15];
+        localStorage.setItem('nimbus_off_thr_v','2');
+        try{ localStorage.setItem('nimbus_off_thr',JSON.stringify(THR)); }catch(e2){}
+      }
+    }catch(e){}
     if(!Array.isArray(THR[sec].kw)) THR[sec].kw=[];
     while(THR[sec].kw.length<10) THR[sec].kw.push({w:"",lv:1});
   });
