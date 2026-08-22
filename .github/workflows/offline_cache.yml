@@ -101,7 +101,7 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           git config user.name  "nimbus-offline"
           git config user.email "nimbus@local"
-          git pull --rebase -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main || true
+          git pull --rebase --autostash -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" main || true
           echo "$SHA" > cache-ver.txt
           python3 - <<'PY'
           import json, os, time
