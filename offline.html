@@ -841,7 +841,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rec3-260822';
+const APP_VER='mtfix-260822';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2042,8 +2042,13 @@ function mtFilter(text, hours){
     const a=mtAgeH(b.lines[0]);
     return (a===null) || (a<=hours+0.05);
   });
-  const s=keep.map(b=>b.lines.join("\n")).join("\n").replace(/\n{3,}/g,"\n\n").trim();
-  return s || "（指定範囲内のデータなし）";
+  let use=keep;
+  if(!use.some(function(b){ return b.head==="METAR"||b.head==="SPECI"; })){
+    const ms=bs.filter(function(b){ return b.head==="METAR"||b.head==="SPECI"; });
+    if(ms.length) use=[{head:"note",lines:["（指定範囲内に新しいMETARがありません。最新の1件を表示）"]}, ms[0]].concat(keep);
+  }
+  const s=use.map(b=>b.lines.join("\n")).join("\n").replace(/\n{3,}/g,"\n\n").trim();
+  return s || "（データなし）";
 }
 function mtToggle(ic,on){
   const i=MTCFG.hide.indexOf(ic);
@@ -2375,9 +2380,15 @@ function mtGroupsNow(it){
   }
   return base;
 }
+function mtSrcGen(){
+  if(MTDATA && MTDATA.groups && MTDATA.groups.length){
+    if(!MF || !MF.generated_utc || String(MTDATA.generated_utc)>=String(MF.generated_utc)) return String(MTDATA.generated_utc||"");
+  }
+  return String((MF&&MF.generated_utc)||"");
+}
 function mtWhen(){
-  if(!MTDATA || !MTDATA.generated_utc) return "";
-  const s=String(MTDATA.generated_utc);
+  const s=mtSrcGen();
+  if(!s) return "";
   try{
     const d=new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8),+s.slice(8,10),+s.slice(10,12)));
     const p=n=>("0"+n).slice(-2), j=new Date(d.getTime()+9*3600000);
