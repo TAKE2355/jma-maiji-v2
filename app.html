@@ -684,6 +684,14 @@ nav.cats button.pg{border-style:dashed;}
 .thr-wx th{color:#7d838b;font-weight:600;padding:2px 8px;border-bottom:1px solid #2a3037}
 .thr-wx td{padding:2px 8px;text-align:center}
 .thr-wx td.wx{color:#cfd4da;font-weight:700;text-align:left}
+.rec{padding:4px 2px 14px}
+.rec-h{font-size:13px;font-weight:700;color:#eceff2;margin:2px 0 14px}
+.rec-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.rec-row>b{font-size:12px;color:#cfd4da;min-width:96px}
+.rec-row input[type=datetime-local],.rec-row select{background:#14181c;color:#eceff2;border:1px solid #3a4048;border-radius:5px;padding:5px 7px;font-size:12px;font-family:inherit}
+.rec-grid{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 14px 96px}
+.rec-grid label{font-size:12px;color:#cfd4da}
+.rec .btn.save{background:var(--danger);color:#fff;border-color:var(--danger)}
 .rwy{margin-left:12px;color:#9fd0ff;font-weight:400;letter-spacing:normal;white-space:nowrap}
 .rwy+.rwy{margin-left:10px}
 .rwsel{margin-left:6px;background:#14181c;color:#eceff2;border:1px solid #3a4048;border-radius:4px;font-size:11px;padding:1px 3px}
@@ -833,7 +841,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rwythr2-260817';
+const APP_VER='rec-260822';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2468,6 +2476,234 @@ function tokenClear(){
   try{ syncGetEnabled(); }catch(e){}
 }
 
+// ══ REC（期間データの動画化）════════════════════════════════════
+let recOpen=false;
+let RECCFG={from:"",to:"",region:"JP",aps:[],fps:4};
+try{ RECCFG=Object.assign(RECCFG, JSON.parse(localStorage.getItem("nimbus_off_rec")||"{}")||{}); }catch(e){}
+function recSave(){ try{ localStorage.setItem("nimbus_off_rec",JSON.stringify(RECCFG)); }catch(e){} }
+const REC_REGIONS=[["JP","全国"],["HOKKAIDO","北海道"],["KANTO","関東"],["CHUBU","名古屋"],
+                   ["KANSAI","関西"],["SHIKOKU","四国"],["KYUSHU","九州"],["OKINAWA","沖縄"]];
+const REC_GEO={JP:[135.000,36.60,6,6,6],HOKKAIDO:[141.692,42.775,8,4,4],KANTO:[139.920,36.04,8,3,3],
+  CHUBU:[136.805,34.858,8,3,3],KANSAI:[135.244,34.427,8,3,3],SHIKOKU:[133.669,33.546,8,4,4],
+  KYUSHU:[130.855,32.837,8,4,4],OKINAWA:[127.646,26.196,8,3,3]};
+function recGeom(rg){
+  const r=REC_GEO[rg]||REC_GEO.JP, lon=r[0], lat=r[1], z=r[2], nx=r[3], ny=r[4];
+  const n=Math.pow(2,z);
+  const cx=(lon+180)/360*n;
+  const rad=lat*Math.PI/180;
+  const cy=(1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*n;
+  return {z:z,nx:nx,ny:ny,x0:Math.floor(cx-nx/2+0.5),y0:Math.floor(cy-ny/2+0.5)};
+}
+function recTs(d){ const p=v=>("0"+v).slice(-2);
+  return ""+d.getUTCFullYear()+p(d.getUTCMonth()+1)+p(d.getUTCDate())+p(d.getUTCHours())+p(d.getUTCMinutes())+"00"; }
+function recParse(s){ // "YYYY-MM-DDTHH:MM"（UTC入力）
+  const m=String(s||"").match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if(!m) return null;
+  return new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5]));
+}
+function recFmt(d){ const p=v=>("0"+v).slice(-2);
+  return d.getUTCFullYear()+"-"+p(d.getUTCMonth()+1)+"-"+p(d.getUTCDate())+"T"+p(d.getUTCHours())+":"+p(d.getUTCMinutes()); }
+function recLoadImg(u){
+  return new Promise(function(res){
+    fetch(u,{cache:"force-cache"}).then(function(r){ return r.ok?r.blob():null; })
+      .then(function(b){ return b?createImageBitmap(b):null; })
+      .then(res).catch(function(){ res(null); });
+  });
+}
+const REC_BM={};
+async function recBasemap(rg){
+  if(REC_BM[rg]) return REC_BM[rg];
+  const g=recGeom(rg);
+  const cv=document.createElement("canvas");
+  cv.width=g.nx*256; cv.height=g.ny*256;
+  const ctx=cv.getContext("2d");
+  ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height);
+  const jobs=[];
+  for(let x=0;x<g.nx;x++) for(let y=0;y<g.ny;y++){
+    jobs.push((async function(x,y){
+      const im=await recLoadImg("https://cyberjapandata.gsi.go.jp/xyz/pale/"+g.z+"/"+(g.x0+x)+"/"+(g.y0+y)+".png");
+      if(im) ctx.drawImage(im,x*256,y*256);
+    })(x,y));
+  }
+  await Promise.all(jobs);
+  REC_BM[rg]=cv; return cv;
+}
+async function recFrame(rg,ts,ctx,dx,dy,dw,dh){
+  const g=recGeom(rg);
+  const bm=await recBasemap(rg);
+  const cv=document.createElement("canvas");
+  cv.width=bm.width; cv.height=bm.height;
+  const c2=cv.getContext("2d");
+  c2.drawImage(bm,0,0);
+  const jobs=[];
+  for(let x=0;x<g.nx;x++) for(let y=0;y<g.ny;y++){
+    jobs.push((async function(x,y){
+      const u="https://www.jma.go.jp/bosai/jmatile/data/nowc/"+ts+"/none/"+ts+"/surf/hrpns/"+g.z+"/"+(g.x0+x)+"/"+(g.y0+y)+".png";
+      const im=await recLoadImg(u);
+      if(im) c2.drawImage(im,x*256,y*256);
+    })(x,y));
+  }
+  await Promise.all(jobs);
+  ctx.drawImage(cv,dx,dy,dw,dh);
+}
+// ── METAR（期間内・最過去が上）──
+function recMetarLines(ic){
+  const cat=mtCat(); if(!cat) return [];
+  const it=(cat.items||[])[0]||{};
+  const gs=mtGroupsNow(it)||[];
+  const g=gs.find(function(x){ return x.icao===ic; });
+  if(!g) return [];
+  const out=[];
+  String(g.text||"").split("\n").forEach(function(l){
+    const m=l.match(/^(METAR|SPECI)\s+\w{4}\s+(\d{2})(\d{2})(\d{2})Z/);
+    if(!m) return;
+    out.push({day:+m[2], hh:+m[3], mm:+m[4], text:l.trim()});
+  });
+  out.reverse();                       // 最過去を上に
+  return out;
+}
+function recMetarAt(list, d){          // その時刻で有効な行の番号
+  let at=-1;
+  for(let i=0;i<list.length;i++){
+    const e=list[i];
+    const t=Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), e.day, e.hh, e.mm);
+    let tt=t;
+    if(tt-d.getTime()>12*3600000) tt-=24*3600000*30;   // 月またぎの保険
+    if(tt<=d.getTime()+60000) at=i; else break;
+  }
+  return at;
+}
+function recDrawMetar(ctx,x,y,w,h,aps,d){
+  ctx.fillStyle="#000"; ctx.fillRect(x,y,w,h);
+  const fs=Math.max(10, Math.round(h/46));
+  ctx.font=fs+"px ui-monospace, Menlo, monospace";
+  ctx.textBaseline="top";
+  let yy=y+8;
+  const lh=Math.round(fs*1.35);
+  aps.forEach(function(ic){
+    const list=recMetarLines(ic);
+    const at=recMetarAt(list,d);
+    ctx.fillStyle="#ffd76a"; ctx.font="bold "+(fs+2)+"px ui-monospace, Menlo, monospace";
+    ctx.fillText(ic, x+10, yy); yy+=lh+2;
+    ctx.font=fs+"px ui-monospace, Menlo, monospace";
+    list.forEach(function(e,i){
+      if(yy>y+h-lh) return;
+      const on=(i===at);
+      if(on){ ctx.fillStyle="#d5342c"; ctx.fillRect(x+6,yy-2,w-12,lh+2); }
+      ctx.fillStyle=on?"#fff":"#8f979f";
+      let s=e.text; const max=Math.floor((w-24)/(fs*0.62));
+      if(s.length>max) s=s.slice(0,max-1)+"…";
+      ctx.fillText(s, x+10, yy);
+      yy+=lh;
+    });
+    yy+=6;
+  });
+}
+// ── 実行 ──
+let recBusy=false;
+function recMsg(s){ const e=document.getElementById("rec-msg"); if(e) e.textContent=s; }
+async function recRun(){
+  if(recBusy) return;
+  const a=recParse(RECCFG.from), b=recParse(RECCFG.to);
+  if(!a||!b||b<=a){ recMsg("期間の指定を確認してください"); return; }
+  const step=5*60000;
+  let n=Math.floor((b-a)/step)+1;
+  if(n>288){ recMsg("期間が長すぎます（最大24時間）"); return; }
+  const aps=(RECCFG.aps||[]).slice(0,6);
+  recBusy=true; recMsg("準備中…");
+  try{
+    const W=1280,H=720;
+    const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+    const ctx=cv.getContext("2d");
+    ctx.fillStyle="#000"; ctx.fillRect(0,0,W,H);
+    await recBasemap(RECCFG.region);
+    const mimes=["video/mp4;codecs=avc1.42E01E","video/mp4","video/webm;codecs=vp9","video/webm"];
+    let mime=""; mimes.forEach(function(m){ if(!mime && window.MediaRecorder && MediaRecorder.isTypeSupported(m)) mime=m; });
+    if(!mime){ recMsg("この端末は動画の書き出しに対応していません"); recBusy=false; return; }
+    const st=cv.captureStream(0);
+    const track=st.getVideoTracks()[0];
+    const rec=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:4000000});
+    const chunks=[];
+    rec.ondataavailable=function(e){ if(e.data&&e.data.size) chunks.push(e.data); };
+    const done=new Promise(function(res){ rec.onstop=res; });
+    rec.start();
+    const hold=Math.max(60, Math.round(1000/(RECCFG.fps||4)));
+    for(let i=0;i<n;i++){
+      const d=new Date(a.getTime()+i*step);
+      const ts=recTs(d);
+      ctx.fillStyle="#000"; ctx.fillRect(0,0,W,H);
+      await recFrame(RECCFG.region, ts, ctx, 0, 40, W/2, H-40);
+      recDrawMetar(ctx, W/2, 40, W/2, H-40, aps, d);
+      ctx.fillStyle="#111"; ctx.fillRect(0,0,W,40);
+      ctx.fillStyle="#fff"; ctx.font="bold 22px ui-monospace, Menlo, monospace"; ctx.textBaseline="middle";
+      const lbl=(REC_REGIONS.find(function(r){return r[0]===RECCFG.region;})||["",""])[1];
+      ctx.fillText("高解像度降水・"+lbl+"   "+ts.slice(4,6)+"/"+ts.slice(6,8)+" "+ts.slice(8,10)+":"+ts.slice(10,12)+"Z", 14, 21);
+      if(track.requestFrame) track.requestFrame();
+      await new Promise(function(r){ setTimeout(r,hold); });
+      recMsg("作成中… "+(i+1)+" / "+n);
+    }
+    await new Promise(function(r){ setTimeout(r,300); });
+    rec.stop(); await done;
+    const blob=new Blob(chunks,{type:mime});
+    const ext=mime.indexOf("mp4")>=0?"mp4":"webm";
+    const url=URL.createObjectURL(blob);
+    const el=document.createElement("a");
+    el.href=url; el.download="NIMBUS_"+recTs(a).slice(2,12)+"-"+recTs(b).slice(8,12)+"."+ext;
+    document.body.appendChild(el); el.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); el.remove(); },30000);
+    recMsg("完成しました（"+n+"コマ／"+(blob.size/1048576).toFixed(1)+"MB）");
+  }catch(e){ recMsg("エラー: "+String(e).slice(0,80)); }
+  recBusy=false;
+}
+// ── REC 画面 ──
+function recSet(k,v){ RECCFG[k]=v; recSave(); }
+function recAp(ic,on){
+  const a=(RECCFG.aps||[]).slice();
+  const i=a.indexOf(ic);
+  if(on){ if(i<0) a.push(ic); } else if(i>=0) a.splice(i,1);
+  RECCFG.aps=a; recSave(); renderRec();
+}
+function recQuick(h){
+  const now=new Date(); now.setUTCSeconds(0,0);
+  now.setUTCMinutes(Math.floor(now.getUTCMinutes()/5)*5);
+  const to=new Date(now.getTime()-15*60000);
+  const from=new Date(to.getTime()-h*3600000);
+  RECCFG.from=recFmt(from); RECCFG.to=recFmt(to); recSave(); renderRec();
+}
+function renderRec(){
+  const el=$("settings"); if(!el) return;
+  if(!RECCFG.from||!RECCFG.to){
+    const now=new Date(); now.setUTCSeconds(0,0);
+    now.setUTCMinutes(Math.floor(now.getUTCMinutes()/5)*5);
+    const to=new Date(now.getTime()-15*60000);
+    RECCFG.to=recFmt(to); RECCFG.from=recFmt(new Date(to.getTime()-3600000));
+  }
+  const aps=mtOrderList();
+  let h='<div class="rec">';
+  h+='<div class="rec-h">REC ― 期間データの動画化</div>';
+  h+='<div class="rec-row"><b>期間（UTC）</b>'
+    +'<input type="datetime-local" id="rec-from" value="'+esc(RECCFG.from)+'" onchange="recSet(\'from\',this.value)">'
+    +'<span>〜</span>'
+    +'<input type="datetime-local" id="rec-to" value="'+esc(RECCFG.to)+'" onchange="recSet(\'to\',this.value)">'
+    +[1,3,6,12].map(function(x){ return '<button class="btn" onclick="recQuick('+x+')">直近'+x+'h</button>'; }).join("")
+    +'</div>';
+  h+='<div class="rec-row"><b>高解像度降水</b><select onchange="recSet(\'region\',this.value);renderRec()">'
+    + REC_REGIONS.map(function(r){ return '<option value="'+r[0]+'"'+(RECCFG.region===r[0]?" selected":"")+'>'+r[1]+'</option>'; }).join("")
+    +'</select><span class="set-hint">5分間隔・最大24時間</span></div>';
+  h+='<div class="rec-row"><b>再生速度</b><select onchange="recSet(\'fps\',+this.value)">'
+    + [[2,"ゆっくり"],[4,"標準"],[8,"速い"]].map(function(x){ return '<option value="'+x[0]+'"'+(+RECCFG.fps===x[0]?" selected":"")+'>'+x[1]+'</option>'; }).join("")
+    +'</select></div>';
+  h+='<div class="rec-row rec-aps"><b>METAR</b><span class="set-hint">最大6空港</span></div><div class="rec-grid">'
+    + aps.map(function(ic){ return '<label><input type="checkbox" '+((RECCFG.aps||[]).indexOf(ic)>=0?"checked":"")
+        +' onchange="recAp(\''+ic+'\',this.checked)"> '+ic+'</label>'; }).join("")
+    +'</div>';
+  h+='<div class="rec-row"><button class="btn save" onclick="recRun()">実行</button>'
+    +'<span id="rec-msg" class="set-hint"></span></div>';
+  h+='<div class="thr-note">動画は左半分が降水、右半分がMETARです。該当時刻のMETARを赤で強調します。'
+    +'METARは端末が持っている直近12時間分から拾います。</div>';
+  h+='</div>';
+  el.innerHTML=h;
+}
 function renderSettings(){
   const el=$('settings'); if(!el) return;
   const modeBar='<div class="set-mode">'
@@ -2614,14 +2850,21 @@ function render(){
   const cur=curTab(); if(cur) selKey=cur.key;
   $('cats').innerHTML=T.map(tb=>'<button class="'+(tb.t==='p'?'pg ':'')+((!settingsOpen&&tb.key===selKey)?'active':'')
         +'" onclick="setTab(\''+tb.key+'\')">'+esc(tb.label)+'</button>').join('')
-    + '<button id="gear" class="'+(settingsOpen?'active':'')+'" title="ページ設定">&#9881;</button>';
-  $('gear').onclick=()=>{ settingsOpen=!settingsOpen; render(); };
+    + '<button id="gear" class="'+(settingsOpen?'active':'')+'" title="ページ設定">&#9881;</button>'
+    + '<button id="recbtn" class="'+(recOpen?'active':'')+'" title="期間データの動画化">REC</button>';
+  $('gear').onclick=()=>{ settingsOpen=!settingsOpen; if(settingsOpen) recOpen=false; render(); };
+  $('recbtn').onclick=()=>{ recOpen=!recOpen; if(recOpen) settingsOpen=false; render(); };
   enableDrag($('cats'),'button',(from,to)=>{
     const n=T.length;
-    if(from>=n||to>=n) return;                   // ⚙(末尾)は固定
+    if(from>=n||to>=n) return;                   // ⚙とRECは固定
     TABORD=moveItem(T.map(x=>x.key),from,to); savePages(); render();
   });
   /* 上位タブの並べ替えは上のTABORD側で一元管理（二重登録を削除） */
+  if(recOpen){
+    $('subs').style.display='none'; $('textview').style.display='none';
+    $('gwrap').style.display='none'; $('settings').style.display='block';
+    renderRec(); fitArea(); return;
+  }
   if(settingsOpen){
     $('subs').style.display='none'; $('textview').style.display='none';
     $('gwrap').style.display='none'; $('settings').style.display='block';
