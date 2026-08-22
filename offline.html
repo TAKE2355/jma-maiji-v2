@@ -696,6 +696,7 @@ nav.cats button.pg{border-style:dashed;}
 .pv-cell{position:absolute;margin:1px;background:#161a1f;border:1px solid #2f353c;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
 .pv-cell span{font-size:11px;color:#cfd4da;text-align:center;padding:2px 6px;line-height:1.3}
 .pv-cell.drag{opacity:.5}
+.rec-sub2>b{padding-left:14px;color:#9aa2a9;font-weight:600}
 .btn.pv-b{padding:4px 12px;margin-left:6px}
 .btn.pv-b.on{background:#000;color:var(--danger);border-color:var(--danger)}
 .rec-go{margin-top:16px;padding-top:14px;border-top:1px solid #2a3037}
@@ -851,7 +852,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rec8-260822';
+const APP_VER='rec9-260822';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2499,7 +2500,7 @@ function tokenClear(){
 
 // ══ REC（期間データの動画化）════════════════════════════════════
 let recOpen=false;
-let RECCFG={from:"",to:"",region:"JP",rad:["JP"],aps:[],alwin:[],xsec:[],flevel:[],fps:4,speed:5,orient:"land",cells:2,slots:[]};
+let RECCFG={from:"",to:"",region:"JP",rad:["JP"],aps:[],alwin:[],xsec:[],flevel:[],fps:4,speed:5,orient:"land",cols:2,rows:[1,1,1],slots:[]};
 try{ RECCFG=Object.assign(RECCFG, JSON.parse(localStorage.getItem("nimbus_off_rec")||"{}")||{}); }catch(e){}
 function recSave(){ try{ localStorage.setItem("nimbus_off_rec",JSON.stringify(RECCFG)); }catch(e){} }
 const REC_REGIONS=[["OFF","表示しない"],["JP","全国"],["HOKKAIDO","北海道"],["KANTO","関東"],["CHUBU","名古屋"],
@@ -2764,10 +2765,26 @@ async function recRadDraw(ctx,x,y,w,h,regs,ts){
     ctx.fillText("降水 "+lb, cx+10, cy+3);
   }
 }
-// ── レイアウト（向き・区画・並び）──
+// ── レイアウト（向き・縦割り／横割り・並び）──
 const REC_ELS=[["rad","降水","rad"],["alwin","ALWIN","alwin"],["xsec","断面","xsec"],["flevel","平面","flevel"],["metar","METAR","aps"]];
 const REC_FPS=[2,3,4,6,8,10,12,15,20,25];
 function recFps(){ const i=Math.max(1,Math.min(10,+RECCFG.speed||5)); return REC_FPS[i-1]; }
+function recCols(){ return Math.max(1,Math.min(3,+RECCFG.cols||2)); }
+function recRows(){
+  const r=Array.isArray(RECCFG.rows)?RECCFG.rows.slice():[];
+  while(r.length<3) r.push(1);
+  return r.map(function(v){ return Math.max(1,Math.min(3,+v||1)); });
+}
+function recCellCount(){ const c=recCols(), r=recRows(); let n=0; for(let i=0;i<c;i++) n+=r[i]; return n; }
+function recCellRects(W,H){
+  const c=recCols(), rr=recRows(), out=[];
+  const cw=W/c;
+  for(let i=0;i<c;i++){
+    const n=rr[i], ch=H/n;
+    for(let j=0;j<n;j++) out.push([Math.round(i*cw), Math.round(j*ch), Math.round(cw), Math.round(ch)]);
+  }
+  return out;
+}
 function recItems(){
   const out=[];
   REC_ELS.forEach(function(e){
@@ -2785,44 +2802,37 @@ function recItems(){
 function recSlots(){
   const av=recItems();
   const key=function(o){ return o.k+"|"+o.v; };
-  const n=Math.max(1, Math.min(9, +RECCFG.cells||av.length||1));
+  const n=recCellCount();
   const map={}; av.forEach(function(o){ map[key(o)]=o; });
   let s=(RECCFG.slots||[]).filter(function(k){ return map[k]; }).map(function(k){ return map[k]; });
   av.forEach(function(o){ if(s.indexOf(o)<0) s.push(o); });
   while(s.length<n) s.push({k:"",v:"",n:"（空）"});
   return s.slice(0,n);
 }
-function recCellRects(W,H,n,orient){
-  const grid=function(cols,rows){
-    const r=[]; const cw=W/cols, ch=H/rows;
-    for(let i=0;i<cols*rows;i++) r.push([(i%cols)*cw, Math.floor(i/cols)*ch, cw, ch]);
-    return r;
-  };
-  const p=(orient==="port");
-  let r;
-  if(n<=1) r=grid(1,1);
-  else if(n===2) r=p?grid(1,2):grid(2,1);
-  else if(n===3) r=p?grid(1,3):grid(3,1);
-  else if(n===4) r=grid(2,2);
-  else if(n<=6) r=p?grid(2,3):grid(3,2);
-  else r=grid(3,3);
-  return r.slice(0,Math.max(n,1)).map(function(a){ return a.map(Math.round); });
-}
 function recSetLayout(k,v){ RECCFG[k]=v; recSave(); renderRec(); }
+function recSetRow(i,v){ const r=recRows(); r[i]=v; RECCFG.rows=r; recSave(); renderRec(); }
 function recPreviewHTML(){
   const s=recSlots(), orient=RECCFG.orient||"land";
   const W=(orient==="port")?270:420, H=(orient==="port")?480:236;
-  const R=recCellRects(W,H,s.length,orient);
+  const R=recCellRects(W,H);
+  const cols=recCols(), rows=recRows();
   let h='<div class="rec-row"><b>動画の向き</b>'
-    +[["land","横"],["port","縦"]].map(function(o){ return '<button class="btn pv-b'+((RECCFG.orient||"land")===o[0]?" on":"")
+    +[["land","横"],["port","縦"]].map(function(o){ return '<button class="btn pv-b'+(orient===o[0]?" on":"")
         +'" onclick="recSetLayout(\'orient\',\''+o[0]+'\')">'+o[1]+'</button>'; }).join("")
-    +'<b style="margin-left:18px">区画</b>'
-    +[1,2,3,4,6,9].map(function(c){ return '<button class="btn pv-b'+((+RECCFG.cells||s.length)===c?" on":"")
-        +'" onclick="recSetLayout(\'cells\','+c+')">'+c+'</button>'; }).join("")
-    +'<span class="set-hint">枠をドラッグで入れ替え</span></div>';
+    +'</div>';
+  h+='<div class="rec-row"><b>縦割り</b>'
+    +[1,2,3].map(function(c){ return '<button class="btn pv-b'+(cols===c?" on":"")
+        +'" onclick="recSetLayout(\'cols\','+c+')">'+c+'</button>'; }).join("")
+    +'<span class="set-hint">画面を左右に分ける数</span></div>';
+  for(let i=0;i<cols;i++){
+    h+='<div class="rec-row rec-sub2"><b>'+(i+1)+'列目の横割り</b>'
+      +[1,2,3].map(function(c){ return '<button class="btn pv-b'+(rows[i]===c?" on":"")
+          +'" onclick="recSetRow('+i+','+c+')">'+c+'</button>'; }).join("")+'</div>';
+  }
+  h+='<div class="rec-row"><span class="set-hint">枠をドラッグで入れ替え</span></div>';
   h+='<div class="pv" id="pv" style="width:'+W+'px;height:'+H+'px">';
   for(let i=0;i<s.length;i++){
-    const a=R[i];
+    const a=R[i]||[0,0,10,10];
     h+='<div class="pv-cell" data-i="'+i+'" style="left:'+a[0]+'px;top:'+a[1]+'px;width:'+(a[2]-2)+'px;height:'+(a[3]-2)+'px">'
       +'<span>'+esc(s[i].n)+'</span></div>';
   }
@@ -2857,7 +2867,7 @@ async function recRun(){
   recBusy=true; recMsg("準備中…");
   try{
     const W=(RECCFG.orient==="port")?720:1280, H=(RECCFG.orient==="port")?1280:720;
-    const rects=recCellRects(W,H-40,recSlots().length,RECCFG.orient||"land");
+    const rects=recCellRects(W,H-40);
     const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
     const ctx=cv.getContext("2d");
     for(let q=0;q<slots.length;q++) if(slots[q].k==="rad") await recBasemap(slots[q].v);
