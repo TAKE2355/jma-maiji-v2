@@ -841,7 +841,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='mtfix-260822';
+const APP_VER='rec4-260822';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2489,7 +2489,7 @@ function tokenClear(){
 
 // ══ REC（期間データの動画化）════════════════════════════════════
 let recOpen=false;
-let RECCFG={from:"",to:"",region:"JP",aps:[],alwin:[],fps:4};
+let RECCFG={from:"",to:"",region:"JP",aps:[],alwin:[],xsec:[],flevel:[],fps:4};
 try{ RECCFG=Object.assign(RECCFG, JSON.parse(localStorage.getItem("nimbus_off_rec")||"{}")||{}); }catch(e){}
 function recSave(){ try{ localStorage.setItem("nimbus_off_rec",JSON.stringify(RECCFG)); }catch(e){} }
 const REC_REGIONS=[["OFF","表示しない"],["JP","全国"],["HOKKAIDO","北海道"],["KANTO","関東"],["CHUBU","名古屋"],
@@ -2698,6 +2698,47 @@ async function recAlDraw(ctx,x,y,w,h,labels,ts){
     ctx.fillText("ALWIN "+labels[i], cx+10, cy+3);
   }
 }
+// ── 断面図・平面図（manifestの時刻付きコマから選ぶ）──
+function recSerList(id){
+  const c=(MF&&MF.categories||[]).find(function(x){ return x.id===id; });
+  return c?(c.series||[]).map(function(s){ return s.label; }):[];
+}
+const REC_SCACHE={};
+async function recSerImg(id,label,ts){
+  const c=(MF&&MF.categories||[]).find(function(x){ return x.id===id; });
+  const s=c&&(c.series||[]).find(function(y){ return y.label===label; });
+  if(!s) return null;
+  const fr=(s.frames||[]).slice().sort(function(a,b){ return String(a.ts)<String(b.ts)?-1:1; });
+  let pick=null;
+  for(let i=0;i<fr.length;i++){ if(String(fr[i].ts)<=String(ts)) pick=fr[i]; else break; }
+  if(!pick) return null;
+  const u=BASE+pick.file;
+  if(REC_SCACHE[u]!==undefined) return REC_SCACHE[u];
+  const im=await recLoadImg(u);
+  REC_SCACHE[u]=im; return im;
+}
+async function recSerDraw(ctx,x,y,w,h,id,labels,ts,title){
+  ctx.fillStyle="#0b0d10"; ctx.fillRect(x,y,w,h);
+  const n=labels.length||1;
+  const cols=(n<=4)?1:2;
+  const rows=Math.ceil(n/cols);
+  const cw=Math.floor(w/cols), ch=Math.floor(h/rows);
+  for(let i=0;i<labels.length;i++){
+    const cx=x+(i%cols)*cw, cy=y+Math.floor(i/cols)*ch;
+    ctx.fillStyle="#000"; ctx.fillRect(cx+1,cy+1,cw-2,ch-2);
+    const im=await recSerImg(id, labels[i], ts);
+    if(im){
+      const s=Math.min((cw-8)/im.width,(ch-24)/im.height);
+      const dw=Math.round(im.width*s), dh=Math.round(im.height*s);
+      ctx.drawImage(im, cx+Math.round((cw-dw)/2), cy+20+Math.round((ch-20-dh)/2), dw, dh);
+    }else{
+      ctx.fillStyle="#6b7278"; ctx.font="14px ui-monospace, Menlo, monospace"; ctx.textBaseline="middle";
+      ctx.fillText("（この時刻の記録なし）", cx+12, cy+ch/2);
+    }
+    ctx.fillStyle="#ffd76a"; ctx.font="bold 15px ui-monospace, Menlo, monospace"; ctx.textBaseline="top";
+    ctx.fillText(title+" "+labels[i], cx+10, cy+3);
+  }
+}
 // ── 実行 ──
 let recBusy=false;
 function recMsg(s){ const e=document.getElementById("rec-msg"); if(e) e.textContent=s; }
@@ -2712,7 +2753,11 @@ async function recRun(){
   const alw=(RECCFG.alwin||[]).slice(0,8);
   const panes=[];
   if(RECCFG.region!=="OFF") panes.push("radar");
+  const xs=(RECCFG.xsec||[]).slice(0,4);
+  const fv=(RECCFG.flevel||[]).slice(0,4);
   if(alw.length) panes.push("alwin");
+  if(xs.length) panes.push("xsec");
+  if(fv.length) panes.push("flevel");
   if(aps.length) panes.push("metar");
   if(!panes.length){ recMsg("表示する内容を1つ以上選んでください"); return; }
   recBusy=true; recMsg("準備中…");
@@ -2743,6 +2788,8 @@ async function recRun(){
         const pw=Math.round(W/panes.length);
         if(panes[k]==="radar") await recFrame(RECCFG.region, ts, ctx, px, py, pw, ph);
         else if(panes[k]==="alwin") await recAlDraw(ctx, px, py, pw, ph, alw, ts);
+        else if(panes[k]==="xsec") await recSerDraw(ctx, px, py, pw, ph, "xsec", xs, ts, "断面");
+        else if(panes[k]==="flevel") await recSerDraw(ctx, px, py, pw, ph, "flevel", fv, ts, "平面");
         else recDrawMetar(ctx, px, py, pw, ph, aps, d, a, b);
         px+=pw;
       }
@@ -2770,6 +2817,12 @@ async function recRun(){
 }
 // ── REC 画面 ──
 function recSet(k,v){ RECCFG[k]=v; recSave(); }
+function recSerSel(k,l,on){
+  const a=(RECCFG[k]||[]).slice();
+  const i=a.indexOf(l);
+  if(on){ if(i<0) a.push(l); } else if(i>=0) a.splice(i,1);
+  RECCFG[k]=a; recSave(); renderRec();
+}
 function recAlSel(l,on){
   const a=(RECCFG.alwin||[]).slice();
   const i=a.indexOf(l);
@@ -2816,6 +2869,12 @@ function renderRec(){
     + recAlList().map(function(e){ return '<label><input type="checkbox" '+((RECCFG.alwin||[]).indexOf(e.label)>=0?"checked":"")
         +' onchange="recAlSel(\''+e.label+'\',this.checked)"> '+e.label+'</label>'; }).join("")
     +'</div>';
+  [["xsec","断面図"],["flevel","平面図"]].forEach(function(cc){
+    h+='<div class="rec-row"><b>'+cc[1]+'</b><span class="set-hint">最大4つ</span></div><div class="rec-grid">'
+      + recSerList(cc[0]).map(function(l){ return '<label><input type="checkbox" '+((RECCFG[cc[0]]||[]).indexOf(l)>=0?"checked":"")
+          +' onchange="recSerSel(\''+cc[0]+'\',\''+l+'\',this.checked)"> '+esc(l)+'</label>'; }).join("")
+      +'</div>';
+  });
   h+='<div class="rec-row rec-aps"><b>METAR</b><span class="set-hint">最大6空港</span></div><div class="rec-grid">'
     + aps.map(function(ic){ return '<label><input type="checkbox" '+((RECCFG.aps||[]).indexOf(ic)>=0?"checked":"")
         +' onchange="recAp(\''+ic+'\',this.checked)"> '+ic+'</label>'; }).join("")
