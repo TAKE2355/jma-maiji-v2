@@ -689,6 +689,10 @@ nav.cats button.pg{border-style:dashed;}
 .rec-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .rec-row>b{font-size:12px;color:#cfd4da;min-width:96px}
 .rec-row input[type=datetime-local],.rec-row select{background:#14181c;color:#eceff2;border:1px solid #3a4048;border-radius:5px;padding:5px 7px;font-size:12px;font-family:inherit}
+.rec-top{border-bottom:1px solid #2a3037;padding-bottom:6px;margin-bottom:14px}
+.rec-sub{font-size:12px;color:#cfd4da;font-weight:700;margin:0 0 12px}
+.rec-el{margin:0 0 10px}
+.rec-go{margin-top:16px;padding-top:14px;border-top:1px solid #2a3037}
 .rec-grid{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 14px 96px}
 .rec-grid label{font-size:12px;color:#cfd4da}
 .rec .btn.save{background:var(--danger);color:#fff;border-color:var(--danger)}
@@ -841,7 +845,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rec4-260822';
+const APP_VER='rec5-260822';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2739,6 +2743,21 @@ async function recSerDraw(ctx,x,y,w,h,id,labels,ts,title){
     ctx.fillText(title+" "+labels[i], cx+10, cy+3);
   }
 }
+async function recRadDraw(ctx,x,y,w,h,regs,ts){
+  ctx.fillStyle="#0b0d10"; ctx.fillRect(x,y,w,h);
+  const n=regs.length||1;
+  const cols=(n<=2)?1:2;
+  const rows=Math.ceil(n/cols);
+  const cw=Math.floor(w/cols), ch=Math.floor(h/rows);
+  for(let i=0;i<regs.length;i++){
+    const cx=x+(i%cols)*cw, cy=y+Math.floor(i/cols)*ch;
+    await recFrame(regs[i], ts, ctx, cx+1, cy+20, cw-2, ch-22);
+    const lb=(REC_REGIONS.find(function(r){ return r[0]===regs[i]; })||["",""])[1];
+    ctx.fillStyle="#0b0d10"; ctx.fillRect(cx,cy,cw,20);
+    ctx.fillStyle="#ffd76a"; ctx.font="bold 15px ui-monospace, Menlo, monospace"; ctx.textBaseline="top";
+    ctx.fillText("降水 "+lb, cx+10, cy+3);
+  }
+}
 // ── 実行 ──
 let recBusy=false;
 function recMsg(s){ const e=document.getElementById("rec-msg"); if(e) e.textContent=s; }
@@ -2751,8 +2770,9 @@ async function recRun(){
   if(n>288){ recMsg("期間が長すぎます（最大24時間）"); return; }
   const aps=(RECCFG.aps||[]).slice(0,6);
   const alw=(RECCFG.alwin||[]).slice(0,8);
+  const rad=(RECCFG.rad||[]).slice(0,4);
   const panes=[];
-  if(RECCFG.region!=="OFF") panes.push("radar");
+  if(rad.length) panes.push("radar");
   const xs=(RECCFG.xsec||[]).slice(0,4);
   const fv=(RECCFG.flevel||[]).slice(0,4);
   if(alw.length) panes.push("alwin");
@@ -2766,7 +2786,7 @@ async function recRun(){
     const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
     const ctx=cv.getContext("2d");
     ctx.fillStyle="#000"; ctx.fillRect(0,0,W,H);
-    if(RECCFG.region!=="OFF") await recBasemap(RECCFG.region);
+    for(let q=0;q<rad.length;q++) await recBasemap(rad[q]);
     const mimes=["video/mp4;codecs=avc1.42E01E","video/mp4","video/webm;codecs=vp9","video/webm"];
     let mime=""; mimes.forEach(function(m){ if(!mime && window.MediaRecorder && MediaRecorder.isTypeSupported(m)) mime=m; });
     if(!mime){ recMsg("この端末は動画の書き出しに対応していません"); recBusy=false; return; }
@@ -2786,7 +2806,7 @@ async function recRun(){
       let px=0;
       for(let k=0;k<panes.length;k++){
         const pw=Math.round(W/panes.length);
-        if(panes[k]==="radar") await recFrame(RECCFG.region, ts, ctx, px, py, pw, ph);
+        if(panes[k]==="radar") await recRadDraw(ctx, px, py, pw, ph, rad, ts);
         else if(panes[k]==="alwin") await recAlDraw(ctx, px, py, pw, ph, alw, ts);
         else if(panes[k]==="xsec") await recSerDraw(ctx, px, py, pw, ph, "xsec", xs, ts, "断面");
         else if(panes[k]==="flevel") await recSerDraw(ctx, px, py, pw, ph, "flevel", fv, ts, "平面");
@@ -2795,9 +2815,7 @@ async function recRun(){
       }
       ctx.fillStyle="#111"; ctx.fillRect(0,0,W,40);
       ctx.fillStyle="#fff"; ctx.font="bold 22px ui-monospace, Menlo, monospace"; ctx.textBaseline="middle";
-      const lbl=(REC_REGIONS.find(function(r){return r[0]===RECCFG.region;})||["",""])[1];
-      ctx.fillText((RECCFG.region==="OFF"?"":"高解像度降水・"+lbl+"   ")
-        +ts.slice(4,6)+"/"+ts.slice(6,8)+" "+ts.slice(8,10)+":"+ts.slice(10,12)+"Z", 14, 21);
+      ctx.fillText(ts.slice(4,6)+"/"+ts.slice(6,8)+" "+ts.slice(8,10)+":"+ts.slice(10,12)+"Z", 14, 21);
       if(track.requestFrame) track.requestFrame();
       await new Promise(function(r){ setTimeout(r,hold); });
       recMsg("作成中… "+(i+1)+" / "+n);
@@ -2844,45 +2862,50 @@ function recQuick(h){
 }
 function renderRec(){
   const el=$("settings"); if(!el) return;
+  if(!Array.isArray(RECCFG.rad)){
+    RECCFG.rad=(RECCFG.region&&RECCFG.region!=="OFF")?[RECCFG.region]:["JP"];
+  }
   if(!RECCFG.from||!RECCFG.to){
     const now=new Date(); now.setUTCSeconds(0,0);
     now.setUTCMinutes(Math.floor(now.getUTCMinutes()/5)*5);
     const to=new Date(now.getTime()-15*60000);
     RECCFG.to=recFmt(to); RECCFG.from=recFmt(new Date(to.getTime()-3600000));
   }
-  const aps=mtOrderList();
+  const grid=function(k,list,max){
+    return '<div class="rec-grid">'+list.map(function(o){
+      const v=(typeof o==="string")?o:o[0], t=(typeof o==="string")?o:o[1];
+      return '<label><input type="checkbox" '+((RECCFG[k]||[]).indexOf(v)>=0?"checked":"")
+        +' onchange="recSerSel(\''+k+'\',\''+v+'\',this.checked)"> '+esc(t)+'</label>';
+    }).join("")+'</div>';
+  };
   let h='<div class="rec">';
   h+='<div class="rec-h">REC ― 期間データの動画化</div>';
+  h+='<div class="rec-top">';
   h+='<div class="rec-row"><b>期間（UTC）</b>'
     +'<input type="datetime-local" id="rec-from" value="'+esc(RECCFG.from)+'" onchange="recSet(\'from\',this.value)">'
     +'<span>〜</span>'
     +'<input type="datetime-local" id="rec-to" value="'+esc(RECCFG.to)+'" onchange="recSet(\'to\',this.value)">'
     +[1,3,6,12].map(function(x){ return '<button class="btn" onclick="recQuick('+x+')">直近'+x+'h</button>'; }).join("")
     +'</div>';
-  h+='<div class="rec-row"><b>高解像度降水</b><select onchange="recSet(\'region\',this.value);renderRec()">'
-    + REC_REGIONS.map(function(r){ return '<option value="'+r[0]+'"'+(RECCFG.region===r[0]?" selected":"")+'>'+r[1]+'</option>'; }).join("")
-    +'</select><span class="set-hint">5分間隔・最大24時間</span></div>';
   h+='<div class="rec-row"><b>再生速度</b><select onchange="recSet(\'fps\',+this.value)">'
     + [[2,"ゆっくり"],[4,"標準"],[8,"速い"]].map(function(x){ return '<option value="'+x[0]+'"'+(+RECCFG.fps===x[0]?" selected":"")+'>'+x[1]+'</option>'; }).join("")
-    +'</select></div>';
-  h+='<div class="rec-row"><b>ALWIN</b><span class="set-hint">最大8空港</span></div><div class="rec-grid">'
-    + recAlList().map(function(e){ return '<label><input type="checkbox" '+((RECCFG.alwin||[]).indexOf(e.label)>=0?"checked":"")
-        +' onchange="recAlSel(\''+e.label+'\',this.checked)"> '+e.label+'</label>'; }).join("")
-    +'</div>';
-  [["xsec","断面図"],["flevel","平面図"]].forEach(function(cc){
-    h+='<div class="rec-row"><b>'+cc[1]+'</b><span class="set-hint">最大4つ</span></div><div class="rec-grid">'
-      + recSerList(cc[0]).map(function(l){ return '<label><input type="checkbox" '+((RECCFG[cc[0]]||[]).indexOf(l)>=0?"checked":"")
-          +' onchange="recSerSel(\''+cc[0]+'\',\''+l+'\',this.checked)"> '+esc(l)+'</label>'; }).join("")
-      +'</div>';
-  });
-  h+='<div class="rec-row rec-aps"><b>METAR</b><span class="set-hint">最大6空港</span></div><div class="rec-grid">'
-    + aps.map(function(ic){ return '<label><input type="checkbox" '+((RECCFG.aps||[]).indexOf(ic)>=0?"checked":"")
-        +' onchange="recAp(\''+ic+'\',this.checked)"> '+ic+'</label>'; }).join("")
-    +'</div>';
-  h+='<div class="rec-row"><button class="btn save" onclick="recRun()">実行</button>'
+    +'</select><span class="set-hint">5分間隔・最大24時間</span></div>';
+  h+='</div>';
+  h+='<div class="rec-sub">表示する要素</div>';
+  h+='<div class="rec-el"><div class="rec-row"><b>高解像度降水</b><span class="set-hint">最大4つ</span></div>'
+    + grid("rad", REC_REGIONS.filter(function(r){ return r[0]!=="OFF"; })) + '</div>';
+  h+='<div class="rec-el"><div class="rec-row"><b>ALWIN</b><span class="set-hint">最大8空港</span></div>'
+    + grid("alwin", recAlList().map(function(e){ return e.label; })) + '</div>';
+  h+='<div class="rec-el"><div class="rec-row"><b>断面図</b><span class="set-hint">最大4つ</span></div>'
+    + grid("xsec", recSerList("xsec")) + '</div>';
+  h+='<div class="rec-el"><div class="rec-row"><b>平面図</b><span class="set-hint">最大4つ</span></div>'
+    + grid("flevel", recSerList("flevel")) + '</div>';
+  h+='<div class="rec-el"><div class="rec-row"><b>METAR</b><span class="set-hint">最大6空港</span></div>'
+    + grid("aps", mtOrderList()) + '</div>';
+  h+='<div class="rec-row rec-go"><button class="btn save" onclick="recRun()">実行</button>'
     +'<span id="rec-msg" class="set-hint"></span></div>';
-  h+='<div class="thr-note">動画は左半分が降水、右半分がMETARです。該当時刻のMETARを赤で強調します。'
-    +'METARは端末が持っている直近12時間分から拾います。</div>';
+  h+='<div class="thr-note">選んだ要素の数だけ画面を縦に分割します。該当時刻のMETARを赤で強調します。'
+    +'降水は5日前まで、断面・平面・METARは12時間前まで、ALWINは記録開始以降が対象です。</div>';
   h+='</div>';
   el.innerHTML=h;
 }
