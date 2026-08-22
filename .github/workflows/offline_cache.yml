@@ -66,6 +66,34 @@ jobs:
           echo "SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
           echo "NFILES=$(ls | wc -l)" >> $GITHUB_ENV
 
+      - name: ALWIN archive
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          rm -rf arch
+          git clone -q --depth 1 --branch alwin-archive "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" arch 2>/dev/null || mkdir -p arch
+          rm -rf arch/.git
+          python3 alwin_archive.py
+          python3 - <<'PY'
+          import json, os
+          try:
+              idx = json.load(open(os.path.join("arch","index.json"), encoding="utf-8"))
+          except Exception:
+              idx = {"frames":{}}
+          repo = os.environ.get("GITHUB_REPOSITORY","")
+          idx["base"] = "https://raw.githubusercontent.com/"+repo+"/alwin-archive/"
+          json.dump(idx, open("alwin_archive.json","w"), ensure_ascii=False, separators=(",",":"))
+          PY
+          cd arch
+          git init -q
+          git checkout -q -b alwin-archive
+          git add -A
+          git -c user.name="nimbus-offline" -c user.email="nimbus@local" \
+              commit -q -m "alwin archive $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" alwin-archive
+          echo "alwin archived: $(ls | wc -l) files"
       - name: Publish cache version
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -91,6 +119,6 @@ jobs:
           L = [x for x in L if x.get("t", 0) > now - 8 * 86400][-900:]
           json.dump(L, open(p, 'w'), separators=(',', ':'))
           PY
-          git add cache-ver.txt cache-log.json
+          git add cache-ver.txt cache-log.json alwin_archive.json
           git commit -q -m "chore: cache version $SHA" || exit 0
           git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
