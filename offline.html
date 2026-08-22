@@ -851,7 +851,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rec6-260822';
+const APP_VER='rec7-260822';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2765,8 +2765,8 @@ async function recRadDraw(ctx,x,y,w,h,regs,ts){
   }
 }
 // ── レイアウト（向き・区画・並び）──
-const REC_ELS=[["rad","降水"],["alwin","ALWIN"],["xsec","断面"],["flevel","平面"],["metar","METAR"]];
-function recPicked(){ return REC_ELS.filter(function(e){ return (RECCFG[e[0]]||[]).length; }).map(function(e){ return e[0]; }); }
+const REC_ELS=[["rad","降水","rad"],["alwin","ALWIN","alwin"],["xsec","断面","xsec"],["flevel","平面","flevel"],["metar","METAR","aps"]];
+function recPicked(){ return REC_ELS.filter(function(e){ return (RECCFG[e[2]]||[]).length; }).map(function(e){ return e[0]; }); }
 function recSlots(){
   const av=recPicked();
   const n=Math.max(1, Math.min(4, +RECCFG.cells||av.length||1));
@@ -2778,7 +2778,7 @@ function recSlots(){
 function recElName(k){
   const e=REC_ELS.find(function(x){ return x[0]===k; });
   if(!e) return "（空）";
-  const v=(RECCFG[k]||[]);
+  const v=(RECCFG[e[2]]||[]);
   let names=v.slice(0,3).join(",");
   if(k==="rad") names=v.slice(0,3).map(function(r){ const g=REC_REGIONS.find(function(y){return y[0]===r;}); return g?g[1]:r; }).join(",");
   return e[1]+(names?("  "+names+(v.length>3?"…":"")):"");
