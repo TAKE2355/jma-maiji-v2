@@ -692,6 +692,10 @@ nav.cats button.pg{border-style:dashed;}
 .rec-top{border-bottom:1px solid #2a3037;padding-bottom:6px;margin-bottom:14px}
 .rec-sub{font-size:12px;color:#cfd4da;font-weight:700;margin:0 0 12px}
 .rec-el{margin:0 0 10px}
+.pv-hd{display:flex;gap:2px;margin:0 0 4px}
+.pv-hd>span{display:flex;justify-content:center}
+.pv-sel{background:#14181c;color:#eceff2;border:1px solid #3a4048;border-radius:5px;padding:3px 6px;font-size:11.5px;font-family:inherit;margin-left:6px}
+.pv-hd .pv-sel{margin-left:0;width:100%;text-align:center}
 .pv{position:relative;background:#000;border:1px solid #3a4048;border-radius:6px;margin:0 0 6px}
 .pv-cell{position:absolute;margin:1px;background:#161a1f;border:1px solid #2f353c;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
 .pv-cell span{font-size:11px;color:#cfd4da;text-align:center;padding:2px 6px;line-height:1.3}
@@ -852,7 +856,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rec9-260822';
+const APP_VER='rec10-260822';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2819,17 +2823,19 @@ function recPreviewHTML(){
   let h='<div class="rec-row"><b>動画の向き</b>'
     +[["land","横"],["port","縦"]].map(function(o){ return '<button class="btn pv-b'+(orient===o[0]?" on":"")
         +'" onclick="recSetLayout(\'orient\',\''+o[0]+'\')">'+o[1]+'</button>'; }).join("")
-    +'</div>';
-  h+='<div class="rec-row"><b>縦割り</b>'
-    +[1,2,3].map(function(c){ return '<button class="btn pv-b'+(cols===c?" on":"")
-        +'" onclick="recSetLayout(\'cols\','+c+')">'+c+'</button>'; }).join("")
-    +'<span class="set-hint">画面を左右に分ける数</span></div>';
+    +'<b style="margin-left:18px">縦割り</b>'
+    +'<select class="pv-sel" onchange="recSetLayout(\'cols\',+this.value)">'
+    +[1,2,3].map(function(c){ return '<option value="'+c+'"'+(cols===c?" selected":"")+'>'+c+'分割</option>'; }).join("")
+    +'</select><span class="set-hint">枠をドラッグで入れ替え</span></div>';
+  const cw=Math.round(W/cols);
+  h+='<div class="pv-hd" style="width:'+W+'px">';
   for(let i=0;i<cols;i++){
-    h+='<div class="rec-row rec-sub2"><b>'+(i+1)+'列目の横割り</b>'
-      +[1,2,3].map(function(c){ return '<button class="btn pv-b'+(rows[i]===c?" on":"")
-          +'" onclick="recSetRow('+i+','+c+')">'+c+'</button>'; }).join("")+'</div>';
+    h+='<span style="width:'+(cw-2)+'px">'
+      +'<select class="pv-sel" onchange="recSetRow('+i+',+this.value)">'
+      +[1,2,3].map(function(c){ return '<option value="'+c+'"'+(rows[i]===c?" selected":"")+'>横'+c+'分割</option>'; }).join("")
+      +'</select></span>';
   }
-  h+='<div class="rec-row"><span class="set-hint">枠をドラッグで入れ替え</span></div>';
+  h+='</div>';
   h+='<div class="pv" id="pv" style="width:'+W+'px;height:'+H+'px">';
   for(let i=0;i<s.length;i++){
     const a=R[i]||[0,0,10,10];
