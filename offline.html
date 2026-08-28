@@ -684,6 +684,9 @@ nav.cats button.pg{border-style:dashed;}
 .thr-wx th{color:#7d838b;font-weight:600;padding:2px 8px;border-bottom:1px solid #2a3037}
 .thr-wx td{padding:2px 8px;text-align:center}
 .thr-wx td.wx{color:#cfd4da;font-weight:700;text-align:left}
+#recbar{display:flex;justify-content:flex-end;margin:6px 0 2px}
+#recbar #recbtn{background:transparent;color:#8b9098;border:1px solid #3a4048;padding:6px 14px;border-radius:7px;font-size:12.5px;font-weight:700}
+#recbar #recbtn.active{background:var(--danger);color:#fff;border-color:var(--danger)}
 .rec{padding:4px 2px 14px}
 .rec-h{font-size:13px;font-weight:700;color:#eceff2;margin:2px 0 14px}
 .rec-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -856,7 +859,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='rec10-260822';
+const APP_VER='recbtn-260822';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -2963,6 +2966,18 @@ function recQuick(h){
   const from=new Date(to.getTime()-h*3600000);
   RECCFG.from=recFmt(from); RECCFG.to=recFmt(to); recSave(); renderRec();
 }
+function recBarUpdate(){
+  const nav=$("cats"); if(!nav) return;
+  let bar=document.getElementById("recbar");
+  const show=(settingsOpen||recOpen);
+  if(!show){ if(bar) bar.remove(); return; }
+  if(!bar){
+    bar=document.createElement("div"); bar.id="recbar";
+    nav.parentNode.insertBefore(bar, nav.nextSibling);
+  }
+  bar.innerHTML='<button id="recbtn" class="'+(recOpen?"active":"")+'" title="期間データの動画化">REC</button>';
+  bar.querySelector("#recbtn").onclick=function(){ recOpen=!recOpen; if(recOpen) settingsOpen=false; render(); };
+}
 function renderRec(){
   const el=$("settings"); if(!el) return;
   if(!Array.isArray(RECCFG.rad)){
@@ -3161,10 +3176,9 @@ function render(){
   const cur=curTab(); if(cur) selKey=cur.key;
   $('cats').innerHTML=T.map(tb=>'<button class="'+(tb.t==='p'?'pg ':'')+((!settingsOpen&&tb.key===selKey)?'active':'')
         +'" onclick="setTab(\''+tb.key+'\')">'+esc(tb.label)+'</button>').join('')
-    + '<button id="gear" class="'+(settingsOpen?'active':'')+'" title="ページ設定">&#9881;</button>'
-    + '<button id="recbtn" class="'+(recOpen?'active':'')+'" title="期間データの動画化">REC</button>';
+    + '<button id="gear" class="'+(settingsOpen?'active':'')+'" title="ページ設定">&#9881;</button>';
   $('gear').onclick=()=>{ settingsOpen=!settingsOpen; if(settingsOpen) recOpen=false; render(); };
-  $('recbtn').onclick=()=>{ recOpen=!recOpen; if(recOpen) settingsOpen=false; render(); };
+  recBarUpdate();
   enableDrag($('cats'),'button',(from,to)=>{
     const n=T.length;
     if(from>=n||to>=n) return;                   // ⚙とRECは固定
