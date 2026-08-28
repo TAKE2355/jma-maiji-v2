@@ -859,7 +859,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='recbtn-260822';
+const APP_VER='dlsize-260828';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -943,7 +943,7 @@ async function radarPull(){
         const fn=q.shift(), key=BASE_R+fn;
         let skip=false;
         try{ skip=!!(await c.match(key)); }catch(e){}
-        if(!skip){ try{ const r=await fetch(SRC+fn,{cache:"reload"}); if(r.ok) await c.put(key,r.clone()); }catch(e){} }
+        if(!skip){ try{ const r=await fetch(SRC+fn,{cache:"reload"}); if(r.ok){ dlAdd(r); await c.put(key,r.clone()); } }catch(e){} }
       }
     }
     await Promise.all([w(),w(),w(),w()]);
@@ -1137,6 +1137,7 @@ async function update(quiet){
       'assets/top-icon-bolt1.png?v=3','assets/top-icon-bolt2.png?v=3','assets/top-icon-bolt3.png?v=3']
       .forEach(f=>files.push('@'+f));
     let done=0, skipped=0;
+    dlReset();
     const q=files.slice();
     async function worker(){
       while(q.length){
@@ -1153,7 +1154,7 @@ async function update(quiet){
         }
         if(!skip){
           try{ const res=await fetch(url,{cache:'reload'});
-               if(res.ok) await c.put(key, res.clone()); }catch(e){}
+               if(res.ok){ dlAdd(res); await c.put(key, res.clone()); } }catch(e){}
         }
         done++; if(skip) skipped++;
         bar.style.width=(done/files.length*100).toFixed(1)+'%';
@@ -1175,6 +1176,7 @@ async function update(quiet){
     if(CATN){ try{ await loadHLogFresh(); }catch(e){} }
     if(RADARPEND){ RADAR=RADARPEND; try{ localStorage.setItem("nimbus_off_radar",JSON.stringify(RADAR)); }catch(e){} RADARPEND=null; }
     MF=mf; render();
+    dlSave();
     console.log('SYNC 完了: 新規取得 '+(files.length-skipped)+' / スキップ '+skipped);
     b.textContent='GET IT NOW!!';
     calcCacheSize();
@@ -1811,6 +1813,17 @@ function subDisp(s){
   }catch(e){}
   return L;
 }
+let DL_BYTES=0;
+try{ DL_BYTES=+(localStorage.getItem("nimbus_off_dl")||0)||0; }catch(e){}
+function dlReset(){ DL_BYTES=0; }
+function dlAdd(res){
+  try{
+    const n=+(res.headers.get("content-length")||0);
+    if(n>0){ DL_BYTES+=n; return; }
+  }catch(e){}
+}
+function dlSave(){ try{ localStorage.setItem("nimbus_off_dl",String(Math.round(DL_BYTES))); }catch(e){} }
+function dlMB(){ return (DL_BYTES/1048576).toFixed(1); }
 function ageStr(ts){
   const m=Math.floor(dataAgeMin(ts));
   if(!isFinite(m)||m<0||m>=9999) return "";
@@ -1824,7 +1837,9 @@ function stampHTML(){
   const L=lastRun();
   const s=(L&&L.d)?Math.round(Number(L.d)):0;
   const d=s?(Math.floor(s/60)+":"+String(s%60).padStart(2,"0")):"";
-  const l2=[d, CACHE_MB?(CACHE_MB+" MB"):""].filter(Boolean).join("　");
+  const dl=(DL_BYTES>0)?(dlMB()+"MB"):"";
+  const tot=CACHE_MB?("（"+CACHE_MB+"MB）"):"";
+  const l2=[d, (dl+tot)].filter(Boolean).join("　");
   if(l2) h+='<div class="s2"><b>'+l2+'</b></div>';
   return h;
 }
