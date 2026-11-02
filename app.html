@@ -859,7 +859,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='trim-261102';
+const APP_VER="reset-261102";
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -919,7 +919,28 @@ async function freshBase(){
 const CACHE='nimbus-offline-v1';
 let MF=null, CACHE_MB="";
 
-if('serviceWorker' in navigator){
+const RESET = /[?&]reset=1/.test(location.search);
+
+async function hardReset(){
+  var n=0;
+  try{ for(const k of await caches.keys()){ await caches.delete(k); n++; } }catch(e){}
+  try{ const rs=await navigator.serviceWorker.getRegistrations(); for(const r of rs) await r.unregister(); }catch(e){}
+  try{ localStorage.removeItem('nimbus_dl_bytes'); }catch(e){}
+  return n;
+}
+
+if(RESET){
+  hardReset().then(function(n){
+    document.body.innerHTML='<div style="color:#eceff2;font:17px/1.9 -apple-system,sans-serif;padding:28px 22px">'+
+      '保存データを消去しました（'+n+'件）。<br>接続設定は残っています。<br><br>'+
+      '<button id="rsgo" style="font-size:17px;padding:12px 22px;background:#111;color:#eceff2;border:1px solid #555;border-radius:8px">NIMBUS を開く</button>'+
+      '</div>';
+    var b=document.getElementById('rsgo');
+    if(b) b.onclick=function(){ location.href=location.pathname; };
+  });
+}
+
+if(!RESET && 'serviceWorker' in navigator){
   navigator.serviceWorker.register('sw-offline.js',{updateViaCache:'none'})
     .then(reg=>{ reg.update(); setInterval(()=>reg.update(), 10*60*1000); }).catch(()=>{});
 }
@@ -3748,10 +3769,12 @@ $('btn-update').onclick=async function(){
 };
 if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
 { const v=$('ver'); if(v) v.textContent='v'+APP_VER; }
+if(!RESET){
 buildCatButtons();
 boot().then(()=>calcCacheSize());
 loadMetarJson().then(j=>{ if(j) render(); });
 setTimeout(fitArea,300);
+}
 </script>
 <script>
 /* TOPアイコン: 3つの雷をそれぞれランダムなタイミングで光らせる */
