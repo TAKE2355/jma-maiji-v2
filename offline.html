@@ -859,7 +859,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='lowmem-261102';
+const APP_VER='trim-261102';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -989,12 +989,41 @@ function swipeSub(dir){
   }
 }
 
+// 起動時の掃除：一覧に無い画像を捨てる（本文は読まないので軽い）
+async function cacheTrim(){
+  let del=0;
+  try{
+    const c=await caches.open(CACHE);
+    const keep=new Set();
+    if(MF){
+      (MF.categories||[]).forEach(function(k){
+        (k.items||[]).forEach(function(o){ if(o.file) keep.add(BASE+o.file); });
+        (k.series||[]).forEach(function(s){ (s.frames||[]).forEach(function(f){ keep.add(BASE+f.file); }); });
+      });
+      keep.add(BASE+"manifest.json");
+    }
+    if(RADAR){
+      (RADAR.series||[]).forEach(function(s){ (s.frames||[]).forEach(function(f){ keep.add(BASE_R+f.file); }); });
+    }
+    if(!keep.size) return 0;
+    for(const k of await c.keys()){
+      const u=k.url.split("?")[0];
+      const mine=(u.indexOf(BASE)===0)||(u.indexOf(BASE_R)===0);
+      if(!mine) continue;
+      if(!keep.has(u)){ await c.delete(k); del++; }
+    }
+    if(del) console.log("起動時の掃除:", del, "件削除");
+  }catch(e){}
+  return del;
+}
+
 async function boot(){
   try{
     const c=await caches.open(CACHE);
     const hit=await c.match(BASE+'manifest.json',{ignoreSearch:true});
     if(hit){ MF=await hit.json(); render(); }
   }catch(e){}
+  try{ await cacheTrim(); }catch(e){}
   // オンラインなら最新のmanifestを取り直して構成を更新（画像はキャッシュのまま）
   try{
     const SRC=await freshBase();
