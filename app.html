@@ -859,7 +859,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='syncdiag-261102';
+const APP_VER='lowmem-261102';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -949,6 +949,7 @@ async function radarPull(){
     await Promise.all([w(),w(),w(),w()]);
     RADAR=mf;
     try{ localStorage.setItem("nimbus_off_radar",JSON.stringify(mf)); }catch(e){}
+    try{ await radarPrune(); }catch(e){}
     render();
     return true;
   }catch(e){ return false; }
@@ -1182,6 +1183,7 @@ async function update(quiet){
     console.log('SYNC 完了: 新規取得 '+(files.length-skipped)+' / スキップ '+skipped);
     if(QUOTA_ERR) { try{ diag('保存容量が不足しています（'+QUOTA_ERR+'件保存できず）'); }catch(e){} }
     b.textContent='GET IT NOW!!';
+    try{ await radarPrune(); }catch(e){}
     calcCacheSize();
   }catch(e){
     b.textContent='SYNC FAILED';
@@ -1440,19 +1442,43 @@ async function calcCacheSize(){
     for(const k of await c.keys()){
       if(/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[0-9a-f]{40}\//.test(k.url)) await c.delete(k);
     }
-    const ks=await c.keys();
+    // 容量は見出し情報から集計する（本体を読み込むと端末が落ちるため）
     let n=0;
-    for(const k of ks){
-      const res=await c.match(k);
-      if(!res) continue;
-      const b=await res.clone().arrayBuffer();
-      n+=b.byteLength;
+    try{
+      if(navigator.storage && navigator.storage.estimate){
+        const e=await navigator.storage.estimate();
+        n=(e && e.usage) || 0;
+      }
+    }catch(e){}
+    if(!n){
+      for(const k of await c.keys()){
+        const res=await c.match(k);
+        if(!res) continue;
+        n += +(res.headers.get("content-length")||0);
+      }
     }
-    CACHE_MB=(n/1024/1024).toFixed(1);
+    CACHE_MB=(n/1048576).toFixed(1);
     const s=$('stamp'); if(s&&MF){ s.innerHTML=stampHTML(); try{ mountLamp(); }catch(e){} }
   }catch(e){}
 }
 
+// 海外レーダーの古いコマを削除（一覧に無いものは捨てる）
+async function radarPrune(){
+  try{
+    if(!RADAR || !RADAR.series) return 0;
+    const keep=new Set();
+    (RADAR.series||[]).forEach(function(s){ (s.frames||[]).forEach(function(f){ keep.add(BASE_R+f.file); }); });
+    const c=await caches.open(CACHE);
+    let del=0;
+    for(const k of await c.keys()){
+      const u=k.url.split("?")[0];
+      if(u.indexOf(BASE_R)!==0) continue;
+      if(!keep.has(u)){ await c.delete(k); del++; }
+    }
+    if(del) console.log("海外レーダーの古い画像を削除:", del, "件");
+    return del;
+  }catch(e){ return 0; }
+}
 
 
 // ══ タブ構成（既存カテゴリ＋ユーザーページ） ══════════════════════
