@@ -41,16 +41,20 @@
       "frames": 30
     },
     {
-      "key": "pagasa_mnl",
+      "key": "rv_mnl",
       "label": "マニラ周辺",
-      "kind": "pagasa",
-      "code": "MNL"
+      "kind": "rv",
+      "code": "MNL",
+      "step": 10,
+      "frames": 12
     },
     {
-      "key": "pagasa_ph",
+      "key": "rv_ph",
       "label": "マニラ全域",
-      "kind": "pagasa",
-      "code": "PH"
+      "kind": "rv",
+      "code": "PH",
+      "step": 10,
+      "frames": 12
     },
     {
       "key": "nmc_ec",
