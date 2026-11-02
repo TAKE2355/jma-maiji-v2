@@ -633,6 +633,109 @@ def _panahon_session():
     return sess
 
 
+# ── RainViewer（フィリピン域のレーダー）────────────────────────────
+RV_API = "https://api.rainviewer.com/public/weather-maps.json"
+RV_HDR = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Chrome/140.0 Safari/537.36"}
+RV_CARTO = "https://a.basemaps.cartocdn.com/light_all/%d/%d/%d.png"
+RV_COLOR = 6          # 配色（NEXRAD相当）
+RV_SMOOTH = "1_1"     # なめらか表示＋雪を区別
+
+# 地域コード: (中心経度, 中心緯度, ズーム, 横タイル数, 縦タイル数)
+RV_REGIONS = {
+    "MNL": (121.0195, 14.5086, 8, 3, 3),   # マニラ（RPLL中心）
+    "PH":  (122.000,  12.500,  6, 3, 3),   # フィリピン全域
+}
+_RV_FRAMES = None
+_RV_BASEMAP = {}
+
+
+def _rv_geom(region="MNL"):
+    import math
+    r = RV_REGIONS.get(str(region or "MNL").upper()) or RV_REGIONS["MNL"]
+    lon, lat, z, nx, ny = r
+    n = 2 ** z
+    cx = (lon + 180.0) / 360.0 * n
+    rad = math.radians(lat)
+    cy = (1 - math.log(math.tan(rad) + 1 / math.cos(rad)) / math.pi) / 2 * n
+    x0 = int(math.floor(cx - nx / 2.0 + 0.5))
+    y0 = int(math.floor(cy - ny / 2.0 + 0.5))
+    return z, x0, x0 + nx - 1, y0, y0 + ny - 1
+
+
+def _rv_tile(url):
+    try:
+        r = requests.get(url, headers=RV_HDR, timeout=20)
+        if r.status_code == 200 and len(r.content) > 80:
+            return Image.open(io.BytesIO(r.content)).convert("RGBA")
+    except Exception:
+        pass
+    return None
+
+
+def _rv_basemap(region="MNL"):
+    """Cartoの淡色地図を1枚に合成してキャッシュ"""
+    key = str(region or "MNL").upper()
+    if key in _RV_BASEMAP:
+        return _RV_BASEMAP[key].copy()
+    z, x0, x1, y0, y1 = _rv_geom(key)
+    cv = Image.new("RGBA", ((x1 - x0 + 1) * 256, (y1 - y0 + 1) * 256), (255, 255, 255, 255))
+    for x in range(x0, x1 + 1):
+        for y in range(y0, y1 + 1):
+            tl = _rv_tile(RV_CARTO % (z, x, y))
+            if tl is not None:
+                cv.paste(tl, ((x - x0) * 256, (y - y0) * 256), tl)
+    _RV_BASEMAP[key] = cv
+    return cv.copy()
+
+
+def _rv_frames(n=12):
+    """[(時刻14桁UTC, パス), ...] を新しい順で返す"""
+    global _RV_FRAMES
+    if _RV_FRAMES is None:
+        out = []
+        try:
+            r = requests.get(RV_API, headers=RV_HDR, timeout=30)
+            j = r.json() if r.status_code == 200 else {}
+            for e in ((j.get("radar") or {}).get("past") or []):
+                t = e.get("time"); p = e.get("path")
+                if not t or not p:
+                    continue
+                ts = datetime.datetime.utcfromtimestamp(int(t)).strftime("%Y%m%d%H%M%S")
+                out.append((ts, j.get("host", "") + p))
+            out.reverse()
+        except Exception as ex:
+            print(f"    RainViewer時系列エラー: {str(ex)[:90]}")
+        _RV_FRAMES = out
+    return _RV_FRAMES[:n]
+
+
+def get_rv_image(path, region="MNL"):
+    """レーダータイルを地図に重ねて1枚にする"""
+    try:
+        cv = _rv_basemap(region)
+        z, x0, x1, y0, y1 = _rv_geom(region)
+        got = 0
+        for x in range(x0, x1 + 1):
+            for y in range(y0, y1 + 1):
+                u = "%s/256/%d/%d/%d/%d/%s.png" % (path, z, x, y, RV_COLOR, RV_SMOOTH)
+                tl = _rv_tile(u)
+                if tl is not None:
+                    cv.paste(tl, ((x - x0) * 256, (y - y0) * 256), tl)
+                    got += 1
+        if got == 0:
+            return None, None
+        try:
+            dr = ImageDraw.Draw(cv)
+            dr.text((8, cv.size[1] - 16), "RainViewer / (C) OpenStreetMap, (C) CARTO",
+                    fill=(90, 90, 90, 255))
+        except Exception:
+            pass
+        return cv.convert("RGB"), None
+    except Exception as ex:
+        print(f"    RainViewer画像エラー[{region}]: {str(ex)[:90]}")
+        return None, None
+
 def _pagasa_frames():
     """PAGASAのレーダーモザイク時系列を取得 [(観測時刻UTC, url), ...]
        旧 api.meteopilipinas.gov.ph は停止したため panahon.gov.ph の公式APIを使う。"""
