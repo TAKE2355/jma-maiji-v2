@@ -859,7 +859,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER='dlsize-260828';
+const APP_VER='syncdiag-261102';
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1125,7 +1125,9 @@ async function update(quiet){
       }
       b.textContent='取得中…';
     }
-    await c.put(BASE+'manifest.json', new Response(JSON.stringify(mf),{headers:{'Content-Type':'application/json'}}));
+    try{
+      await c.put(BASE+'manifest.json', new Response(JSON.stringify(mf),{headers:{'Content-Type':'application/json'}}));
+    }catch(e){ throw new Error('一覧の保存に失敗（容量不足の可能性）: '+String(e&&e.message||e).slice(0,80)); }
     const files=[];
     mf.categories.filter(k=>catOn(k.id)).forEach(k=>{
       (k.items||[]).forEach(i=>{ if(i.file) files.push(i.file); });
@@ -1136,7 +1138,7 @@ async function update(quiet){
     ['offline.html','sw-offline.js','assets/top-icon-base.png?v=4',
       'assets/top-icon-bolt1.png?v=3','assets/top-icon-bolt2.png?v=3','assets/top-icon-bolt3.png?v=3']
       .forEach(f=>files.push('@'+f));
-    let done=0, skipped=0;
+    let done=0, skipped=0, QUOTA_ERR=0;
     dlReset();
     const q=files.slice();
     async function worker(){
@@ -1154,7 +1156,7 @@ async function update(quiet){
         }
         if(!skip){
           try{ const res=await fetch(url,{cache:'reload'});
-               if(res.ok){ dlAdd(res); await c.put(key, res.clone()); } }catch(e){}
+               if(res.ok){ dlAdd(res); await c.put(key, res.clone()); } }catch(e){ if(/quota/i.test(String(e&&e.name||e)+String(e&&e.message||'')) ) QUOTA_ERR++; }
         }
         done++; if(skip) skipped++;
         bar.style.width=(done/files.length*100).toFixed(1)+'%';
@@ -1178,9 +1180,16 @@ async function update(quiet){
     MF=mf; render();
     dlSave();
     console.log('SYNC 完了: 新規取得 '+(files.length-skipped)+' / スキップ '+skipped);
+    if(QUOTA_ERR) { try{ diag('保存容量が不足しています（'+QUOTA_ERR+'件保存できず）'); }catch(e){} }
     b.textContent='GET IT NOW!!';
     calcCacheSize();
-  }catch(e){ b.textContent='SYNC FAILED'; console.error('sync',e); }
+  }catch(e){
+    b.textContent='SYNC FAILED';
+    console.error('sync',e);
+    let m=String((e&&e.message)||e).slice(0,120);
+    if(/quota|QuotaExceeded|storage/i.test(m)) m='端末の保存容量が足りません（'+m+'）';
+    try{ diag('同期に失敗: '+m); }catch(e2){}
+  }
   finally{ b.dataset.busy=''; b.disabled=false; try{ syncGetEnabled(); }catch(e){} setTimeout(()=>{pr.style.display='none';},900); }
 }
 
