@@ -201,6 +201,11 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
         sp = M.nowc_thunder_specs(n)
         specs = [(vt, (bt, vt2, lbt, lvt), None) for vt, bt, vt2, lbt, lvt in sp]
         M._nowc_basemap()
+    elif kind == "rv":
+        fr = M._rv_frames(n)
+        view = str(s.get("code") or "MNL")
+        specs = [(ts, p, None) for ts, p in fr]
+        M._rv_basemap(view)
     elif kind == "pagasa":
         fr = M._pagasa_frames()
         view = M.PAGASA_VIEWS.get(str(s.get("code")))
@@ -211,7 +216,9 @@ def collect_series(s, jma_ts=None, akuten_ts=None):
     def one(idx_spec):
         idx, (ts, url, hdr) = idx_spec
         try:
-            if kind == "pagasa":
+            if kind == "rv":
+                im, _ts = M.get_rv_image(url, view or "MNL")
+            elif kind == "pagasa":
                 im = M._pagasa_compose(url, view)
             elif kind == "nowc":
                 im, _ts = M.get_nowc_hrpns(url, ts, view or "JP")
