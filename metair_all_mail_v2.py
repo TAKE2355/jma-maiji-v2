@@ -612,36 +612,66 @@ def _arcgis_base(w, s, e, n, px, py_):
         print(f"    ArcGISエラー: {ex}")
         return None
 
+PANAHON_BASE = "https://www.panahon.gov.ph"
+_PANAHON_SESS = None
+
+def _panahon_session():
+    """panahon.gov.ph のセッション（CSRFトークンとCookieを保持）"""
+    global _PANAHON_SESS
+    if _PANAHON_SESS is not None:
+        return _PANAHON_SESS
+    sess = requests.Session()
+    sess.headers.update({"User-Agent": PAGASA_HDR.get("User-Agent", "Mozilla/5.0")})
+    try:
+        home = sess.get(PANAHON_BASE + "/", timeout=40)
+        m = re.search(r'name="csrf-token"\s+content="([^"]+)"', home.text or "")
+        sess.nimbus_token = m.group(1) if m else None
+    except Exception as ex:
+        print(f"    PAGASA: サイトに接続できません {str(ex)[:80]}")
+        sess.nimbus_token = None
+    _PANAHON_SESS = sess
+    return sess
+
+
 def _pagasa_frames():
-    """PAGASAのレーダーモザイク時系列を取得 [(フィリピン時刻datetime, url), ...]"""
+    """PAGASAのレーダーモザイク時系列を取得 [(観測時刻UTC, url), ...]
+       旧 api.meteopilipinas.gov.ph は停止したため panahon.gov.ph の公式APIを使う。"""
     global _PAGASA_FRAMES
     if _PAGASA_FRAMES is not None:
         return _PAGASA_FRAMES
     frames = []
     try:
-        data = []
-        for _try in range(3):
-            rr = requests.post("https://www.pagasa.dost.gov.ph/api/HybridTimeline",
-                               headers=PAGASA_HDR, timeout=40)
-            ct = (rr.headers.get("Content-Type") or "").split(";")[0]
-            if "json" in ct and rr.text:
-                data = rr.json().get("rainfall_estimate", [])
-                break
+        sess = _panahon_session()
+        tok = getattr(sess, "nimbus_token", None)
+        if not tok:
+            print("    PAGASA: トークンが取得できません")
+            _PAGASA_FRAMES = frames
+            return frames
+        rr = sess.get(PANAHON_BASE + "/api/v1/radar/timeline",
+                      params={"token": tok, "sublayer": "hybrid-reflectivity"},
+                      headers={"X-Requested-With": "XMLHttpRequest"}, timeout=40)
+        ct = (rr.headers.get("Content-Type") or "").split(";")[0]
+        if "json" not in ct:
             print(f"    PAGASA API 応答異常: {rr.status_code} {ct} len{len(rr.text)}")
-            time.sleep(2)
-        for a in data:
-            u = a.get("url", "")
-            m = re.search(r"_(\d{14})", u)
-            if not m:
+            _PAGASA_FRAMES = frames
+            return frames
+        data = (rr.json() or {}).get("data") or {}
+        tl = data.get("timeline") or []
+        if not tl:
+            print("    PAGASA: レーダーの配信がありません（no_data=%s）" % data.get("no_data"))
+        for e in tl:
+            u = str(e.get("image_url") or "").replace("http://", "https://")
+            ts = e.get("observed_at_unix")
+            if not u or not ts:
                 continue
             try:
-                dt = datetime.datetime.strptime(m.group(1), "%Y%m%d%H%M%S")
+                dt = datetime.datetime.utcfromtimestamp(int(ts))
             except Exception:
                 continue
             frames.append((dt, u))
-        frames.sort()
+        frames.sort(key=lambda x: x[0])
     except Exception as ex:
-        print(f"    PAGASA時系列エラー: {ex}")
+        print(f"    PAGASA時系列エラー: {str(ex)[:100]}")
     _PAGASA_FRAMES = frames
     return frames
 
@@ -656,7 +686,7 @@ def _pagasa_compose(url, view):
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         except Exception:
             pass
-        rr = requests.get(url, headers=PAGASA_HDR, timeout=60, verify=False)
+        rr = _panahon_session().get(url, timeout=60)
         if rr.status_code != 200:
             print(f"    PAGASA画像: HTTP {rr.status_code}")
             return None
