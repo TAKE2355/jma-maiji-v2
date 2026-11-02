@@ -637,14 +637,17 @@ def _panahon_session():
 RV_API = "https://api.rainviewer.com/public/weather-maps.json"
 RV_HDR = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                         "(KHTML, like Gecko) Chrome/140.0 Safari/537.36"}
-RV_CARTO = "https://a.basemaps.cartocdn.com/light_all/%d/%d/%d.png"
+RV_ESRI_BASE = ("https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/"
+                "World_Light_Gray_Base/MapServer/tile/%d/%d/%d")      # z/y/x
+RV_ESRI_REF  = ("https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/"
+                "World_Light_Gray_Reference/MapServer/tile/%d/%d/%d") # 地名
 RV_COLOR = 6          # 配色（NEXRAD相当）
 RV_SMOOTH = "1_1"     # なめらか表示＋雪を区別
 
 # 地域コード: (中心経度, 中心緯度, ズーム, 横タイル数, 縦タイル数)
 RV_REGIONS = {
-    "MNL": (121.0195, 14.5086, 8, 3, 3),   # マニラ（RPLL中心）
-    "PH":  (122.000,  12.500,  6, 3, 3),   # フィリピン全域
+    "MNL": (121.0195, 14.5086, 7, 3, 3),   # マニラ（RPLL中心）RainViewerはz7まで
+    "PH":  (122.000,  12.500,  6, 2, 3),   # フィリピン全域
 }
 _RV_FRAMES = None
 _RV_BASEMAP = {}
@@ -682,9 +685,12 @@ def _rv_basemap(region="MNL"):
     cv = Image.new("RGBA", ((x1 - x0 + 1) * 256, (y1 - y0 + 1) * 256), (255, 255, 255, 255))
     for x in range(x0, x1 + 1):
         for y in range(y0, y1 + 1):
-            tl = _rv_tile(RV_CARTO % (z, x, y))
+            tl = _rv_tile(RV_ESRI_BASE % (z, y, x))
             if tl is not None:
                 cv.paste(tl, ((x - x0) * 256, (y - y0) * 256), tl)
+            rf = _rv_tile(RV_ESRI_REF % (z, y, x))
+            if rf is not None:
+                cv.paste(rf, ((x - x0) * 256, (y - y0) * 256), rf)
     _RV_BASEMAP[key] = cv
     return cv.copy()
 
@@ -727,7 +733,7 @@ def get_rv_image(path, region="MNL"):
             return None, None
         try:
             dr = ImageDraw.Draw(cv)
-            dr.text((8, cv.size[1] - 16), "RainViewer / (C) OpenStreetMap, (C) CARTO",
+            dr.text((8, cv.size[1] - 16), "RainViewer / (C) Esri",
                     fill=(90, 90, 90, 255))
         except Exception:
             pass
