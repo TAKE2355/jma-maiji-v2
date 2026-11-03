@@ -859,7 +859,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="dl3-261104";
+const APP_VER="resume-261104";
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -867,8 +867,11 @@ async function checkUpdate(){
     const r=await fetch(location.pathname.split('/').pop()+'?cb='+Date.now(),{cache:'no-store'});
     if(!r.ok) return;
     const t=await r.text();
-    const m=t.match(/const APP_VER='([^']+)'/);
+    const m=t.match(/const APP_VER\s*=\s*["']([^"']+)["']/);
     if(!m || m[1]===APP_VER) return;
+    try{ if(localStorage.getItem('nimbus_pend')) return; }catch(e){}
+    const bu=document.getElementById('btn-update');
+    if(bu && bu.dataset.busy==='1') return;
     try{
       const c=await caches.open(CACHE);
       for(const k of await c.keys()){
@@ -1109,6 +1112,7 @@ async function runCollection(b){
       if(r0 && r0.id!==prev) runId=r0.id;
     }
     if(!runId) return false;
+    try{ localStorage.setItem('nimbus_pend', JSON.stringify({id:runId, ts:Date.now()})); }catch(e){}
     const t0=Date.now();
     const tick=setInterval(function(){
       const sec=Math.round((Date.now()-t0)/1000);
@@ -1151,6 +1155,37 @@ async function radarWait(before){
     await new Promise(r=>setTimeout(r,4000));
   }
   return null;
+}
+
+// ── 収集待ちの途中でページが落ちた場合、開き直したときに待機から再開する ──
+async function pendResume(){
+  let p=null;
+  try{ p=JSON.parse(localStorage.getItem('nimbus_pend')||'null'); }catch(e){}
+  if(!p||!p.id) return;
+  if(Date.now()-(p.ts||0) > 30*60000){ try{ localStorage.removeItem('nimbus_pend'); }catch(e){} return; }
+  let cfg={};
+  try{ cfg=JSON.parse(localStorage.getItem('metair_v2')||'{}'); }catch(e){}
+  if(!cfg.pat||!cfg.repo) return;
+  const HH={'Authorization':'token '+cfg.pat};
+  const b=$('btn-update');
+  const t0=Date.now();
+  try{
+    for(let i=0;i<240;i++){
+      if(b && b.dataset.busy==='1') return;
+      let r=null;
+      try{ r=await (await fetch('https://api.github.com/repos/'+cfg.repo+'/actions/runs/'+p.id,{headers:HH,cache:'no-store'})).json(); }catch(e){}
+      if(r && r.status==='completed'){
+        try{ localStorage.removeItem('nimbus_pend'); }catch(e){}
+        if(r.conclusion==='success'){ try{ await update(true); }catch(e){} }
+        return;
+      }
+      if(b && b.dataset.busy!=='1'){
+        const sec=Math.round((Date.now()-t0)/1000);
+        b.textContent='COLLECTING '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')+'（再開）';
+      }
+      await new Promise(function(z){ setTimeout(z,5000); });
+    }
+  }catch(e){}
 }
 
 async function update(quiet){
@@ -1233,6 +1268,7 @@ async function update(quiet){
     dlSave();
     console.log('SYNC 完了: 新規取得 '+(files.length-skipped)+' / スキップ '+skipped);
     if(QUOTA_ERR) { try{ diag('保存容量が不足しています（'+QUOTA_ERR+'件保存できず）'); }catch(e){} }
+    try{ localStorage.removeItem('nimbus_pend'); }catch(e){}
     b.textContent='GET IT NOW!!';
     try{ await radarPrune(); }catch(e){}
     calcCacheSize();
@@ -3772,7 +3808,7 @@ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().cat
 { const v=$('ver'); if(v) v.textContent='v'+APP_VER; }
 if(!RESET){
 buildCatButtons();
-boot().then(()=>calcCacheSize());
+boot().then(()=>calcCacheSize()).then(function(){ try{ pendResume(); }catch(e){} });
 loadMetarJson().then(j=>{ if(j) render(); });
 setTimeout(fitArea,300);
 }
