@@ -859,7 +859,7 @@ nav.cats button.pg{border-style:dashed;}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const APP_VER="reset-261102";
+const APP_VER="dl3-261104";
 
 // ── 自動更新: サーバ上の版と違えばキャッシュを捨てて読み込み直す ──
 async function checkUpdate(){
@@ -1207,14 +1207,15 @@ async function update(quiet){
         }
         if(!skip){
           try{ const res=await fetch(url,{cache:'reload'});
-               if(res.ok){ dlAdd(res); await c.put(key, res.clone()); } }catch(e){ if(/quota/i.test(String(e&&e.name||e)+String(e&&e.message||'')) ) QUOTA_ERR++; }
+               if(res.ok){ dlAdd(res); await c.put(key, res); } }catch(e){ if(/quota/i.test(String(e&&e.name||e)+String(e&&e.message||'')) ) QUOTA_ERR++; }
         }
         done++; if(skip) skipped++;
         bar.style.width=(done/files.length*100).toFixed(1)+'%';
         b.textContent=(quiet?'AUTO ':'SYNC ')+done+'/'+files.length;
+        if(done%6===0) await new Promise(function(r){ setTimeout(r,40); });
       }
     }
-    await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+    await Promise.all([worker(),worker(),worker()]);
     // manifestに存在しない古い画像を掃除（設定変更で不要になったファイル対策）
     try{
       const keep=new Set(files.filter(f=>f.charAt(0)!=='@').map(f=>BASE+f));
