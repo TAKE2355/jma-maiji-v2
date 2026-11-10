@@ -41,19 +41,19 @@
       "frames": 30
     },
     {
-      "key": "rv_mnl",
-      "label": "マニラ周辺",
-      "kind": "rv",
+      "key": "gsm_mnl",
+      "label": "マニラ周辺（衛星推定）",
+      "kind": "gsm",
       "code": "MNL",
-      "step": 10,
+      "step": 30,
       "frames": 12
     },
     {
-      "key": "rv_ph",
-      "label": "マニラ全域",
-      "kind": "rv",
+      "key": "gsm_ph",
+      "label": "マニラ全域（衛星推定）",
+      "kind": "gsm",
       "code": "PH",
-      "step": 10,
+      "step": 30,
       "frames": 12
     },
     {
