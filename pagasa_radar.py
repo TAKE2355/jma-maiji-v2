@@ -142,6 +142,12 @@ def _source(t):
             ch[3] = ImageChops.multiply(ch[3], alpha)       # 有効域の外は透明
             col = Image.merge("RGBA", ch)
             res = (col, ch[3].getbbox() is not None)
+            # 着色前の生データにも値があるか（配色の読み違いでエコーを消していないかの確認用）
+            raw = ImageChops.multiply(red.point(lambda x: 255 if x > 0 else 0),
+                                      alpha.point(lambda x: 255 if x > 0 else 0))
+            nraw = raw.histogram()[255]
+            if nraw and not res[1]:
+                print("    PAGASA注意: 生データに値 %d px あるが着色後は透明（t=%d）" % (nraw, t))
         else:
             print("    PAGASA画像: HTTP", r.status_code)
     except Exception as ex:

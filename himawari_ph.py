@@ -31,7 +31,7 @@ def _times():
     try:
         t = requests.get(PAGE, headers=HDR, timeout=30).text
         for v, hh, mm, d, mon, y in re.findall(
-                r'<option[^>]*value="(\d{4})"[^>]*>\s*(\d{2}):(\d{2}) UTC (\d{1,2}) (\w+) (\d{4})', t):
+                r'<option[^>]*value=["\']?(\d{4})["\']?[^>]*>\s*(\d{2}):(\d{2}) UTC (\d{1,2}) (\w+) (\d{4})', t):
             if mon in MONTH:
                 out.append((v, datetime.datetime(int(y), MONTH[mon], int(d), int(hh), int(mm))))
     except Exception as ex:
